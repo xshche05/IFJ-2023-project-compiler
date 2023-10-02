@@ -1,7 +1,9 @@
+# https://github.com/vsaltxx/IFJ_PRJ
+
 cmake_minimum_required(VERSION 3.26)
 project(IFJ_PRJ C)
 
-set(CMAKE_C_STANDARD 11)
+set(CMAKE_C_STANDARD 99)
 
 add_executable(IFJ_PRJ
         main.c

@@ -1,3 +1,8 @@
-//
-// Created by Spagetik on 02.10.2023.
-//
+#include "macros.h"
+#include "utils/utils.h"
+#include "parts/parts.h"
+
+
+int main(int argc, char **argv) {
+    return 0;
+}
