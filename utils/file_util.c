@@ -16,7 +16,7 @@ file_t *file_init() {
         return NULL;
     }
     file->file_name = NULL;
-    file->lines = malloc(sizeof(string_t) * 8);
+    file->lines = malloc(sizeof(string_t*) * 8);
     if (file->lines == NULL) {
         fprintf(stderr, "Error: malloc failed.\n");
         return NULL;
@@ -105,4 +105,13 @@ char file_next_char(file_t *file) {
     char c = file->lines[file->current_line]->str[file->current_position];
     file->current_position++;
     return c;
+}
+
+void print_file(file_t *file) {
+    if (file == NULL) {
+        return;
+    }
+    for (size_t i = 0; i < file->line_count; i++) {
+        printf("%s\n", file->lines[i]->str);
+    }
 }

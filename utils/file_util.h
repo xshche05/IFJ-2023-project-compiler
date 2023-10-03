@@ -8,6 +8,16 @@
 #include <stdio.h>
 #include "string_util.h"
 
+/**
+ * @brief This structure represents source code file.
+ *
+ * @param file_name - Name of file
+ * @param lines - Array of lines
+ * @param line_allocated - Number of allocated lines
+ * @param line_count - Number of lines
+ * @param current_line - Index of current line
+ * @param current_position - Index of current position in current line
+ */
 typedef struct {
     char *file_name;
     string_t **lines;
