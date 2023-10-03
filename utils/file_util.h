@@ -5,4 +5,28 @@
 #ifndef IFJ_PRJ_FILE_UTIL_H
 #define IFJ_PRJ_FILE_UTIL_H
 
+#include <stdio.h>
+#include "string_util.h"
+
+typedef struct {
+    char *file_name;
+    string_t **lines;
+    int line_allocated;
+    int line_count;
+    int current_line;
+    int current_position;
+} file_t;
+
+file_t *file_init();
+
+void file_dtor(file_t *file);
+
+int file_add_line(file_t *file, string_t *line);
+
+int read_file(char *file_name, file_t *file);
+
+char file_next_char(file_t *file);
+
+void print_file(file_t *file);
+
 #endif //IFJ_PRJ_FILE_UTIL_H
