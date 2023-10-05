@@ -8,7 +8,7 @@
 #include "utils.h"
 
 typedef enum {
-    TOKEN_IDENTIFIER,           //
+    TOKEN_IDENTIFIER,           //      S to [a-zA-Z_] to [a-zA-Z0-9_]
     TOKEN_OPERATOR,             //
     TOKEN_KEYWORD,              //
     TOKEN_LITERAL,              //
@@ -16,34 +16,37 @@ typedef enum {
 } token_type_t;
 
 typedef enum {
-    ASSIGNMENT,                 // =
+    ASSIGNMENT,                 // =    S to =
 
-    ADDITION,                   // +
-    SUBTRACTION,                // -
-    MULTIPLICATION,             // *
-    DIVISION,                   // /
+    ADDITION,                   // +    S to +
+    SUBTRACTION,                // -    S to -
+    MULTIPLICATION,             // *    S to *
+    DIVISION,                   // /    S to /
 
-    LESS_THAN,                  // <
-    LESS_THAN_OR_EQUAL_TO,      // <=
-    GREATER_THAN,               // >
-    GREATER_THAN_OR_EQUAL_TO,   // >=
-    EQUAL_TO,                   // ==
-    NOT_EQUAL_TO,               // !=
+    LESS_THAN,                  // <    S to <
+    LESS_THAN_OR_EQUAL_TO,      // <=   S to < to =
+    GREATER_THAN,               // >    S to >
+    GREATER_THAN_OR_EQUAL_TO,   // >=   S to > to =
+    EQUAL_TO,                   // ==   S to = to =
+    NOT_EQUAL_TO,               // !=   S to ! to =
 
-    NILABLE,                    // ?
-    IS_NIL,                     // ??
-    UNWRAP_NILABLE,             // ...!
+    NILABLE,                    // ?    S to ?
+    IS_NIL,                     // ??   S to ? to ?
+    UNWRAP_NILABLE,             // .!   S to !
 
     // PREMIUM
-    LOGICAL_AND,                // &&
-    LOGICAL_OR,                 // ||
-    LOGICAL_NOT,                // !
+    LOGICAL_AND,                // &&   S to & to &
+    LOGICAL_OR,                 // ||   S to | to |
+    LOGICAL_NOT,                // !.   S to !
 } operator_type_t;
 
 typedef enum {
-    INTEGER,                    // int
-    REAL,                       // real
-    STRING,                     // string
+    INTEGER,                    // int      S to [0-9]
+    REAL,                       // real     S to [0-9] to . to [0-9]
+                                //          S to [0-9] to . to [0-9] to e|E to [0-9]
+                                //          S to [0-9] to . to [0-9] to e|E to +|- to [0-9]
+    STRING,                     // string   S to " to [^"] to "
+                                //          S to " to " to " to \n to [^"] to " to " to " to \n
     NIL,                        // nil
 
     // PREMIUM
@@ -67,14 +70,13 @@ typedef enum {
 } keyword_type_t;
 
 typedef enum {
-    LEFT_PARENTHESIS,           // (
-    RIGHT_PARENTHESIS,          // )
-    LEFT_BRACE,                 // {
-    RIGHT_BRACE,                // }
-    COMMA,                      // ,
-    COLON,                      // :
-    SEMICOLON,                  // ;
-    ARROW,                      // ->
+    LEFT_BRACKET,           // (        S to (
+    RIGHT_BRACKET,              // )        S to )
+    LEFT_BRACE,                 // {        S to {
+    RIGHT_BRACE,                // }        S to }
+    COMMA,                      // ,        S to ,
+    SEMICOLON,                  // ;        S to ;
+    ARROW,                      // ->       S to - to >
 } punctuator_type_t;
 
 typedef union {
@@ -89,5 +91,29 @@ typedef struct {
     token_subtype_t subtype;
     string_t *lexeme;
 } token_t;
+
+typedef struct {
+    token_t **array;
+    int length;
+    int allocated;
+} token_array_t;
+
+typedef enum {
+    START_S,
+} fsm_state_t;
+
+token_t *token_init(token_type_t type, token_subtype_t subtype, string_t *lexeme);
+
+void token_dtor(token_t *token);
+
+token_array_t *token_array_init();
+
+void token_array_dtor(token_array_t *token_array);
+
+int token_array_add(token_array_t *token_array, token_t *token);
+
+token_array_t *source_code_to_tokens(file_t *file);
+
+
 
 #endif //IFJ_PRJ_LEXER_H
