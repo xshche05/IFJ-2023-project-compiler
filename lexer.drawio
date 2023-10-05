@@ -1,6 +1,6 @@
-<mxfile host="app.diagrams.net" modified="2023-10-05T12:02:02.777Z" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/117.0.0.0 Safari/537.36" etag="OSCz-8A9zeJDVAzdyjbG" version="22.0.2" type="github">
+<mxfile host="app.diagrams.net" modified="2023-10-05T12:16:01.042Z" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/117.0.0.0 Safari/537.36" etag="-PaK0k8vqwxJhW4FYqrK" version="22.0.2" type="github">
   <diagram name="Страница — 1" id="OEXieys6IyBbqHFSCYJF">
-    <mxGraphModel dx="660" dy="416" grid="1" gridSize="5" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+    <mxGraphModel dx="939" dy="592" grid="1" gridSize="5" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -915,8 +915,8 @@
             <mxPoint x="1" as="offset" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="q3ADz-T0AIVfJ_UUvJF6-1" value="COMMA" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=9;fontStyle=3" vertex="1" parent="1">
-          <mxGeometry x="715" y="95" width="55" height="25" as="geometry" />
+        <mxCell id="q3ADz-T0AIVfJ_UUvJF6-1" value="comma" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=9;fontStyle=3" vertex="1" parent="1">
+          <mxGeometry x="717.5" y="100" width="55" height="25" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>
