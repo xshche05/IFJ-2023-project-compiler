@@ -72,6 +72,7 @@ typedef enum {
     LEFT_BRACE,                 // {
     RIGHT_BRACE,                // }
     COMMA,                      // ,
+    COLON,                      // :
     SEMICOLON,                  // ;
     ARROW,                      // ->
 } punctuator_type_t;
