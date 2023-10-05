@@ -108,7 +108,7 @@ char file_next_char(file_t *file) {
 }
 
 void print_file(file_t *file) {
-    $);
+    print("File: %s\n", file->file_name);
     if (file == NULL) {
         return;
     }
