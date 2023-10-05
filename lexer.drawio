@@ -1,16 +1,16 @@
-<mxfile host="app.diagrams.net" modified="2023-10-05T21:17:36.629Z" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/117.0.0.0 Safari/537.36" etag="oXWlrU9f05nWMXo1ssjp" version="22.0.2" type="github">
+<mxfile host="app.diagrams.net" modified="2023-10-05T21:18:21.022Z" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/117.0.0.0 Safari/537.36" etag="VqyhA4FGLF-Im5wmjbE2" version="22.0.2" type="github">
   <diagram name="Страница — 1" id="OEXieys6IyBbqHFSCYJF">
     <mxGraphModel dx="1163" dy="732" grid="1" gridSize="5" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
-        <mxCell id="y03-LxhdyNBDIvemHkm3-42" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;strokeWidth=4;" vertex="1" parent="1">
+        <mxCell id="y03-LxhdyNBDIvemHkm3-42" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;strokeWidth=4;strokeColor=none;" vertex="1" parent="1">
           <mxGeometry x="262" y="480" width="408" height="335" as="geometry" />
         </mxCell>
-        <mxCell id="y03-LxhdyNBDIvemHkm3-41" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;strokeWidth=4;" vertex="1" parent="1">
+        <mxCell id="y03-LxhdyNBDIvemHkm3-41" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;strokeWidth=4;strokeColor=none;" vertex="1" parent="1">
           <mxGeometry x="760" y="15" width="405" height="335" as="geometry" />
         </mxCell>
-        <mxCell id="y03-LxhdyNBDIvemHkm3-38" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;strokeWidth=3;" vertex="1" parent="1">
+        <mxCell id="y03-LxhdyNBDIvemHkm3-38" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;strokeWidth=3;strokeColor=none;" vertex="1" parent="1">
           <mxGeometry x="680.5" y="360" width="484.5" height="460" as="geometry" />
         </mxCell>
         <mxCell id="LYe48fv7NBrQbQcGyMcg-10" value="" style="group" parent="1" vertex="1" connectable="0">
