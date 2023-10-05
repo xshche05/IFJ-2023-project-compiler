@@ -1,0 +1,30 @@
+S to !
+------ to =
+S to " to " to " to \n to [^"] to \n to " to " to "
+------ to [^"] to "
+S to & to &
+S to (
+S to )
+S to *
+S to +
+S to ,
+S to -
+------ to >
+S to /
+S to ;
+S to <
+------ to =
+S to =
+------ to =
+S to >
+------ to =
+S to ?
+------ to ?
+S to [0-9]
+---------- to . to [0-9]
+------------------------ to e|E to [0-9]
+------------------------------- to +|- to [0-9]
+S to [a-zA-Z_] to [a-zA-Z0-9_]
+S to {
+S to | to |
+S to }
