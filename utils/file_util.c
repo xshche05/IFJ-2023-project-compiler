@@ -108,7 +108,6 @@ char file_next_char(file_t *file) {
 }
 
 void print_file(file_t *file) {
-
     if (file == NULL) {
         return;
     }
