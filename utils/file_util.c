@@ -108,7 +108,7 @@ char file_next_char(file_t *file) {
 }
 
 void print_file(file_t *file) {
-    printf("ggggg");
+
     if (file == NULL) {
         return;
     }
