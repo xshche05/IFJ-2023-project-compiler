@@ -79,7 +79,9 @@ int string_assign(string_t *dest, string_t *source) {
     return 0;
 }
 
-
+/*
+ *  перепиши коммент к функции, не  очень понимаю её смысл; если там все так, как ты задумывал, то просто удали данную стоку
+ */
 int string_assign_cstr(string_t *dest, char *source) {
     int length = strlen(source);
     if (dest->allocated < length + 1) {

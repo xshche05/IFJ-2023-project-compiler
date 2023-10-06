@@ -27,7 +27,7 @@ string_t *string_init();
  * @brief This function destroys string.
  *
  * @param string - Pointer to string_t structure.
- * @return Pointer to string_t structure.
+ * @return -
  */
 void string_dtor(string_t *string);
 
