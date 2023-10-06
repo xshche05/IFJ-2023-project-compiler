@@ -25,11 +25,13 @@ string_t *string_init() {
     return string;
 }
 
+
 void string_dtor(string_t *string) {
     free(string->str);
     free(string);
     string = NULL;
 }
+
 
 int string_extend_memory(string_t *string, int add_size) {
     char *new_string = realloc(string->str, sizeof(char) * (string->allocated + add_size * 3 / 2));
@@ -53,6 +55,7 @@ int string_add_char(string_t *string, char c) {
     return 0;
 }
 
+
 int string_add_string(string_t *dest, string_t *source) {
     if (dest->length + source->length + 1 >= dest->allocated) {
         if (string_extend_memory(dest, source->length) != 0) {
@@ -63,6 +66,7 @@ int string_add_string(string_t *dest, string_t *source) {
     dest->length += source->length;
     return 0;
 }
+
 
 int string_assign(string_t *dest, string_t *source) {
     if (dest->allocated < source->length + 1) {
@@ -75,6 +79,7 @@ int string_assign(string_t *dest, string_t *source) {
     return 0;
 }
 
+
 int string_assign_cstr(string_t *dest, char *source) {
     int length = strlen(source);
     if (dest->allocated < length + 1) {
@@ -86,6 +91,7 @@ int string_assign_cstr(string_t *dest, char *source) {
     dest->length = length;
     return 0;
 }
+
 
 string_t *string_copy(string_t *source) {
     string_t *dest = string_init();

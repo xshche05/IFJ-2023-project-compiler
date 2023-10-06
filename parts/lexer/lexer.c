@@ -1,6 +1,7 @@
 #include "lexer.h"
 #include <stdlib.h>
 
+
 token_t *token_init(token_type_t type, token_subtype_t subtype, string_t *lexeme) {
     token_t *token = malloc(sizeof(token_t));
     if (token == NULL) {

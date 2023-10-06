@@ -144,16 +144,51 @@ typedef enum {
     COM_END_S       // /* , */
 } fsm_state_t;
 
+/**
+ * @brief This function initializes token.
+ *
+ * @param type - Type of token
+ * @param subtype - Subtype of token
+ * @param lexeme - Lexeme of token
+ * @return Pointer to token
+ */
 token_t *token_init(token_type_t type, token_subtype_t subtype, string_t *lexeme);
 
+/**
+ * @brief This function destroys token.
+ *
+ * @param token - Pointer to token
+ */
 void token_dtor(token_t *token);
-
+/**
+ * @brief This function initializes token array.
+ *
+ * @return Pointer to token array
+ */
 token_array_t *token_array_init();
 
+/**
+ * @brief This function destroys token array.
+ *
+ * @param token_array - Pointer to token array
+ */
 void token_array_dtor(token_array_t *token_array);
 
+/**
+ * @brief This function adds token to token array.
+ *
+ * @param token_array - Pointer to token array
+ * @param token - Pointer to token
+ * @return 0 if success, -1 otherwise
+ */
 int token_array_add(token_array_t *token_array, token_t *token);
 
+/**
+ * @brief This function initializes token array from source code file.
+ *
+ * @param file - Pointer to source code file
+ * @return Pointer to token array
+ */
 token_array_t *source_code_to_tokens(file_t *file);
 
 
