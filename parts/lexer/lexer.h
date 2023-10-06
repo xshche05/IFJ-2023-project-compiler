@@ -96,52 +96,52 @@ typedef struct {
 } token_array_t;
 
 typedef enum {
-    START,          // S
-    WHITESYMB,      // \n \t \r \v \f
-    PLUS,           // +
-    MUL,            // *
-    EXCL_MARK,      // !
-    NOT_EQUAL,      // !=
-    NILABLE,        // ?
-    IS_NIL,         // ??
-    GREATER,        // >
-    GREATER_EQUAL,  // >=
-    LESS,           // <
-    LESS_EQUAL,     // <=
-    MINUS,          // -
-    ARROW,          // ->
-    ASSIGN,         // =
-    EQUAL,          // ==
-    BRACE_L,        // {
-    BRACE_R,        // }
-    BRACKET_L,      // (
-    BRACKET_R,      // )
-    COLON,          // :
-    SEMICOLON,      // ;
-    COMMA,          // ,
-    INTEGER,        // 0-9
-    ID,             // a-zA-Z_
-    REAL,           // 0-9.
-    REAL_NUM,       // 0-9.0-9
-    REAL_E,         // 0-9.eE
-    REAL_EXP,       // 0-9.eE+-0-9
-    STR_START,      // "
-    STR_1_END,      // ""
-    STR_2_START,    // """  , }
-    STR_MULT,       // """\n
-    STR_LF,         // """\n\n
-    STR_2_E,        // """\n\n"
-    STR_2_EE,       // """\n\n""
-    STR_2_END,      // """\n\n"""
-    ESC,            // \ , flag mult=false
-    U_SEC,          // \u , flag mult=(false or true)
-    U_SEC_START,    // \u{
-    U_SEC_NUM,      // \u{0-9
-    DIV,            // /
-    COM_SINGL,      // //
-    COM_MULT,       // /** ,
-    COM_HALF_END,   // /* , **
-    COM_END         // /* , */
+    START_S,          // S
+    WHITESYMB_S,      // \n \t \r \v \f
+    PLUS_S,           // +
+    MUL_S,            // *
+    EXCL_MARK_S,      // !
+    NOT_EQUAL_S,      // !=
+    NILABLE_S,        // ?
+    IS_NIL_S,         // ??
+    GREATER_S,        // >
+    GREATER_EQUAL_S,  // >=
+    LESS_S,           // <
+    LESS_EQUAL_S,     // <=
+    MINUS_S,          // -
+    ARROW_S,          // ->
+    ASSIGN_S,         // =
+    EQUAL_S,          // ==
+    BRACE_L_S,        // {
+    BRACE_R_S,        // }
+    BRACKET_L_S,      // (
+    BRACKET_R_S,      // )
+    COLON_S,          // :
+    SEMICOLON_S,      // ;
+    COMMA_S,          // ,
+    INTEGER_S,        // 0-9
+    ID_S,             // a-zA-Z_
+    REAL_S,           // 0-9.
+    REAL_NUM_S,       // 0-9.0-9
+    REAL_E_S,         // 0-9.eE
+    REAL_EXP_S,       // 0-9.eE+-0-9
+    STR_START_S,      // "
+    STR_1_END_S,      // ""
+    STR_2_START_S,    // """  _S, }
+    STR_MULT_S,       // """\n
+    STR_LF_S,         // """\n\n
+    STR_2_E_S,        // """\n\n"
+    STR_2_EE_S,       // """\n\n""
+    STR_2_END_S,      // """\n\n"""
+    ESC_S,            // \ _S, flag mult=false
+    U_SEC_S,          // \u _S, flag mult=(false or true)
+    U_SEC_START_S,    // \u{
+    U_SEC_NUM_S,      // \u{0-9
+    DIV_S,            // /
+    COM_SINGL_S,      // //
+    COM_MULT_S,       // /** _S,
+    COM_HALF_END_S,   // /* _S, **
+    COM_END_S       // /* , */
 } fsm_state_t;
 
 token_t *token_init(token_type_t type, token_subtype_t subtype, string_t *lexeme);
