@@ -84,5 +84,7 @@ int string_assign_cstr(string_t *dest, char *source);
  */
 string_t *string_copy(string_t *source);
 
+int string_clear(string_t *string);
+
 
 #endif //IFJ_PRJ_STRING_UTIL_H

@@ -106,3 +106,9 @@ string_t *string_copy(string_t *source) {
     }
     return dest;
 }
+
+int string_clear(string_t *string) {
+    string->str[0] = '\0';
+    string->length = 0;
+    return 0;
+}
