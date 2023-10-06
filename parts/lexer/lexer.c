@@ -1,6 +1,14 @@
 #include "lexer.h"
 #include <stdlib.h>
 
+/**
+ * @brief This function initializes token.
+ *
+ * @param type - Type of token
+ * @param subtype - Subtype of token
+ * @param lexeme - Lexeme of token
+ * @return Pointer to token
+ */
 token_t *token_init(token_type_t type, token_subtype_t subtype, string_t *lexeme) {
     token_t *token = malloc(sizeof(token_t));
     if (token == NULL) {
@@ -13,6 +21,11 @@ token_t *token_init(token_type_t type, token_subtype_t subtype, string_t *lexeme
     return token;
 }
 
+/**
+ * @brief This function destroys token.
+ *
+ * @param token - Pointer to token
+ */
 void token_dtor(token_t *token) {
     if (token == NULL) {
         return;
@@ -22,6 +35,11 @@ void token_dtor(token_t *token) {
     token = NULL;
 }
 
+/**
+ * @brief This function initializes token array.
+ *
+ * @return Pointer to token array
+ */
 token_array_t *token_array_init() {
     token_array_t *token_array = malloc(sizeof(token_array_t));
     if (token_array == NULL) {
@@ -39,6 +57,11 @@ token_array_t *token_array_init() {
     return token_array;
 }
 
+/**
+ * @brief This function destroys token array.
+ *
+ * @param token_array - Pointer to token array
+ */
 void token_array_dtor(token_array_t *token_array) {
     if (token_array == NULL) {
         return;
@@ -51,6 +74,13 @@ void token_array_dtor(token_array_t *token_array) {
     token_array = NULL;
 }
 
+/**
+ * @brief This function adds token to token array.
+ *
+ * @param token_array - Pointer to token array
+ * @param token - Pointer to token
+ * @return 0 if success, -1 otherwise
+ */
 int token_array_add(token_array_t *token_array, token_t *token) {
     if (token_array == NULL || token == NULL) {
         return -1;
@@ -68,6 +98,12 @@ int token_array_add(token_array_t *token_array, token_t *token) {
     return 0;
 }
 
+/**
+ * @brief This function initializes token array from source code file.
+ *
+ * @param file - Pointer to source code file
+ * @return Pointer to token array
+ */
 token_array_t *source_code_to_tokens(file_t *file) {
     return 0;
 }
