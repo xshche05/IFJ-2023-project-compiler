@@ -1,5 +1,6 @@
 #include "lexer.h"
 #include <stdlib.h>
+#include <stdbool.h>
 
 
 token_t *token_init(token_type_t type, token_subtype_t subtype, string_t *lexeme) {
