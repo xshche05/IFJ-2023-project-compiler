@@ -100,52 +100,52 @@ typedef struct {
 } token_array_t;
 
 typedef enum {
-    START,
-    WHITESYMB,
-    PLUS,
-    MUL,
-    EXCL_MARK,
-    NOT_EQUAL,
-    NILABLE,
-    IS_NIL,
-    GREATER,
-    GREATER_EQUAL,
-    LESS,
-    LESS_EQUAL,
-    MINUS,
-    ARROW,
-    ASSIGN,
-    EQUAL,
-    BRACE_L,
-    BRACE_R,
-    BRACKET_L,
-    BRACKET_R,
-    COLON,
-    SEMICOLON,
-    COMMA,
-    INTEGER,
-    ID,
-    REAL,
-    REAL_NUM,
-    REAL_E,
-    REAL_EXP,
-    STR_START,
-    STR_1_END,
-    STR_2_START,
-    STR_MULT,
-    STR_LF,
-    STR_2_E,
-    STR_2_EE,
-    STR_2_END,
-    ESC,
-    U_SEC,
-    U_SEC_START,
-    U_SEC_NUM,
-    DIV,
-    COM_SINGL,
-    COM_END,
-    COM_MULT,
-    COM_HALF_END,
+    START,          // S
+    WHITESYMB,      // \n \t \r \v \f
+    PLUS,           // +
+    MUL,            // *
+    EXCL_MARK,      // !
+    NOT_EQUAL,      // !=
+    NILABLE,        // ?
+    IS_NIL,         // ??
+    GREATER,        // >
+    GREATER_EQUAL,  // >=
+    LESS,           // <
+    LESS_EQUAL,     // <=
+    MINUS,          // -
+    ARROW,          // ->
+    ASSIGN,         // =
+    EQUAL,          // ==
+    BRACE_L,        // {
+    BRACE_R,        // }
+    BRACKET_L,      // (
+    BRACKET_R,      // )
+    COLON,          // :
+    SEMICOLON,      // ;
+    COMMA,          // ,
+    INTEGER,        // 0-9
+    ID,             // a-zA-Z_
+    REAL,           // 0-9.
+    REAL_NUM,       // 0-9.0-9
+    REAL_E,         // 0-9.eE
+    REAL_EXP,       // 0-9.eE+-0-9
+    STR_START,      // "
+    STR_1_END,      // ""
+    STR_2_START,    // """  , }
+    STR_MULT,       // """\n
+    STR_LF,         // """\n\n
+    STR_2_E,        // """\n\n"
+    STR_2_EE,       // """\n\n""
+    STR_2_END,      // """\n\n"""
+    ESC,            // \ , flag mult=false
+    U_SEC,          // \u , flag mult=(false or true)
+    U_SEC_START,    // \u{
+    U_SEC_NUM,      // \u{0-9
+    DIV,            // /
+    COM_SINGL,      // //
+    COM_MULT,       // /** ,
+    COM_HALF_END,   // /* , **
+    COM_END         // /* , */
 } fsm_state_t;
 
 token_t *token_init(token_type_t type, token_subtype_t subtype, string_t *lexeme);
