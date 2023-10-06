@@ -98,6 +98,10 @@ token_array_t *source_code_to_tokens(file_t *file) {
                         fsm_state = STR_START_S;
                         string_add_char(lexeme, c);
                         break;
+                    case 48 ... 57:
+                        fsm_state = INTEGER_S;
+                        string_add_char(lexeme, c);
+                        break;
                     // Other
                     default:
                         return NULL;    
@@ -148,16 +152,81 @@ token_array_t *source_code_to_tokens(file_t *file) {
             case COMMA_S:
                 break;
             case INTEGER_S:
+                switch (c) {
+                    case 48 ... 57:
+                        string_add_char(lexeme, c);
+                        break;
+                    case 'e':
+                    case 'E':
+                        fsm_state = REAL_E_S;
+                        string_add_char(lexeme, c);
+                        break;
+                    case '.':
+                        fsm_state = REAL_S;
+                        string_add_char(lexeme, c);
+                        break;
+                    default:
+                        type = TOKEN_LITERAL;
+                        subtype.literal_type = INTEGER_LITERAL;
+                        add_token(t_array, type, subtype, lexeme);
+                        fsm_state = START_S;
+                        string_clear(lexeme);
+                }
                 break;
             case ID_S:
                 break;
             case REAL_S:
+                switch (c) {
+                    case 48 ... 57:
+                        fsm_state = REAL_NUM_S;
+                        string_add_char(lexeme, c);
+                        break;
+                    default:
+                        return NULL;
+                }
                 break;
             case REAL_NUM_S:
+                switch (c) {
+                    case 48 ... 57:
+                        string_add_char(lexeme, c);
+                        break;
+                    case 'e':
+                    case 'E':
+                        fsm_state = REAL_E_S;
+                        string_add_char(lexeme, c);
+                        break;
+                    default:
+                        type = TOKEN_LITERAL;
+                        subtype.literal_type = REAL_LITERAL;
+                        add_token(t_array, type, subtype, lexeme);
+                        fsm_state = START_S;
+                        string_clear(lexeme);
+                }
                 break;
             case REAL_E_S:
+                switch (c) {
+                    case 48 ... 57:
+                    case '+':
+                    case '-':
+                        fsm_state = REAL_EXP_S;
+                        string_add_char(lexeme, c);
+                        break;
+                    default:
+                        return NULL;
+                }
                 break;
             case REAL_EXP_S:
+                switch (c) {
+                    case 48 ... 57:
+                        string_add_char(lexeme, c);
+                        break;
+                    default:
+                        type = TOKEN_LITERAL;
+                        subtype.literal_type = REAL_LITERAL;
+                        add_token(t_array, type, subtype, lexeme);
+                        fsm_state = START_S;
+                        string_clear(lexeme);
+                }
                 break;
             case STR_START_S:
                 switch (c) {
