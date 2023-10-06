@@ -3,6 +3,7 @@
 
 #include "utils.h"
 
+
 typedef enum {
     TOKEN_IDENTIFIER,           //      S to [a-zA-Z_] to [a-zA-Z0-9_]
     TOKEN_OPERATOR,             //
@@ -37,16 +38,16 @@ typedef enum {
 } operator_type_t;
 
 typedef enum {
-    INTEGER,                    // int      S to [0-9]
-    REAL,                       // real     S to [0-9] to . to [0-9]
+    INTEGER_LITERAL,                    // int      S to [0-9]
+    REAL_LITERAL,                       // real     S to [0-9] to . to [0-9]
                                 //          S to [0-9] to . to [0-9] to e|E to [0-9]
                                 //          S to [0-9] to . to [0-9] to e|E to +|- to [0-9]
-    STRING,                     // string   S to " to [^"] to "
+    STRING_LITERAL,                     // string   S to " to [^"] to "
                                 //          S to " to " to " to \n to [^"] to " to " to " to \n
-    NIL,                        // nil
+    NIL_LITERAL,                        // nil
 
     // PREMIUM
-    BOOL,                       // bool
+    BOOL_LITERAL,                       // bool
 } literal_type_t;
 
 typedef enum {
@@ -145,52 +146,53 @@ typedef enum {
 } fsm_state_t;
 
 /**
- * @brief This function initializes token.
+ * @brief allocate and initialize token structure
  *
- * @param type - Type of token
- * @param subtype - Subtype of token
- * @param lexeme - Lexeme of token
- * @return Pointer to token
+ * @param type - type of token
+ * @param subtype - subtype of token
+ * @param lexeme - lexeme of token
+ * @return pointer to token structure
  */
 token_t *token_init(token_type_t type, token_subtype_t subtype, string_t *lexeme);
 
 /**
- * @brief This function destroys token.
+ * @brief deallocate token structure
  *
- * @param token - Pointer to token
+ * @param token - pointer to token structure
  */
 void token_dtor(token_t *token);
+
 /**
- * @brief This function initializes token array.
+ * @brief allocate and initialize token array structure
  *
- * @return Pointer to token array
+ * @return pointer to token array structure
  */
 token_array_t *token_array_init();
 
 /**
- * @brief This function destroys token array.
+ * @brief deallocate token array structure
  *
- * @param token_array - Pointer to token array
+ * @param token_array - pointer to token array structure
  */
 void token_array_dtor(token_array_t *token_array);
 
 /**
- * @brief This function adds token to token array.
+ * @brief add token to token array
  *
- * @param token_array - Pointer to token array
- * @param token - Pointer to token
- * @return 0 if success, -1 otherwise
+ * @param token_array - pointer to token array structure
+ * @param token - pointer to token structure
+ * @return 0 if success, non-zero otherwise
  */
 int token_array_add(token_array_t *token_array, token_t *token);
 
 /**
- * @brief This function initializes token array from source code file.
+ * @brief convert source code to tokens
  *
- * @param file - Pointer to source code file
- * @return Pointer to token array
+ * @param file - pointer to file structure
+ * @return pointer to token array structure
  */
 token_array_t *source_code_to_tokens(file_t *file);
 
-
+char f_getc();
 
 #endif //IFJ_PRJ_LEXER_H
