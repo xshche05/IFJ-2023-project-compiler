@@ -54,7 +54,7 @@ int file_add_line(file_t *file, string_t *line) {
     return 0;
 }
 
-int read_file(char *file_name, file_t *file) {
+int file_load(char *file_name, file_t *file) {
     if (file == NULL) {
         return -1;
     }
@@ -86,7 +86,7 @@ int read_file(char *file_name, file_t *file) {
     return 0;
 }
 
-char file_next_char(file_t *file) {
+char file_getc(file_t *file) {
     if (file == NULL) {
         return -1;
     }
@@ -103,7 +103,7 @@ char file_next_char(file_t *file) {
     return c;
 }
 
-void print_file(file_t *file) {
+void file_print(file_t *file) {
     if (file == NULL) {
         return;
     }
