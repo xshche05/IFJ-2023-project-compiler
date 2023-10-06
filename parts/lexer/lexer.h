@@ -70,11 +70,12 @@ typedef enum {
 } keyword_type_t;
 
 typedef enum {
-    LEFT_BRACKET,           // (        S to (
+    LEFT_BRACKET,               // (        S to (
     RIGHT_BRACKET,              // )        S to )
     LEFT_BRACE,                 // {        S to {
     RIGHT_BRACE,                // }        S to }
     COMMA,                      // ,        S to ,
+    COLON,                      // :        S to :
     SEMICOLON,                  // ;        S to ;
     ARROW,                      // ->       S to - to >
 } punctuator_type_t;
@@ -100,6 +101,11 @@ typedef struct {
 
 typedef enum {
     START_S,
+    IDENTIFIER_S,
+    KEYWORD_S,
+    COMMENT_S,
+    STRING_S,
+    ESCAPE_STATE,
 } fsm_state_t;
 
 token_t *token_init(token_type_t type, token_subtype_t subtype, string_t *lexeme);
