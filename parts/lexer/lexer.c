@@ -75,6 +75,31 @@ int add_token(token_array_t *token_array, token_type_t type, token_subtype_t sub
     return token_array_add(token_array, token);
 }
 
+void print_token(token_t *token) {
+    if (token == NULL) {
+        return;
+    }
+    printf("Token = ");
+    printf("type: ");
+    switch (token->type) {
+        case TOKEN_KEYWORD:
+            printf("KEYWORD");
+            break;
+        case TOKEN_LITERAL:
+            printf("LITERAL");
+            break;
+        case TOKEN_IDENTIFIER:
+            printf("IDENTIFIER");
+            break;
+        case TOKEN_OPERATOR:
+            printf("OPERATOR");
+            break;
+        default:
+            printf("UNKNOWN");
+    }
+    printf(", lexeme: %s\n", token->lexeme->str);
+}
+
 token_array_t *source_code_to_tokens(file_t *file) {
 
     // Initial values DO NOT CHANGE
@@ -102,10 +127,12 @@ token_array_t *source_code_to_tokens(file_t *file) {
                         fsm_state = STR_START_S;
                         string_add_char(lexeme, c);
                         break;
+                    // Number literals
                     case 48 ... 57:
                         fsm_state = INTEGER_S;
                         string_add_char(lexeme, c);
                         break;
+                    // Operators
                     case '+':
                         fsm_state = PLUS_S;
                         string_add_char(lexeme, c);
@@ -181,8 +208,6 @@ token_array_t *source_code_to_tokens(file_t *file) {
                         return NULL;    
                 }
                 break;
-            case WHITESYMB_S:
-                break;
             case PLUS_S:
                 type = TOKEN_OPERATOR;
                 subtype.operator_type = ADDITION;
@@ -206,7 +231,6 @@ token_array_t *source_code_to_tokens(file_t *file) {
                         // KIRILL
                         break;
                 }
-
             case NOT_EQUAL_S:
                 type = TOKEN_OPERATOR;
                 subtype.operator_type = NOT_EQUAL_TO;
@@ -432,7 +456,7 @@ token_array_t *source_code_to_tokens(file_t *file) {
                         string_clear(lexeme);
                 }
                 break;
-            case REAL_E_S:
+            case REAL_E_S:      // TODO fix sign
                 switch (c) {
                     case 48 ... 57:
                     case '+':
@@ -443,6 +467,8 @@ token_array_t *source_code_to_tokens(file_t *file) {
                     default:
                         return NULL;
                 }
+                break;
+            case EXP_SIGN_S:    // TODO fix sign
                 break;
             case REAL_EXP_S:
                 switch (c) {
@@ -457,6 +483,7 @@ token_array_t *source_code_to_tokens(file_t *file) {
                         string_clear(lexeme);
                 }
                 break;
+            // string literals
             case STR_START_S:
                 switch (c) {
                     case '"':
@@ -631,6 +658,7 @@ token_array_t *source_code_to_tokens(file_t *file) {
                         return NULL;
                 }
                 break;
+            // comments
             case DIV_S:
                 switch (c){
                     case '/':
