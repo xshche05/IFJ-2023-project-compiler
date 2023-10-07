@@ -100,6 +100,36 @@ void print_token(token_t *token) {
     printf(", lexeme: %s\n", token->lexeme->str);
 }
 
+//TODO check
+int is_keyword(string_t *lexeme){
+    if (strcmp(lexeme->str, "Double") == 0) {
+        return 0;
+    } else if (strcmp(lexeme->str, "else") == 0) {
+        return 1;
+    } else if (strcmp(lexeme->str, "func") == 0) {
+        return 2;
+    } else if (strcmp(lexeme->str, "if") == 0) {
+        return 3;
+    } else if (strcmp(lexeme->str, "Int") == 0) {
+        return 4;
+    } else if (strcmp(lexeme->str, "let") == 0) {
+        return 5;
+    } else if (strcmp(lexeme->str, "return") == 0) {
+        return 6;
+    } else if (strcmp(lexeme->str, "String") == 0) {
+        return 7;
+    } else if (strcmp(lexeme->str, "var") == 0) {
+        return 8;
+    } else if (strcmp(lexeme->str, "while") == 0) {
+        return 9;
+    } else if (strcmp(lexeme->str, "Bool") == 0) {
+        return 10;
+    } else if (strcmp(lexeme->str, "nil") == 0) {
+        return 11;
+    }
+    return -1;
+}
+
 token_array_t *source_code_to_tokens(file_t *file) {
 
     // Initial values DO NOT CHANGE
@@ -128,7 +158,7 @@ token_array_t *source_code_to_tokens(file_t *file) {
                         string_add_char(lexeme, c);
                         break;
                     // Number literals
-                    case 48 ... 57:
+                    case '0' ... '9':
                         fsm_state = INTEGER_S;
                         string_add_char(lexeme, c);
                         break;
@@ -370,7 +400,7 @@ token_array_t *source_code_to_tokens(file_t *file) {
                 break;
             case INTEGER_S:
                 switch (c) {
-                    case 48 ... 57:
+                    case '0' ... '9':
                         string_add_char(lexeme, c);
                         break;
                     case 'e':
@@ -399,8 +429,20 @@ token_array_t *source_code_to_tokens(file_t *file) {
                         string_add_char(lexeme, c);
                         break;
                     default:
-                        type = TOKEN_IDENTIFIER;
-                        /* add subtype */
+                        //TODO check
+                        int keyword_code = is_keyword(lexeme);
+                        switch (keyword_code){
+                            case -1:
+                                type = TOKEN_IDENTIFIER;
+                                break;
+                            case 11:
+                                type = TOKEN_LITERAL;
+                                subtype.literal_type = NIL_LITERAL;
+                                break;
+                            default:
+                                type = TOKEN_KEYWORD;
+                                subtype.keyword_type = (keyword_type_t)keyword_code;
+                        }
                         add_token(t_array, type, subtype, lexeme);
                         fsm_state = START_S;
                         string_clear(lexeme);
@@ -408,7 +450,7 @@ token_array_t *source_code_to_tokens(file_t *file) {
                 break;
             case REAL_S:
                 switch (c) {
-                    case 48 ... 57:
+                    case '0' ... '9':
                         fsm_state = REAL_NUM_S;
                         string_add_char(lexeme, c);
                         break;
@@ -418,7 +460,7 @@ token_array_t *source_code_to_tokens(file_t *file) {
                 break;
             case REAL_NUM_S:
                 switch (c) {
-                    case 48 ... 57:
+                    case '0' ... '9':
                         string_add_char(lexeme, c);
                         break;
                     case 'e':
@@ -434,11 +476,24 @@ token_array_t *source_code_to_tokens(file_t *file) {
                         string_clear(lexeme);
                 }
                 break;
-            case REAL_E_S:      // TODO fix sign
+            case REAL_E_S:
                 switch (c) {
-                    case 48 ... 57:
+                    case '0' ... '9':
+                        fsm_state = REAL_EXP_S;
+                        string_add_char(lexeme, c);
+                        break;
                     case '+':
                     case '-':
+                        fsm_state = EXP_SIGN_S;
+                        string_add_char(lexeme, c);
+                        break;
+                    default:
+                        return NULL;
+                }
+                break;
+            case EXP_SIGN_S:
+                switch (c) {
+                    case '0' ... '9':
                         fsm_state = REAL_EXP_S;
                         string_add_char(lexeme, c);
                         break;
@@ -446,11 +501,10 @@ token_array_t *source_code_to_tokens(file_t *file) {
                         return NULL;
                 }
                 break;
-            case EXP_SIGN_S:    // TODO fix sign
-                break;
             case REAL_EXP_S:
                 switch (c) {
-                    case 48 ... 57:
+                    case '0' ... '9':
+                    case '0' ... '9':
                         string_add_char(lexeme, c);
                         break;
                     default:
