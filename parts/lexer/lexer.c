@@ -154,6 +154,11 @@ token_array_t *source_code_to_tokens(file_t *file) {
                     case '/':
                         fsm_state = DIV_S;
                         break;
+                    case '_':
+                    case 'a' ... 'z':
+                    case 'A' ... 'Z':
+                        fsm_state = ID_S;
+                        break;
                         // Other
                     default:
                         return NULL;    
@@ -362,6 +367,20 @@ token_array_t *source_code_to_tokens(file_t *file) {
                 }
                 break;
             case ID_S:
+                switch (c) {
+                    case '_':
+                    case 'a' ... 'z':
+                    case 'A' ... 'Z':
+                    case '0' ... '9':
+                        string_add_char(lexeme, c);
+                        break;
+                    default:
+                        type = TOKEN_IDENTIFIER;
+                        /* add subtype */
+                        add_token(t_array, type, subtype, lexeme);
+                        fsm_state = START_S;
+                        string_clear(lexeme);
+                }
                 break;
             case REAL_S:
                 switch (c) {
