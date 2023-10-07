@@ -103,6 +103,35 @@ char file_getc(file_t *file) {
     return c;
 }
 
+void file_back_step(file_t *file) {
+    if (file == NULL) {
+        return;
+    }
+    if (file->current_position == 0) {
+        file->current_line--;
+        file->current_position = file->lines[file->current_line]->length;
+        return;
+    }
+    file->current_position--;
+}
+
+char file_getc_prev(file_t *file) {
+    if (file == NULL) {
+        return -1;
+    }
+    if (file->current_line == 0 && file->current_position == 0) {
+        return -1;
+    }
+    if (file->current_position == 0) {
+        file->current_line--;
+        file->current_position = file->lines[file->current_line]->length;
+        return '\n';
+    }
+    char c = file->lines[file->current_line]->str[file->current_position - 1];
+    file->current_position--;
+    return c;
+}
+
 void file_print(file_t *file) {
     if (file == NULL) {
         return;

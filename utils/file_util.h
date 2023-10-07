@@ -33,6 +33,10 @@ int file_load(char *file_name, file_t *file);
 
 char file_getc(file_t *file);
 
+void file_back_step(file_t *file);
+
+char file_getc_prev(file_t *file);
+
 void file_print(file_t *file);
 
 #endif //IFJ_PRJ_FILE_UTIL_H

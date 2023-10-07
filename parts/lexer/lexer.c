@@ -4,6 +4,10 @@
 #include <ctype.h>
 
 
+char control_char = ' ';
+file_t *global_file;
+
+
 token_t *token_init(token_type_t type, token_subtype_t subtype, string_t *lexeme) {
     token_t *token = malloc(sizeof(token_t));
     if (token == NULL) {
@@ -73,6 +77,7 @@ int token_array_add(token_array_t *token_array, token_t *token) {
 
 int add_token(token_array_t *token_array, token_type_t type, token_subtype_t subtype, string_t *lexeme) {
     token_t *token = token_init(type, subtype, lexeme);
+    if (!isspace(control_char)) file_back_step(global_file);
     return token_array_add(token_array, token);
 }
 
@@ -95,10 +100,13 @@ void print_token(token_t *token) {
         case TOKEN_OPERATOR:
             printf("OPERATOR");
             break;
+        case TOKEN_PUNCTUATOR:
+            printf("TOKEN_PUNCTUATOR");
+            break;
         default:
             printf("UNKNOWN");
     }
-    printf(", lexeme: %s\n", token->lexeme->str);
+    if (token->lexeme != NULL) printf(", lexeme: \"%s\"\n", token->lexeme->str);
 }
 
 //TODO check
@@ -134,18 +142,19 @@ int is_keyword(string_t *lexeme){
 token_array_t *source_code_to_tokens(file_t *file) {
 
     // Initial values DO NOT CHANGE
-
+    global_file = file;
     fsm_state_t fsm_state = START_S;
     token_array_t *t_array = token_array_init();
     bool multiline = false;
     string_t *lexeme = string_init();
     token_subtype_t subtype;
     token_type_t type;
-    char c, prev, count = 0;
+    char c,  prev = ' ', count = 0;
 
     // FSM loop
 
     while ((c = file_getc(file)) != EOF) {
+        control_char = c;
         switch (fsm_state) {
             case START_S:
                 switch (c) {
@@ -267,6 +276,7 @@ token_array_t *source_code_to_tokens(file_t *file) {
                         string_clear(lexeme);
                         break;
                 }
+                break;
             case NOT_EQUAL_S:
                 type = TOKEN_OPERATOR;
                 subtype.operator_type = NOT_EQUAL_TO;
@@ -288,6 +298,7 @@ token_array_t *source_code_to_tokens(file_t *file) {
                         string_clear(lexeme);
                         break;
                 }
+                break;
             case IS_NIL_S:
                 type = TOKEN_OPERATOR;
                 subtype.operator_type = IS_NIL;
@@ -309,6 +320,7 @@ token_array_t *source_code_to_tokens(file_t *file) {
                         string_clear(lexeme);
                     break;
                 }
+                break;
             case GREATER_EQUAL_S:
                 type = TOKEN_OPERATOR;
                 subtype.operator_type = GREATER_THAN_OR_EQUAL_TO;
@@ -330,7 +342,7 @@ token_array_t *source_code_to_tokens(file_t *file) {
                         string_clear(lexeme);
                         break;
                 }
-
+                break;
             case LESS_EQUAL_S:
                 type = TOKEN_OPERATOR;
                 subtype.operator_type = LESS_THAN_OR_EQUAL_TO;
@@ -352,6 +364,7 @@ token_array_t *source_code_to_tokens(file_t *file) {
                         string_clear(lexeme);
                         break;
                 }
+                break;
             case ARROW_S:
                 type = TOKEN_PUNCTUATOR;
                 subtype.punctuator_type = ARROW;
@@ -373,6 +386,7 @@ token_array_t *source_code_to_tokens(file_t *file) {
                         string_clear(lexeme);
                         break;
                 }
+                break;
             case EQUAL_S:
                 type = TOKEN_OPERATOR;
                 subtype.operator_type = EQUAL_TO;
@@ -730,7 +744,7 @@ token_array_t *source_code_to_tokens(file_t *file) {
                         break;
                     default:
                         type = TOKEN_OPERATOR;
-                        subtype.operator_type = DIVISION;   //done
+                        subtype.operator_type = DIVISION;
                         add_token(t_array, type, subtype, lexeme);
                         fsm_state = START_S;
                         string_clear(lexeme);
