@@ -112,31 +112,18 @@ void print_token(token_t *token) {
 
 //TODO check
 int is_keyword(string_t *lexeme) {
-    if (strcmp(lexeme->str, "Double") == 0) {
-        return DOUBLE_TYPE;
-    } else if (strcmp(lexeme->str, "else") == 0) {
-        return ELSE;
-    } else if (strcmp(lexeme->str, "func") == 0) {
-        return FUNC;
-    } else if (strcmp(lexeme->str, "if") == 0) {
-        return IF;
-    } else if (strcmp(lexeme->str, "Int") == 0) {
-        return INT_TYPE;
-    } else if (strcmp(lexeme->str, "let") == 0) {
-        return LET;
-    } else if (strcmp(lexeme->str, "return") == 0) {
-        return RETURN;
-    } else if (strcmp(lexeme->str, "String") == 0) {
-        return STRING_TYPE;
-    } else if (strcmp(lexeme->str, "var") == 0) {
-        return VAR;
-    } else if (strcmp(lexeme->str, "while") == 0) {
-        return WHILE;
-    } else if (strcmp(lexeme->str, "Bool") == 0) {
-        return BOOL_TYPE;
-    } else if (strcmp(lexeme->str, "nil") == 0) {
-        return NIL_LITERAL;
-    }
+    if (strcmp(lexeme->str, "Double") == 0) return DOUBLE_TYPE;
+    else if (strcmp(lexeme->str, "else") == 0) return ELSE;
+    else if (strcmp(lexeme->str, "func") == 0) return FUNC;
+    else if (strcmp(lexeme->str, "if") == 0) return IF;
+    else if (strcmp(lexeme->str, "Int") == 0) return INT_TYPE;
+    else if (strcmp(lexeme->str, "let") == 0) return LET;
+    else if (strcmp(lexeme->str, "return") == 0) return RETURN;
+    else if (strcmp(lexeme->str, "String") == 0) return STRING_TYPE;
+    else if (strcmp(lexeme->str, "var") == 0) return VAR;
+    else if (strcmp(lexeme->str, "while") == 0) return WHILE;
+    else if (strcmp(lexeme->str, "Bool") == 0) return BOOL_TYPE;
+    else if (strcmp(lexeme->str, "nil") == 0) return NIL_LITERAL;
     return -1;
 }
 
