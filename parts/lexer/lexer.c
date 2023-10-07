@@ -151,7 +151,10 @@ token_array_t *source_code_to_tokens(file_t *file) {
                     case ',':
                         fsm_state = COMMA_S;
                         break;
-                    // Other
+                    case '/':
+                        fsm_state = DIV_S;
+                        break;
+                        // Other
                     default:
                         return NULL;    
                 }
@@ -574,14 +577,44 @@ token_array_t *source_code_to_tokens(file_t *file) {
                 }
                 break;
             case DIV_S:
+                switch (c){
+                    case '/':
+                        fsm_state = COM_SINGL_S;
+                        break;
+                    case '*':
+                        fsm_state = COM_MULT_S;
+                        break;
+                    default:
+                        type = TOKEN_OPERATOR;
+                        subtype.literal_type = DIVISION;
+                        add_token(t_array, type, subtype, lexeme);
+                        fsm_state = START_S;
+                        string_clear(lexeme);
+                }
                 break;
             case COM_SINGL_S:
+                 if (c == '\n'){
+                     fsm_state = COM_END_S;
+                     }
                 break;
             case COM_MULT_S:
+                if (c == '*'){
+                    fsm_state = COM_HALF_END_S;
+                }
                 break;
             case COM_HALF_END_S:
+                switch (c) {
+                    case '/':
+                        fsm_state = COM_END_S;
+                        break;
+                    case '*':
+                        break;
+                    default:
+                        fsm_state = COM_MULT_S;
+                }
                 break;
             case COM_END_S:
+                fsm_state = START_S;
                 break;
 
         }
