@@ -76,7 +76,9 @@ int add_token(token_array_t *token_array, token_type_t type, token_subtype_t sub
 }
 
 token_array_t *source_code_to_tokens(file_t *file) {
+
     // Initial values DO NOT CHANGE
+
     fsm_state_t fsm_state = START_S;
     token_array_t *t_array = token_array_init();
     bool multiline = false;
@@ -84,7 +86,9 @@ token_array_t *source_code_to_tokens(file_t *file) {
     token_subtype_t subtype;
     token_type_t type;
     char c, prev, count = 0;
+
     // FSM loop
+
     while ((c = file_getc(file)) != EOF) {
         switch (fsm_state) {
             case START_S:
