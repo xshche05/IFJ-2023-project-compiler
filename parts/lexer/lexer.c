@@ -340,6 +340,9 @@ token_array_t *source_code_to_tokens(file_t *file) {
             case EQUAL_S:
                 type = TOKEN_OPERATOR;
                 subtype.operator_type = EQUAL_TO;
+                add_token(t_array, type, subtype, lexeme);
+                fsm_state = START_S;
+                string_clear(lexeme);
                 break;
             case BRACE_L_S:
                 type = TOKEN_PUNCTUATOR;
