@@ -9,8 +9,8 @@ int main(int argc, char **argv) {
     file_load(file_name, file);
 
     token_array_t *token_array = source_code_to_tokens(file);
-    for (int i = 0; i < token_array->length; i++) {
-        print_token(token_array->array[i]);
+    if (token_array == NULL) {
+        fprintf(stderr, "Error: Failed to convert source code to tokens.\n");
     }
     return 0;
 }
