@@ -42,12 +42,12 @@ int file_add_line(file_t *file, string_t *line) {
         return -1;
     }
     if (file->line_count == file->line_allocated) {
-        void* tmp = realloc(file->lines, sizeof(string_t)*file->line_allocated*3/2);
+        void* tmp = realloc(file->lines, sizeof(string_t)*file->line_allocated*2);
         if (tmp == NULL) {
             return -1;
         }
         file->lines = tmp;
-        file->line_allocated *= 3/2;
+        file->line_allocated *= 2;
     }
     file->lines[file->line_count] = line;
     file->line_count++;
@@ -115,21 +115,18 @@ void file_back_step(file_t *file) {
     file->current_position--;
 }
 
-char file_getc_prev(file_t *file) {
+int file_line(file_t *file) {
     if (file == NULL) {
         return -1;
     }
-    if (file->current_line == 0 && file->current_position == 0) {
+    return file->current_line;
+}
+
+int file_column(file_t *file) {
+    if (file == NULL) {
         return -1;
     }
-    if (file->current_position == 0) {
-        file->current_line--;
-        file->current_position = file->lines[file->current_line]->length;
-        return '\n';
-    }
-    char c = file->lines[file->current_line]->str[file->current_position - 1];
-    file->current_position--;
-    return c;
+    return file->current_position;
 }
 
 void file_print(file_t *file) {
