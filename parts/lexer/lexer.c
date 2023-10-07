@@ -176,12 +176,15 @@ token_array_t *source_code_to_tokens(file_t *file) {
                 string_clear(lexeme);
                 break;
             case EXCL_MARK_S:
-            case '=':
-                fsm_state = NOT_EQUAL_S;
-                break;
-            default:
-                // KIRILL
-                break;
+                switch (c) {
+                    case '=':
+                        fsm_state = NOT_EQUAL_S;
+                        break;
+                    default:
+                        // KIRILL
+                        break;
+                }
+
             case NOT_EQUAL_S:
                 type = TOKEN_OPERATOR;
                 subtype.operator_type = NOT_EQUAL_TO;
@@ -190,16 +193,18 @@ token_array_t *source_code_to_tokens(file_t *file) {
                 string_clear(lexeme);
                 break;
             case NILABLE_S:
-            case '?':
-                fsm_state = IS_NIL_S;
-                break;
-            default:
-                type = TOKEN_OPERATOR;
-                subtype.operator_type = NILABLE;
-                add_token(t_array, type, subtype, lexeme);
-                fsm_state = START_S;
-                string_clear(lexeme);
-                break;
+                switch (c) {
+                    case '?':
+                        fsm_state = IS_NIL_S;
+                        break;
+                    default:
+                        type = TOKEN_OPERATOR;
+                        subtype.operator_type = NILABLE;
+                        add_token(t_array, type, subtype, lexeme);
+                        fsm_state = START_S;
+                        string_clear(lexeme);
+                        break;
+                }
             case IS_NIL_S:
                 type = TOKEN_OPERATOR;
                 subtype.operator_type = IS_NIL;
@@ -208,16 +213,18 @@ token_array_t *source_code_to_tokens(file_t *file) {
                 string_clear(lexeme);
                 break;
             case GREATER_S:
-            case '=':
-                fsm_state = GREATER_EQUAL_S;
-                break;
-            default:
-                type = TOKEN_OPERATOR;
-                subtype.operator_type = GREATER_THAN;
-                add_token(t_array, type, subtype, lexeme);
-                fsm_state = START_S;
-                string_clear(lexeme);
-                break;
+                switch (c): {
+                    case '=':
+                        fsm_state = GREATER_EQUAL_S;
+                        break;
+                    default:
+                        type = TOKEN_OPERATOR;
+                        subtype.operator_type = GREATER_THAN;
+                        add_token(t_array, type, subtype, lexeme);
+                        fsm_state = START_S;
+                        string_clear(lexeme);
+                    break;
+                }
             case GREATER_EQUAL_S:
                 type = TOKEN_OPERATOR;
                 subtype.operator_type = GREATER_THAN_OR_EQUAL_TO;
@@ -226,16 +233,19 @@ token_array_t *source_code_to_tokens(file_t *file) {
                 string_clear(lexeme);
                 break;
             case LESS_S:
-            case '=':
-                fsm_state = LESS_EQUAL_S;
-                break;
-            default:
-                type = TOKEN_OPERATOR;
-                subtype.operator_type = LESS_THAN;
-                add_token(t_array, type, subtype, lexeme);
-                fsm_state = START_S;
-                string_clear(lexeme);
-                break;
+                switch (c) {
+                    case '=':
+                        fsm_state = LESS_EQUAL_S;
+                        break;
+                    default:
+                        type = TOKEN_OPERATOR;
+                        subtype.operator_type = LESS_THAN;
+                        add_token(t_array, type, subtype, lexeme);
+                        fsm_state = START_S;
+                        string_clear(lexeme);
+                        break;
+                }
+
             case LESS_EQUAL_S:
                 type = TOKEN_OPERATOR;
                 subtype.operator_type = LESS_THAN_OR_EQUAL_TO;
@@ -244,16 +254,18 @@ token_array_t *source_code_to_tokens(file_t *file) {
                 string_clear(lexeme);
                 break;
             case MINUS_S:
-            case '>':
-                fsm_state = ARROW_S;
-                break;
-            default:
-                type = TOKEN_OPERATOR;
-                subtype.operator_type = SUBTRACTION;
-                add_token(t_array, type, subtype, lexeme);
-                fsm_state = START_S;
-                string_clear(lexeme);
-                break;
+                switch (c) {
+                    case '>':
+                        fsm_state = ARROW_S;
+                        break;
+                    default:
+                        type = TOKEN_OPERATOR;
+                        subtype.operator_type = SUBTRACTION;
+                        add_token(t_array, type, subtype, lexeme);
+                        fsm_state = START_S;
+                        string_clear(lexeme);
+                        break;
+                }
             case ARROW_S:
                 type = TOKEN_PUNCTUATOR;
                 subtype.punctuator_type = ARROW;
@@ -262,16 +274,18 @@ token_array_t *source_code_to_tokens(file_t *file) {
                 string_clear(lexeme);
                 break;
             case ASSIGN_S:
-            case '=':
-                fsm_state = EQUAL_S;
-                break;
-            default:
-                type = TOKEN_OPERATOR;
-                subtype.operator_type = ASSIGNMENT;
-                add_token(t_array, type, subtype, lexeme);
-                fsm_state = START_S;
-                string_clear(lexeme);
-                break;
+                switch (c) {
+                    case '=':
+                        fsm_state = EQUAL_S;
+                        break;
+                    default:
+                        type = TOKEN_OPERATOR;
+                        subtype.operator_type = ASSIGNMENT;
+                        add_token(t_array, type, subtype, lexeme);
+                        fsm_state = START_S;
+                        string_clear(lexeme);
+                        break;
+                }
             case EQUAL_S:
                 type = TOKEN_OPERATOR;
                 subtype.operator_type = EQUAL_TO;
