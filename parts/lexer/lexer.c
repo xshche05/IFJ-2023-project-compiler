@@ -109,7 +109,6 @@ void print_token(token_t *token) {
     if (token->lexeme != NULL) printf(", lexeme: \"%s\"\n", token->lexeme->str);
 }
 
-//TODO check
 int is_keyword(string_t *lexeme){
     if (strcmp(lexeme->str, "Double") == 0) return 0;
     else if (strcmp(lexeme->str, "else") == 0) return 1;
@@ -460,7 +459,7 @@ token_array_t *source_code_to_tokens(file_t *file) {
                     case '0' ... '9':
                         string_add_char(lexeme, c);
                         break;
-                    default:  //TODO check
+                    default:
                         int keyword_code = is_keyword(lexeme);
                         switch (keyword_code){
                             case -1:
