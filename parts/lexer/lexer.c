@@ -678,7 +678,7 @@ token_array_t *source_code_to_tokens(file_t *file) {
                         break;
                     default:
                         type = TOKEN_OPERATOR;
-                        subtype.literal_type = DIVISION;   // TODO fix subtype
+                        subtype.operator_type = DIVISION;   //done
                         add_token(t_array, type, subtype, lexeme);
                         fsm_state = START_S;
                         string_clear(lexeme);
