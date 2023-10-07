@@ -76,15 +76,19 @@ int add_token(token_array_t *token_array, token_type_t type, token_subtype_t sub
 }
 
 token_array_t *source_code_to_tokens(file_t *file) {
+
     // Initial values DO NOT CHANGE
+
     fsm_state_t fsm_state = START_S;
     token_array_t *t_array = token_array_init();
-    bool multiline = false;
+    bool multiline = false;                         //flag for multiline string
     string_t *lexeme = string_init();
     token_subtype_t subtype;
     token_type_t type;
     char c, prev, count = 0;
+
     // FSM loop
+
     while ((c = file_getc(file)) != EOF) {
         switch (fsm_state) {
             case START_S:
@@ -98,54 +102,223 @@ token_array_t *source_code_to_tokens(file_t *file) {
                         fsm_state = STR_START_S;
                         string_add_char(lexeme, c);
                         break;
-                    // Other
+                    case '+':
+                        fsm_state = PLUS_S;
+                        break;
+                    case '*':
+                        fsm_state = MUL_S;
+                        break;
+                    case '!':
+                        fsm_state = EXCL_MARK_S;
+                        break;
+                    case '?':
+                        fsm_state = NILABLE_S;
+                        break;
+                    case '>':
+                        fsm_state = GREATER_S;
+                        break;
+                    case '<':
+                        fsm_state = LESS_S;
+                        break;
+                    case '-':
+                        fsm_state = MINUS_S;
+                        break;
+                    case '=':
+                        fsm_state = ASSIGN_S;
+                        break;
+                    case '{':
+                        fsm_state = BRACE_L_S;
+                        break;
+                    case '}':
+                        fsm_state = BRACE_R_S;
+                        break;
+                    case '(':
+                        fsm_state = BRACKET_L_S;
+                        break;
+                    case ')':
+                        fsm_state = BRACKET_R_S;
+                        break;
+                    case ':':
+                        fsm_state = COLON_S;
+                        break;
+                    case ';':
+                        fsm_state = SEMICOLON_S;
+                        break;
+                    case ',':
+                        fsm_state = COMMA_S;
+                        break;
+
+                    //Other
+
                     default:
-                        return NULL;    
+                        return NULL;
                 }
                 break;
             case WHITESYMB_S:
                 break;
             case PLUS_S:
+                type = TOKEN_OPERATOR;
+                subtype.operator_type = ADDITION;
+                add_token(t_array, type, subtype, lexeme);
+                fsm_state = START_S;
+                string_clear(lexeme);
                 break;
             case MUL_S:
+                type = TOKEN_OPERATOR;
+                subtype.operator_type = MULTIPLICATION;
+                add_token(t_array, type, subtype, lexeme);
+                fsm_state = START_S;
+                string_clear(lexeme);
                 break;
             case EXCL_MARK_S:
+                case '=':
+                    fsm_state = NOT_EQUAL_S;
+                    break;
+                default:
+                    //
                 break;
             case NOT_EQUAL_S:
+                type = TOKEN_OPERATOR;
+                subtype.operator_type = NOT_EQUAL_TO;
+                add_token(t_array, type, subtype, lexeme);
+                fsm_state = START_S;
+                string_clear(lexeme);
                 break;
             case NILABLE_S:
+                case '?':
+                    fsm_state = IS_NIL_S;
+                    break;
+                default:
+                    type = TOKEN_OPERATOR;
+                    subtype.operator_type = NILABLE;
+                    add_token(t_array, type, subtype, lexeme);
+                    fsm_state = START_S;
+                    string_clear(lexeme);
                 break;
             case IS_NIL_S:
+                type = TOKEN_OPERATOR;
+                subtype.operator_type = IS_NIL;
+                add_token(t_array, type, subtype, lexeme);
+                fsm_state = START_S;
+                string_clear(lexeme);
                 break;
             case GREATER_S:
+                case '=':
+                    fsm_state = GREATER_EQUAL_S;
+                    break;
+                default:
+                    type = TOKEN_OPERATOR;
+                    subtype.operator_type = GREATER_THAN;
+                    add_token(t_array, type, subtype, lexeme);
+                    fsm_state = START_S;
+                    string_clear(lexeme);
                 break;
             case GREATER_EQUAL_S:
+                type = TOKEN_OPERATOR;
+                subtype.operator_type = GREATER_THAN_OR_EQUAL_TO;
+                add_token(t_array, type, subtype, lexeme);
+                fsm_state = START_S;
+                string_clear(lexeme);
                 break;
             case LESS_S:
+                case '=':
+                    fsm_state = LESS_EQUAL_S;
+                    break;
+                default:
+                    type = TOKEN_OPERATOR;
+                    subtype.operator_type = LESS_THAN;
+                    add_token(t_array, type, subtype, lexeme);
+                    fsm_state = START_S;
+                    string_clear(lexeme);
                 break;
             case LESS_EQUAL_S:
+                type = TOKEN_OPERATOR;
+                subtype.operator_type = LESS_THAN_OR_EQUAL_TO;
+                add_token(t_array, type, subtype, lexeme);
+                fsm_state = START_S;
+                string_clear(lexeme);
                 break;
             case MINUS_S:
+                case '>':
+                    fsm_state = ARROW_S;
+                    break;
+                default:
+                    type = TOKEN_OPERATOR;
+                    subtype.operator_type = SUBTRACTION;
+                    add_token(t_array, type, subtype, lexeme);
+                    fsm_state = START_S;
+                    string_clear(lexeme);
                 break;
             case ARROW_S:
+                type = TOKEN_PUNCTUATOR;
+                subtype.punctuator_type = ARROW;
+                add_token(t_array, type, subtype, lexeme);
+                fsm_state = START_S;
+                string_clear(lexeme);
                 break;
             case ASSIGN_S:
+                case '=':
+                    fsm_state = EQUAL_S;
+                    break;
+                default:
+                    type = TOKEN_OPERATOR;
+                    subtype.operator_type = ASSIGNMENT;
+                    add_token(t_array, type, subtype, lexeme);
+                    fsm_state = START_S;
+                    string_clear(lexeme);
                 break;
             case EQUAL_S:
+                type = TOKEN_OPERATOR;
+                subtype.operator_type = EQUAL_TO;
                 break;
             case BRACE_L_S:
+                type = TOKEN_PUNCTUATOR;
+                subtype.punctuator_type = LEFT_BRACE;
+                add_token(t_array, type, subtype, lexeme);
+                fsm_state = START_S;
+                string_clear(lexeme);
                 break;
             case BRACE_R_S:
+                type = TOKEN_PUNCTUATOR;
+                subtype.punctuator_type = RIGHT_BRACE;
+                add_token(t_array, type, subtype, lexeme);
+                fsm_state = START_S;
+                string_clear(lexeme);
                 break;
             case BRACKET_L_S:
+                type = TOKEN_PUNCTUATOR;
+                subtype.punctuator_type = LEFT_BRACKET;
+                add_token(t_array, type, subtype, lexeme);
+                fsm_state = START_S;
+                string_clear(lexeme);
                 break;
             case BRACKET_R_S:
+                type = TOKEN_PUNCTUATOR;
+                subtype.punctuator_type = RIGHT_BRACKET;
+                add_token(t_array, type, subtype, lexeme);
+                fsm_state = START_S;
+                string_clear(lexeme);
                 break;
             case COLON_S:
+                type = TOKEN_PUNCTUATOR;
+                subtype.punctuator_type = COLON;
+                add_token(t_array, type, subtype, lexeme);
+                fsm_state = START_S;
+                string_clear(lexeme);
                 break;
             case SEMICOLON_S:
+                type = TOKEN_PUNCTUATOR;
+                subtype.punctuator_type = SEMICOLON;
+                add_token(t_array, type, subtype, lexeme);
+                fsm_state = START_S;
+                string_clear(lexeme);
                 break;
             case COMMA_S:
+                type = TOKEN_PUNCTUATOR;
+                subtype.punctuator_type = COMMA;
+                add_token(t_array, type, subtype, lexeme);
+                fsm_state = START_S;
+                string_clear(lexeme);
                 break;
             case INTEGER_S:
                 break;
