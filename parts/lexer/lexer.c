@@ -111,31 +111,18 @@ void print_token(token_t *token) {
 
 //TODO check
 int is_keyword(string_t *lexeme){
-    if (strcmp(lexeme->str, "Double") == 0) {
-        return 0;
-    } else if (strcmp(lexeme->str, "else") == 0) {
-        return 1;
-    } else if (strcmp(lexeme->str, "func") == 0) {
-        return 2;
-    } else if (strcmp(lexeme->str, "if") == 0) {
-        return 3;
-    } else if (strcmp(lexeme->str, "Int") == 0) {
-        return 4;
-    } else if (strcmp(lexeme->str, "let") == 0) {
-        return 5;
-    } else if (strcmp(lexeme->str, "return") == 0) {
-        return 6;
-    } else if (strcmp(lexeme->str, "String") == 0) {
-        return 7;
-    } else if (strcmp(lexeme->str, "var") == 0) {
-        return 8;
-    } else if (strcmp(lexeme->str, "while") == 0) {
-        return 9;
-    } else if (strcmp(lexeme->str, "Bool") == 0) {
-        return 10;
-    } else if (strcmp(lexeme->str, "nil") == 0) {
-        return 11;
-    }
+    if (strcmp(lexeme->str, "Double") == 0) return 0;
+    else if (strcmp(lexeme->str, "else") == 0) return 1;
+    else if (strcmp(lexeme->str, "func") == 0) return 2;
+    else if (strcmp(lexeme->str, "if") == 0) return 3;
+    else if (strcmp(lexeme->str, "Int") == 0) return 4;
+    else if (strcmp(lexeme->str, "let") == 0) return 5;
+    else if (strcmp(lexeme->str, "return") == 0) return 6;
+    else if (strcmp(lexeme->str, "String") == 0) return 7;
+    else if (strcmp(lexeme->str, "var") == 0) return 8;
+    else if (strcmp(lexeme->str, "while") == 0) return 9;
+    else if (strcmp(lexeme->str, "Bool") == 0) return 10;
+    else if (strcmp(lexeme->str, "nil") == 0) return 11;
     return -1;
 }
 
