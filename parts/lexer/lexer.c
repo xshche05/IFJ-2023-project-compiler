@@ -108,56 +108,73 @@ token_array_t *source_code_to_tokens(file_t *file) {
                         break;
                     case '+':
                         fsm_state = PLUS_S;
+                        string_add_char(lexeme, c);
                         break;
                     case '*':
                         fsm_state = MUL_S;
+                        string_add_char(lexeme, c);
                         break;
                     case '!':
                         fsm_state = EXCL_MARK_S;
+                        string_add_char(lexeme, c);
                         break;
                     case '?':
                         fsm_state = NILABLE_S;
+                        string_add_char(lexeme, c);
                         break;
                     case '>':
                         fsm_state = GREATER_S;
+                        string_add_char(lexeme, c);
                         break;
                     case '<':
                         fsm_state = LESS_S;
+                        string_add_char(lexeme, c);
                         break;
                     case '-':
                         fsm_state = MINUS_S;
+                        string_add_char(lexeme, c);
                         break;
                     case '=':
                         fsm_state = ASSIGN_S;
+                        string_add_char(lexeme, c);
                         break;
                     case '{':
                         fsm_state = BRACE_L_S;
+                        string_add_char(lexeme, c);
                         break;
                     case '}':
                         fsm_state = BRACE_R_S;
+                        string_add_char(lexeme, c);
                         break;
                     case '(':
                         fsm_state = BRACKET_L_S;
+                        string_add_char(lexeme, c);
                         break;
                     case ')':
                         fsm_state = BRACKET_R_S;
+                        string_add_char(lexeme, c);
                         break;
                     case ':':
                         fsm_state = COLON_S;
+                        string_add_char(lexeme, c);
                         break;
                     case ';':
                         fsm_state = SEMICOLON_S;
+                        string_add_char(lexeme, c);
                         break;
                     case ',':
                         fsm_state = COMMA_S;
+                        string_add_char(lexeme, c);
                         break;
                     case '/':
                         fsm_state = DIV_S;
+                        string_add_char(lexeme, c);
                         break;
                     case '_':
                     case 'a' ... 'z':
                     case 'A' ... 'Z':
                         fsm_state = ID_S;
+                        string_add_char(lexeme, c);
                         break;
                         // Other
                     default:
@@ -201,6 +218,7 @@ token_array_t *source_code_to_tokens(file_t *file) {
                 switch (c) {
                     case '?':
                         fsm_state = IS_NIL_S;
+                        string_add_char(lexeme, c);
                         break;
                     default:
                         type = TOKEN_OPERATOR;
@@ -221,6 +239,7 @@ token_array_t *source_code_to_tokens(file_t *file) {
                 switch (c) {
                     case '=':
                         fsm_state = GREATER_EQUAL_S;
+                        string_add_char(lexeme, c);
                         break;
                     default:
                         type = TOKEN_OPERATOR;
@@ -241,6 +260,7 @@ token_array_t *source_code_to_tokens(file_t *file) {
                 switch (c) {
                     case '=':
                         fsm_state = LESS_EQUAL_S;
+                        string_add_char(lexeme, c);
                         break;
                     default:
                         type = TOKEN_OPERATOR;
@@ -262,6 +282,7 @@ token_array_t *source_code_to_tokens(file_t *file) {
                 switch (c) {
                     case '>':
                         fsm_state = ARROW_S;
+                        string_add_char(lexeme, c);
                         break;
                     default:
                         type = TOKEN_OPERATOR;
@@ -282,6 +303,7 @@ token_array_t *source_code_to_tokens(file_t *file) {
                 switch (c) {
                     case '=':
                         fsm_state = EQUAL_S;
+                        string_add_char(lexeme, c);
                         break;
                     default:
                         type = TOKEN_OPERATOR;
