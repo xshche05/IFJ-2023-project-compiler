@@ -213,7 +213,7 @@ token_array_t *source_code_to_tokens(file_t *file) {
                 string_clear(lexeme);
                 break;
             case GREATER_S:
-                switch (c): {
+                switch (c) {
                     case '=':
                         fsm_state = GREATER_EQUAL_S;
                         break;
