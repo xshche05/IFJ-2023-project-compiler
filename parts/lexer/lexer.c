@@ -1,6 +1,7 @@
 #include "lexer.h"
 #include <stdlib.h>
 #include <stdbool.h>
+#include <ctype.h>
 
 
 token_t *token_init(token_type_t type, token_subtype_t subtype, string_t *lexeme) {
@@ -211,7 +212,12 @@ token_array_t *source_code_to_tokens(file_t *file) {
                         fsm_state = NOT_EQUAL_S;
                         break;
                     default:
-                        // KIRILL
+                        type = TOKEN_OPERATOR;
+                        if (isspace(prev)) subtype.operator_type = LOGICAL_NOT;
+                        else subtype.operator_type = UNWRAP_NILABLE;
+                        add_token(t_array, type, subtype, lexeme);
+                        fsm_state = START_S;
+                        string_clear(lexeme);
                         break;
                 }
             case NOT_EQUAL_S:
@@ -398,7 +404,7 @@ token_array_t *source_code_to_tokens(file_t *file) {
                     case '0' ... '9':
                         string_add_char(lexeme, c);
                         break;
-                    default:
+                    default:    // TODO check if keyword and set subtype
                         type = TOKEN_IDENTIFIER;
                         /* add subtype */
                         add_token(t_array, type, subtype, lexeme);
@@ -647,7 +653,7 @@ token_array_t *source_code_to_tokens(file_t *file) {
                         break;
                     default:
                         type = TOKEN_OPERATOR;
-                        subtype.literal_type = DIVISION;
+                        subtype.literal_type = DIVISION;   // TODO fix subtype
                         add_token(t_array, type, subtype, lexeme);
                         fsm_state = START_S;
                         string_clear(lexeme);
