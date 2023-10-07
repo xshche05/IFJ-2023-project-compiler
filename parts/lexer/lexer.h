@@ -98,7 +98,6 @@ typedef struct {
 
 typedef enum {
     START_S,          // S
-    WHITESYMB_S,      // \n \t \r \v \f
     PLUS_S,           // +
     MUL_S,            // *
     EXCL_MARK_S,      // !
@@ -125,6 +124,7 @@ typedef enum {
     REAL_S,           // 0-9.
     REAL_NUM_S,       // 0-9.0-9
     REAL_E_S,         // 0-9.eE
+    EXP_SIGN_S,       // 0-9.eE+-0-9
     REAL_EXP_S,       // 0-9.eE+-0-9
     STR_START_S,      // "
     STR_1_END_S,      // ""
@@ -193,6 +193,7 @@ int token_array_add(token_array_t *token_array, token_t *token);
  */
 token_array_t *source_code_to_tokens(file_t *file);
 
-char f_getc();
+
+void print_token(token_t *token);
 
 #endif //IFJ_PRJ_LEXER_H
