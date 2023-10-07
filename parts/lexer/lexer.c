@@ -175,7 +175,7 @@ token_array_t *source_code_to_tokens(file_t *file) {
                     fsm_state = NOT_EQUAL_S;
                     break;
                 default:
-                    //
+                    // KIRILL
                 break;
             case NOT_EQUAL_S:
                 type = TOKEN_OPERATOR;
