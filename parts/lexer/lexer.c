@@ -2,10 +2,11 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <ctype.h>
+#include <string.h>
 
 
 char control_char = ' ';
-file_t *global_file;
+file_t *global_file = NULL;
 
 
 token_t *token_init(token_type_t type, token_subtype_t subtype, string_t *lexeme) {
@@ -62,13 +63,13 @@ int token_array_add(token_array_t *token_array, token_t *token) {
     if (token_array == NULL || token == NULL) {
         return -1;
     }
-    if (token_array->length == token_array->allocated) {
-        void *tmp = realloc(token_array->array, sizeof(token_t *) * token_array->allocated * 3/2);
+    if (token_array->length >= token_array->allocated) {
+        void *tmp = realloc(token_array->array, sizeof(token_t *) * token_array->allocated * 2);
         if (tmp == NULL) {
             return -1;
         }
         token_array->array = tmp;
-        token_array->allocated *= 3/2;
+        token_array->allocated *= 2;
     }
     token_array->array[token_array->length] = token;
     token_array->length++;
@@ -110,31 +111,31 @@ void print_token(token_t *token) {
 }
 
 //TODO check
-int is_keyword(string_t *lexeme){
+int is_keyword(string_t *lexeme) {
     if (strcmp(lexeme->str, "Double") == 0) {
-        return 0;
+        return DOUBLE_TYPE;
     } else if (strcmp(lexeme->str, "else") == 0) {
-        return 1;
+        return ELSE;
     } else if (strcmp(lexeme->str, "func") == 0) {
-        return 2;
+        return FUNC;
     } else if (strcmp(lexeme->str, "if") == 0) {
-        return 3;
+        return IF;
     } else if (strcmp(lexeme->str, "Int") == 0) {
-        return 4;
+        return INT_TYPE;
     } else if (strcmp(lexeme->str, "let") == 0) {
-        return 5;
+        return LET;
     } else if (strcmp(lexeme->str, "return") == 0) {
-        return 6;
+        return RETURN;
     } else if (strcmp(lexeme->str, "String") == 0) {
-        return 7;
+        return STRING_TYPE;
     } else if (strcmp(lexeme->str, "var") == 0) {
-        return 8;
+        return VAR;
     } else if (strcmp(lexeme->str, "while") == 0) {
-        return 9;
+        return WHILE;
     } else if (strcmp(lexeme->str, "Bool") == 0) {
-        return 10;
+        return BOOL_TYPE;
     } else if (strcmp(lexeme->str, "nil") == 0) {
-        return 11;
+        return NIL_LITERAL;
     }
     return -1;
 }
@@ -149,7 +150,8 @@ token_array_t *source_code_to_tokens(file_t *file) {
     string_t *lexeme = string_init();
     token_subtype_t subtype;
     token_type_t type;
-    char c,  prev = ' ', count = 0;
+    char c, prev = ' ', count = 0;
+    int keyword_code;
 
     // FSM loop
 
@@ -162,17 +164,17 @@ token_array_t *source_code_to_tokens(file_t *file) {
                     case 9 ... 13:
                     case 32:
                         break;
-                    // String literals
+                        // String literals
                     case '"':
                         fsm_state = STR_START_S;
                         string_add_char(lexeme, c);
                         break;
-                    // Number literals
+                        // Number literals
                     case '0' ... '9':
                         fsm_state = INTEGER_S;
                         string_add_char(lexeme, c);
                         break;
-                    // Operators
+                        // Operators
                     case '+':
                         fsm_state = PLUS_S;
                         string_add_char(lexeme, c);
@@ -245,7 +247,7 @@ token_array_t *source_code_to_tokens(file_t *file) {
                         break;
                         // Other
                     default:
-                        return NULL;    
+                        return NULL;
                 }
                 break;
             case PLUS_S:
@@ -318,7 +320,7 @@ token_array_t *source_code_to_tokens(file_t *file) {
                         add_token(t_array, type, subtype, lexeme);
                         fsm_state = START_S;
                         string_clear(lexeme);
-                    break;
+                        break;
                 }
                 break;
             case GREATER_EQUAL_S:
@@ -473,19 +475,19 @@ token_array_t *source_code_to_tokens(file_t *file) {
                     case '0' ... '9':
                         string_add_char(lexeme, c);
                         break;
-                    default:  //TODO check
-                        int keyword_code = is_keyword(lexeme);
-                        switch (keyword_code){
+                    default:
+                        keyword_code = is_keyword(lexeme);
+                        switch (keyword_code) {
                             case -1:
                                 type = TOKEN_IDENTIFIER;
                                 break;
-                            case 11:
+                            case NIL_LITERAL:
                                 type = TOKEN_LITERAL;
                                 subtype.literal_type = NIL_LITERAL;
                                 break;
                             default:
                                 type = TOKEN_KEYWORD;
-                                subtype.keyword_type = (keyword_type_t)keyword_code;
+                                subtype.keyword_type = keyword_code;
                         }
                         add_token(t_array, type, subtype, lexeme);
                         fsm_state = START_S;
@@ -558,7 +560,7 @@ token_array_t *source_code_to_tokens(file_t *file) {
                         string_clear(lexeme);
                 }
                 break;
-            // string literals
+                // string literals
             case STR_START_S:
                 switch (c) {
                     case '"':
@@ -733,9 +735,9 @@ token_array_t *source_code_to_tokens(file_t *file) {
                         return NULL;
                 }
                 break;
-            // comments
+                // comments
             case DIV_S:
-                switch (c){
+                switch (c) {
                     case '/':
                         fsm_state = COM_SINGL_S;
                         break;
@@ -751,12 +753,12 @@ token_array_t *source_code_to_tokens(file_t *file) {
                 }
                 break;
             case COM_SINGL_S:
-                 if (c == '\n'){
-                     fsm_state = COM_END_S;
-                     }
+                if (c == '\n') {
+                    fsm_state = COM_END_S;
+                }
                 break;
             case COM_MULT_S:
-                if (c == '*'){
+                if (c == '*') {
                     fsm_state = COM_HALF_END_S;
                 }
                 break;
