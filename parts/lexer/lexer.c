@@ -1,6 +1,7 @@
 #include "lexer.h"
 #include <stdlib.h>
 #include <stdbool.h>
+#include <ctype.h>
 
 
 token_t *token_init(token_type_t type, token_subtype_t subtype, string_t *lexeme) {
@@ -100,36 +101,6 @@ void print_token(token_t *token) {
     printf(", lexeme: %s\n", token->lexeme->str);
 }
 
-//TODO check
-int is_keyword(string_t *lexeme){
-    if (strcmp(lexeme->str, "Double") == 0) {
-        return 0;
-    } else if (strcmp(lexeme->str, "else") == 0) {
-        return 1;
-    } else if (strcmp(lexeme->str, "func") == 0) {
-        return 2;
-    } else if (strcmp(lexeme->str, "if") == 0) {
-        return 3;
-    } else if (strcmp(lexeme->str, "Int") == 0) {
-        return 4;
-    } else if (strcmp(lexeme->str, "let") == 0) {
-        return 5;
-    } else if (strcmp(lexeme->str, "return") == 0) {
-        return 6;
-    } else if (strcmp(lexeme->str, "String") == 0) {
-        return 7;
-    } else if (strcmp(lexeme->str, "var") == 0) {
-        return 8;
-    } else if (strcmp(lexeme->str, "while") == 0) {
-        return 9;
-    } else if (strcmp(lexeme->str, "Bool") == 0) {
-        return 10;
-    } else if (strcmp(lexeme->str, "nil") == 0) {
-        return 11;
-    }
-    return -1;
-}
-
 token_array_t *source_code_to_tokens(file_t *file) {
 
     // Initial values DO NOT CHANGE
@@ -158,63 +129,80 @@ token_array_t *source_code_to_tokens(file_t *file) {
                         string_add_char(lexeme, c);
                         break;
                     // Number literals
-                    case '0' ... '9':
+                    case 48 ... 57:
                         fsm_state = INTEGER_S;
                         string_add_char(lexeme, c);
                         break;
                     // Operators
                     case '+':
                         fsm_state = PLUS_S;
+                        string_add_char(lexeme, c);
                         break;
                     case '*':
                         fsm_state = MUL_S;
+                        string_add_char(lexeme, c);
                         break;
                     case '!':
                         fsm_state = EXCL_MARK_S;
+                        string_add_char(lexeme, c);
                         break;
                     case '?':
                         fsm_state = NILABLE_S;
+                        string_add_char(lexeme, c);
                         break;
                     case '>':
                         fsm_state = GREATER_S;
+                        string_add_char(lexeme, c);
                         break;
                     case '<':
                         fsm_state = LESS_S;
+                        string_add_char(lexeme, c);
                         break;
                     case '-':
                         fsm_state = MINUS_S;
+                        string_add_char(lexeme, c);
                         break;
                     case '=':
                         fsm_state = ASSIGN_S;
+                        string_add_char(lexeme, c);
                         break;
                     case '{':
                         fsm_state = BRACE_L_S;
+                        string_add_char(lexeme, c);
                         break;
                     case '}':
                         fsm_state = BRACE_R_S;
+                        string_add_char(lexeme, c);
                         break;
                     case '(':
                         fsm_state = BRACKET_L_S;
+                        string_add_char(lexeme, c);
                         break;
                     case ')':
                         fsm_state = BRACKET_R_S;
+                        string_add_char(lexeme, c);
                         break;
                     case ':':
                         fsm_state = COLON_S;
+                        string_add_char(lexeme, c);
                         break;
                     case ';':
                         fsm_state = SEMICOLON_S;
+                        string_add_char(lexeme, c);
                         break;
                     case ',':
                         fsm_state = COMMA_S;
+                        string_add_char(lexeme, c);
                         break;
                     case '/':
                         fsm_state = DIV_S;
+                        string_add_char(lexeme, c);
                         break;
                     case '_':
                     case 'a' ... 'z':
                     case 'A' ... 'Z':
                         fsm_state = ID_S;
+                        string_add_char(lexeme, c);
                         break;
                         // Other
                     default:
@@ -241,7 +229,12 @@ token_array_t *source_code_to_tokens(file_t *file) {
                         fsm_state = NOT_EQUAL_S;
                         break;
                     default:
-                        // KIRILL
+                        type = TOKEN_OPERATOR;
+                        if (isspace(prev)) subtype.operator_type = LOGICAL_NOT;
+                        else subtype.operator_type = UNWRAP_NILABLE;
+                        add_token(t_array, type, subtype, lexeme);
+                        fsm_state = START_S;
+                        string_clear(lexeme);
                         break;
                 }
             case NOT_EQUAL_S:
@@ -255,6 +248,7 @@ token_array_t *source_code_to_tokens(file_t *file) {
                 switch (c) {
                     case '?':
                         fsm_state = IS_NIL_S;
+                        string_add_char(lexeme, c);
                         break;
                     default:
                         type = TOKEN_OPERATOR;
@@ -275,6 +269,7 @@ token_array_t *source_code_to_tokens(file_t *file) {
                 switch (c) {
                     case '=':
                         fsm_state = GREATER_EQUAL_S;
+                        string_add_char(lexeme, c);
                         break;
                     default:
                         type = TOKEN_OPERATOR;
@@ -295,6 +290,7 @@ token_array_t *source_code_to_tokens(file_t *file) {
                 switch (c) {
                     case '=':
                         fsm_state = LESS_EQUAL_S;
+                        string_add_char(lexeme, c);
                         break;
                     default:
                         type = TOKEN_OPERATOR;
@@ -316,6 +312,7 @@ token_array_t *source_code_to_tokens(file_t *file) {
                 switch (c) {
                     case '>':
                         fsm_state = ARROW_S;
+                        string_add_char(lexeme, c);
                         break;
                     default:
                         type = TOKEN_OPERATOR;
@@ -336,6 +333,7 @@ token_array_t *source_code_to_tokens(file_t *file) {
                 switch (c) {
                     case '=':
                         fsm_state = EQUAL_S;
+                        string_add_char(lexeme, c);
                         break;
                     default:
                         type = TOKEN_OPERATOR;
@@ -348,6 +346,9 @@ token_array_t *source_code_to_tokens(file_t *file) {
             case EQUAL_S:
                 type = TOKEN_OPERATOR;
                 subtype.operator_type = EQUAL_TO;
+                add_token(t_array, type, subtype, lexeme);
+                fsm_state = START_S;
+                string_clear(lexeme);
                 break;
             case BRACE_L_S:
                 type = TOKEN_PUNCTUATOR;
@@ -400,7 +401,7 @@ token_array_t *source_code_to_tokens(file_t *file) {
                 break;
             case INTEGER_S:
                 switch (c) {
-                    case '0' ... '9':
+                    case 48 ... 57:
                         string_add_char(lexeme, c);
                         break;
                     case 'e':
@@ -428,21 +429,9 @@ token_array_t *source_code_to_tokens(file_t *file) {
                     case '0' ... '9':
                         string_add_char(lexeme, c);
                         break;
-                    default:
-                        //TODO check
-                        int keyword_code = is_keyword(lexeme);
-                        switch (keyword_code){
-                            case -1:
-                                type = TOKEN_IDENTIFIER;
-                                break;
-                            case 11:
-                                type = TOKEN_LITERAL;
-                                subtype.literal_type = NIL_LITERAL;
-                                break;
-                            default:
-                                type = TOKEN_KEYWORD;
-                                subtype.keyword_type = (keyword_type_t)keyword_code;
-                        }
+                    default:    // TODO check if keyword and set subtype
+                        type = TOKEN_IDENTIFIER;
+                        /* add subtype */
                         add_token(t_array, type, subtype, lexeme);
                         fsm_state = START_S;
                         string_clear(lexeme);
@@ -450,7 +439,7 @@ token_array_t *source_code_to_tokens(file_t *file) {
                 break;
             case REAL_S:
                 switch (c) {
-                    case '0' ... '9':
+                    case 48 ... 57:
                         fsm_state = REAL_NUM_S;
                         string_add_char(lexeme, c);
                         break;
@@ -460,7 +449,7 @@ token_array_t *source_code_to_tokens(file_t *file) {
                 break;
             case REAL_NUM_S:
                 switch (c) {
-                    case '0' ... '9':
+                    case 48 ... 57:
                         string_add_char(lexeme, c);
                         break;
                     case 'e':
@@ -476,35 +465,23 @@ token_array_t *source_code_to_tokens(file_t *file) {
                         string_clear(lexeme);
                 }
                 break;
-            case REAL_E_S:
+            case REAL_E_S:      // TODO fix sign
                 switch (c) {
-                    case '0' ... '9':
-                        fsm_state = REAL_EXP_S;
-                        string_add_char(lexeme, c);
-                        break;
+                    case 48 ... 57:
                     case '+':
                     case '-':
-                        fsm_state = EXP_SIGN_S;
+                        fsm_state = REAL_EXP_S;
                         string_add_char(lexeme, c);
                         break;
                     default:
                         return NULL;
                 }
                 break;
-            case EXP_SIGN_S:
-                switch (c) {
-                    case '0' ... '9':
-                        fsm_state = REAL_EXP_S;
-                        string_add_char(lexeme, c);
-                        break;
-                    default:
-                        return NULL;
-                }
+            case EXP_SIGN_S:    // TODO fix sign
                 break;
             case REAL_EXP_S:
                 switch (c) {
-                    case '0' ... '9':
-                    case '0' ... '9':
+                    case 48 ... 57:
                         string_add_char(lexeme, c);
                         break;
                     default:
@@ -701,7 +678,7 @@ token_array_t *source_code_to_tokens(file_t *file) {
                         break;
                     default:
                         type = TOKEN_OPERATOR;
-                        subtype.literal_type = DIVISION;
+                        subtype.literal_type = DIVISION;   // TODO fix subtype
                         add_token(t_array, type, subtype, lexeme);
                         fsm_state = START_S;
                         string_clear(lexeme);
