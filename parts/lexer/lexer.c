@@ -725,7 +725,6 @@ token_array_t *source_code_to_tokens(file_t *file) {
 
         }
         prev = c;
-
     }
     return t_array;
 }
