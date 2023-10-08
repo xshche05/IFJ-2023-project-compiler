@@ -110,7 +110,6 @@ void print_token(token_t *token) {
     if (token->lexeme != NULL) printf(", lexeme: \"%s\"\n", token->lexeme->str);
 }
 
-//TODO check
 int is_keyword(string_t *lexeme) {
     if (strcmp(lexeme->str, "Double") == 0) return DOUBLE_TYPE;
     else if (strcmp(lexeme->str, "else") == 0) return ELSE;
@@ -141,7 +140,6 @@ token_array_t *source_code_to_tokens(file_t *file) {
     int keyword_code;
 
     // FSM loop
-
     while ((c = file_getc(file)) != EOF) {
         control_char = c;
         switch (fsm_state) {
@@ -252,18 +250,16 @@ token_array_t *source_code_to_tokens(file_t *file) {
                 string_clear(lexeme);
                 break;
             case EXCL_MARK_S:
-                switch (c) {
-                    case '=':
-                        fsm_state = NOT_EQUAL_S;
-                        break;
-                    default:
-                        type = TOKEN_OPERATOR;
-                        if (isspace(prev)) subtype.operator_type = LOGICAL_NOT;
-                        else subtype.operator_type = UNWRAP_NILABLE;
-                        add_token(t_array, type, subtype, lexeme);
-                        fsm_state = START_S;
-                        string_clear(lexeme);
-                        break;
+                if (c == '=') {
+                    fsm_state = NOT_EQUAL_S;
+                    string_add_char(lexeme, c);
+                } else {
+                    type = TOKEN_OPERATOR;
+                    if (isspace(prev)) subtype.operator_type = LOGICAL_NOT;
+                    else subtype.operator_type = UNWRAP_NILABLE;
+                    add_token(t_array, type, subtype, lexeme);
+                    fsm_state = START_S;
+                    string_clear(lexeme);
                 }
                 break;
             case NOT_EQUAL_S:
@@ -274,18 +270,15 @@ token_array_t *source_code_to_tokens(file_t *file) {
                 string_clear(lexeme);
                 break;
             case NILABLE_S:
-                switch (c) {
-                    case '?':
-                        fsm_state = IS_NIL_S;
-                        string_add_char(lexeme, c);
-                        break;
-                    default:
-                        type = TOKEN_OPERATOR;
-                        subtype.operator_type = NILABLE;
-                        add_token(t_array, type, subtype, lexeme);
-                        fsm_state = START_S;
-                        string_clear(lexeme);
-                        break;
+                if (c == '?') {
+                    fsm_state = IS_NIL_S;
+                    string_add_char(lexeme, c);
+                } else {
+                    type = TOKEN_OPERATOR;
+                    subtype.operator_type = NILABLE;
+                    add_token(t_array, type, subtype, lexeme);
+                    fsm_state = START_S;
+                    string_clear(lexeme);
                 }
                 break;
             case IS_NIL_S:
@@ -296,18 +289,15 @@ token_array_t *source_code_to_tokens(file_t *file) {
                 string_clear(lexeme);
                 break;
             case GREATER_S:
-                switch (c) {
-                    case '=':
-                        fsm_state = GREATER_EQUAL_S;
-                        string_add_char(lexeme, c);
-                        break;
-                    default:
-                        type = TOKEN_OPERATOR;
-                        subtype.operator_type = GREATER_THAN;
-                        add_token(t_array, type, subtype, lexeme);
-                        fsm_state = START_S;
-                        string_clear(lexeme);
-                        break;
+                if (c == '=') {
+                    fsm_state = GREATER_EQUAL_S;
+                    string_add_char(lexeme, c);
+                } else {
+                    type = TOKEN_OPERATOR;
+                    subtype.operator_type = GREATER_THAN;
+                    add_token(t_array, type, subtype, lexeme);
+                    fsm_state = START_S;
+                    string_clear(lexeme);
                 }
                 break;
             case GREATER_EQUAL_S:
@@ -318,18 +308,15 @@ token_array_t *source_code_to_tokens(file_t *file) {
                 string_clear(lexeme);
                 break;
             case LESS_S:
-                switch (c) {
-                    case '=':
-                        fsm_state = LESS_EQUAL_S;
-                        string_add_char(lexeme, c);
-                        break;
-                    default:
-                        type = TOKEN_OPERATOR;
-                        subtype.operator_type = LESS_THAN;
-                        add_token(t_array, type, subtype, lexeme);
-                        fsm_state = START_S;
-                        string_clear(lexeme);
-                        break;
+                if (c == '=') {
+                    fsm_state = LESS_EQUAL_S;
+                    string_add_char(lexeme, c);
+                } else {
+                    type = TOKEN_OPERATOR;
+                    subtype.operator_type = LESS_THAN;
+                    add_token(t_array, type, subtype, lexeme);
+                    fsm_state = START_S;
+                    string_clear(lexeme);
                 }
                 break;
             case LESS_EQUAL_S:
@@ -340,18 +327,15 @@ token_array_t *source_code_to_tokens(file_t *file) {
                 string_clear(lexeme);
                 break;
             case MINUS_S:
-                switch (c) {
-                    case '>':
-                        fsm_state = ARROW_S;
-                        string_add_char(lexeme, c);
-                        break;
-                    default:
-                        type = TOKEN_OPERATOR;
-                        subtype.operator_type = SUBTRACTION;
-                        add_token(t_array, type, subtype, lexeme);
-                        fsm_state = START_S;
-                        string_clear(lexeme);
-                        break;
+                if (c == '>') {
+                    fsm_state = ARROW_S;
+                    string_add_char(lexeme, c);
+                } else {
+                    type = TOKEN_OPERATOR;
+                    subtype.operator_type = SUBTRACTION;
+                    add_token(t_array, type, subtype, lexeme);
+                    fsm_state = START_S;
+                    string_clear(lexeme);
                 }
                 break;
             case ARROW_S:
@@ -362,18 +346,15 @@ token_array_t *source_code_to_tokens(file_t *file) {
                 string_clear(lexeme);
                 break;
             case ASSIGN_S:
-                switch (c) {
-                    case '=':
-                        fsm_state = EQUAL_S;
-                        string_add_char(lexeme, c);
-                        break;
-                    default:
-                        type = TOKEN_OPERATOR;
-                        subtype.operator_type = ASSIGNMENT;
-                        add_token(t_array, type, subtype, lexeme);
-                        fsm_state = START_S;
-                        string_clear(lexeme);
-                        break;
+                if (c == '=') {
+                    fsm_state = EQUAL_S;
+                    string_add_char(lexeme, c);
+                } else {
+                    type = TOKEN_OPERATOR;
+                    subtype.operator_type = ASSIGNMENT;
+                    add_token(t_array, type, subtype, lexeme);
+                    fsm_state = START_S;
+                    string_clear(lexeme);
                 }
                 break;
             case EQUAL_S:
@@ -482,13 +463,11 @@ token_array_t *source_code_to_tokens(file_t *file) {
                 }
                 break;
             case REAL_S:
-                switch (c) {
-                    case '0' ... '9':
-                        fsm_state = REAL_NUM_S;
-                        string_add_char(lexeme, c);
-                        break;
-                    default:
-                        return NULL;
+                if ('0' <= c && c <= '9') {
+                    fsm_state = REAL_NUM_S;
+                    string_add_char(lexeme, c);
+                } else {
+                    return NULL;
                 }
                 break;
             case REAL_NUM_S:
@@ -525,26 +504,22 @@ token_array_t *source_code_to_tokens(file_t *file) {
                 }
                 break;
             case EXP_SIGN_S:
-                switch (c) {
-                    case '0' ... '9':
-                        fsm_state = REAL_EXP_S;
-                        string_add_char(lexeme, c);
-                        break;
-                    default:
-                        return NULL;
+                if ('0' <= c && c <= '9') {
+                    fsm_state = REAL_EXP_S;
+                    string_add_char(lexeme, c);
+                } else {
+                    return NULL;
                 }
                 break;
             case REAL_EXP_S:
-                switch (c) {
-                    case '0' ... '9':
-                        string_add_char(lexeme, c);
-                        break;
-                    default:
-                        type = TOKEN_LITERAL;
-                        subtype.literal_type = REAL_LITERAL;
-                        add_token(t_array, type, subtype, lexeme);
-                        fsm_state = START_S;
-                        string_clear(lexeme);
+                if ('0' <= c && c <= '9') {
+                    string_add_char(lexeme, c);
+                } else {
+                    type = TOKEN_LITERAL;
+                    subtype.literal_type = REAL_LITERAL;
+                    add_token(t_array, type, subtype, lexeme);
+                    fsm_state = START_S;
+                    string_clear(lexeme);
                 }
                 break;
                 // string literals
@@ -568,28 +543,24 @@ token_array_t *source_code_to_tokens(file_t *file) {
                 }
                 break;
             case STR_1_END_S:
-                switch (c) {
-                    case '"':
-                        fsm_state = STR_2_START_S;
-                        string_add_char(lexeme, c);
-                        break;
-                    default:
-                        type = TOKEN_LITERAL;
-                        subtype.literal_type = STRING_LITERAL;
-                        add_token(t_array, type, subtype, lexeme);
-                        fsm_state = START_S;
-                        string_clear(lexeme);
+                if (c == '"') {
+                    fsm_state = STR_2_START_S;
+                    string_add_char(lexeme, c);
+                } else {
+                    type = TOKEN_LITERAL;
+                    subtype.literal_type = STRING_LITERAL;
+                    add_token(t_array, type, subtype, lexeme);
+                    fsm_state = START_S;
+                    string_clear(lexeme);
                 }
                 break;
             case STR_2_START_S:
-                switch (c) {
-                    case '\n':
-                        fsm_state = STR_MULT_S;
-                        multiline = true;
-                        string_add_char(lexeme, c);
-                        break;
-                    default:
-                        return NULL;
+                if (c == '\n') {
+                    fsm_state = STR_MULT_S;
+                    multiline = true;
+                    string_add_char(lexeme, c);
+                } else {
+                    return NULL;
                 }
                 break;
             case STR_MULT_S:
@@ -682,13 +653,11 @@ token_array_t *source_code_to_tokens(file_t *file) {
                 }
                 break;
             case U_SEC_S:
-                switch (c) {
-                    case '{':
-                        string_add_char(lexeme, c);
-                        fsm_state = U_SEC_START_S;
-                        break;
-                    default:
-                        return NULL;
+                if (c == '{') {
+                    string_add_char(lexeme, c);
+                    fsm_state = U_SEC_START_S;
+                } else {
+                    return NULL;
                 }
                 break;
             case U_SEC_START_S:
