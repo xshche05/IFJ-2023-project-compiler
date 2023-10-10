@@ -1,7 +1,7 @@
 #ifndef IFJ_PRJ_LEXER_H
 #define IFJ_PRJ_LEXER_H
 
-#include "utils.h"
+#include "../utils/utils.h"
 
 
 typedef enum {
@@ -32,8 +32,8 @@ typedef enum {
     UNWRAP_NILABLE,             // .!   S to !
 
     // PREMIUM
-    LOGICAL_AND,                // &&   S to & to &
-    LOGICAL_OR,                 // ||   S to | to |
+    LOGICAL_AND,                // &&   S to & to &    TODO
+    LOGICAL_OR,                 // ||   S to | to |    TODO
     LOGICAL_NOT,                // !.   S to !
 } operator_type_t;
 
@@ -47,7 +47,8 @@ typedef enum {
     NIL_LITERAL,                        // nil
 
     // PREMIUM
-    BOOL_LITERAL,                       // bool
+    TRUE_LITERAL,                       // bool TODO
+    FALSE_LITERAL,                      // bool TODO
 } literal_type_t;
 
 typedef enum {
@@ -112,6 +113,10 @@ typedef enum {
     ARROW_S,          // ->
     ASSIGN_S,         // =
     EQUAL_S,          // ==
+    LOGICAL_AND1_S,   // &  TODO
+    LOGICAL_AND2_S,   // && TODO
+    LOGICAL_OR1_S,    // |  TODO
+    LOGICAL_OR2_S,    // || TODO
     BRACE_L_S,        // {
     BRACE_R_S,        // }
     BRACKET_L_S,      // (
@@ -194,6 +199,6 @@ int token_array_add(token_array_t *token_array, token_t *token);
 token_array_t *source_code_to_tokens(file_t *file);
 
 
-void print_token(token_t *token);
+void token_print(token_t *token);
 
 #endif //IFJ_PRJ_LEXER_H
