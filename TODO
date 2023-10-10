@@ -1,2 +1,1 @@
-Add logical operators to the lexer and schematic
-Add bool literals to the lexer
+Add logical operators to schematic

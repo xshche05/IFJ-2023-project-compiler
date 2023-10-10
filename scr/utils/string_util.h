@@ -37,6 +37,7 @@ struct string_interface {
     string_t *(*copy)(string_t *source);
     void (*dtor)(string_t *string);
     int (*cmp)(string_t *string1, string_t *string2);
+    int (*cmp_cstr)(string_t *string1, char *string2);
     int (*clear)(string_t *string);
     int (*add_char)(string_t *string, char c);
     int (*add_string)(string_t *dest, string_t *source);

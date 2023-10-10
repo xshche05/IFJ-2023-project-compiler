@@ -170,8 +170,12 @@ static int string_clear(string_t *string) {
  * @param string2 - Pointer to second string_t structure.
  * @return 0 if strings are equal, -1 if first string is "smaller", 1 if first string is "bigger".
  */
-int string_compare(string_t *string1, string_t *string2) {
+static int string_compare(string_t *string1, string_t *string2) {
     return strcmp(string1->str, string2->str);
+}
+
+static int string_compare_cstr(string_t *string1, char *string2) {
+    return strcmp(string1->str, string2);
 }
 
 const struct string_interface String = {
@@ -180,6 +184,7 @@ const struct string_interface String = {
         .dtor = string_dtor,
         .clear = string_clear,
         .cmp = string_compare,
+        .cmp_cstr = string_compare_cstr,
         .add_char = string_add_char,
         .add_string = string_add_string,
         .assign = string_assign,

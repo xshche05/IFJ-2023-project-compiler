@@ -32,8 +32,8 @@ typedef enum {
     UNWRAP_NILABLE,             // .!   S to !
 
     // PREMIUM
-    LOGICAL_AND,                // &&   S to & to &    TODO
-    LOGICAL_OR,                 // ||   S to | to |    TODO
+    LOGICAL_AND,                // &&   S to & to &
+    LOGICAL_OR,                 // ||   S to | to |
     LOGICAL_NOT,                // !.   S to !
 } operator_type_t;
 
@@ -47,8 +47,8 @@ typedef enum {
     NIL_LITERAL,                        // nil
 
     // PREMIUM
-    TRUE_LITERAL,                       // bool TODO
-    FALSE_LITERAL,                      // bool TODO
+    TRUE_LITERAL,                       // bool
+    FALSE_LITERAL,                      // bool
 } literal_type_t;
 
 typedef enum {
@@ -113,10 +113,10 @@ typedef enum {
     ARROW_S,          // ->
     ASSIGN_S,         // =
     EQUAL_S,          // ==
-    LOGICAL_AND1_S,   // &  TODO
-    LOGICAL_AND2_S,   // && TODO
-    LOGICAL_OR1_S,    // |  TODO
-    LOGICAL_OR2_S,    // || TODO
+    LOGICAL_AND1_S,   // &
+    LOGICAL_AND2_S,   // &&
+    LOGICAL_OR1_S,    // |
+    LOGICAL_OR2_S,    // ||
     BRACE_L_S,        // {
     BRACE_R_S,        // }
     BRACKET_L_S,      // (
@@ -158,7 +158,7 @@ typedef enum {
  * @param lexeme - lexeme of token
  * @return pointer to token structure
  */
-token_t *token_init(token_type_t type, token_subtype_t subtype, string_t *lexeme);
+token_t *token_ctor(token_type_t type, token_subtype_t subtype, string_t *lexeme);
 
 /**
  * @brief deallocate token structure
@@ -172,7 +172,7 @@ void token_dtor(token_t *token);
  *
  * @return pointer to token array structure
  */
-token_array_t *token_array_init();
+token_array_t *token_array_ctor();
 
 /**
  * @brief deallocate token array structure
@@ -197,7 +197,6 @@ int token_array_add(token_array_t *token_array, token_t *token);
  * @return pointer to token array structure
  */
 token_array_t *source_code_to_tokens(file_t *file);
-
 
 void token_print(token_t *token);
 

@@ -5,11 +5,35 @@
 #include <string.h>
 
 
-char control_char = ' ';
-file_t *global_file = NULL;
+static char control_char = ' ';
 
+static file_t *curr_file = NULL;
 
-token_t *token_init(token_type_t type, token_subtype_t subtype, string_t *lexeme) {
+static int is_keyword(string_t *lexeme) {
+    if str_eq_cstr(lexeme, "Double") return DOUBLE_TYPE;
+    if str_eq_cstr(lexeme, "else") return ELSE;
+    if str_eq_cstr(lexeme, "func") return FUNC;
+    if str_eq_cstr(lexeme, "if") return IF;
+    if str_eq_cstr(lexeme, "Int") return INT_TYPE;
+    if str_eq_cstr(lexeme, "let") return LET;
+    if str_eq_cstr(lexeme, "return") return RETURN;
+    if str_eq_cstr(lexeme, "String") return STRING_TYPE;
+    if str_eq_cstr(lexeme, "var") return VAR;
+    if str_eq_cstr(lexeme, "while") return WHILE;
+    if str_eq_cstr(lexeme, "Bool") return BOOL_TYPE;
+    if str_eq_cstr(lexeme, "nil") return NIL_LITERAL;
+    if str_eq_cstr(lexeme, "true") return TRUE_LITERAL;
+    if str_eq_cstr(lexeme, "false") return FALSE_LITERAL;
+    return -1;
+}
+
+static int add_token(token_array_t *token_array, token_type_t type, token_subtype_t subtype, string_t *lexeme) {
+    token_t *token = token_ctor(type, subtype, lexeme);
+    if (!isspace(control_char)) File.back_step(curr_file);
+    return token_array_add(token_array, token);
+}
+
+token_t *token_ctor(token_type_t type, token_subtype_t subtype, string_t *lexeme) {
     token_t *token = malloc(sizeof(token_t));
     if (token == NULL) {
         fprintf(stderr, "Error: malloc failed.\n");
@@ -30,7 +54,7 @@ void token_dtor(token_t *token) {
     token = NULL;
 }
 
-token_array_t *token_array_init() {
+token_array_t *token_array_ctor() {
     token_array_t *token_array = malloc(sizeof(token_array_t));
     if (token_array == NULL) {
         fprintf(stderr, "Error: malloc failed.\n");
@@ -76,12 +100,6 @@ int token_array_add(token_array_t *token_array, token_t *token) {
     return 0;
 }
 
-int add_token(token_array_t *token_array, token_type_t type, token_subtype_t subtype, string_t *lexeme) {
-    token_t *token = token_init(type, subtype, lexeme);
-    if (!isspace(control_char)) File.back_step(global_file);
-    return token_array_add(token_array, token);
-}
-
 void token_print(token_t *token) {
     if (token == NULL) {
         return;
@@ -110,30 +128,12 @@ void token_print(token_t *token) {
     if (token->lexeme != NULL) printf(", lexeme: \"%s\"\n", token->lexeme->str);
 }
 
-int is_keyword(string_t *lexeme) {
-    if (strcmp(lexeme->str, "Double") == 0) return DOUBLE_TYPE;
-    else if (strcmp(lexeme->str, "else") == 0) return ELSE;
-    else if (strcmp(lexeme->str, "func") == 0) return FUNC;
-    else if (strcmp(lexeme->str, "if") == 0) return IF;
-    else if (strcmp(lexeme->str, "Int") == 0) return INT_TYPE;
-    else if (strcmp(lexeme->str, "let") == 0) return LET;
-    else if (strcmp(lexeme->str, "return") == 0) return RETURN;
-    else if (strcmp(lexeme->str, "String") == 0) return STRING_TYPE;
-    else if (strcmp(lexeme->str, "var") == 0) return VAR;
-    else if (strcmp(lexeme->str, "while") == 0) return WHILE;
-    else if (strcmp(lexeme->str, "Bool") == 0) return BOOL_TYPE;
-    else if (strcmp(lexeme->str, "nil") == 0) return NIL_LITERAL;
-    else if (strcmp(lexeme->str, "true") == 0) return TRUE_LITERAL;
-    else if (strcmp(lexeme->str, "false") == 0) return FALSE_LITERAL;
-    return -1;
-}
-
 token_array_t *source_code_to_tokens(file_t *file) {
 
     // Initial values DO NOT CHANGE
-    global_file = file;
+    curr_file = file;
     fsm_state_t fsm_state = START_S;
-    token_array_t *t_array = token_array_init();
+    token_array_t *t_array = token_array_ctor();
     bool multiline = false;
     string_t *lexeme = String.ctor();
     token_subtype_t subtype;
