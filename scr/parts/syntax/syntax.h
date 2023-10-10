@@ -1,4 +1,0 @@
-#ifndef IFJ_PRJ_SYNTAX_H
-#define IFJ_PRJ_SYNTAX_H
-
-#endif //IFJ_PRJ_SYNTAX_H
