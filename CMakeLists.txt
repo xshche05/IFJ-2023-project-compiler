@@ -7,9 +7,12 @@ set(CMAKE_C_STANDARD 99)
 
 include_directories(scr/utils scr/parts)
 
+add_compile_options(-Wall -Wextra -std=c99 -g)
+
 add_executable(IFJ_PRJ
         scr/main.c
-        scr/parts/lexer/lexer.c
+        scr/parts/scanner/scanner.c
         scr/utils/file_util.c
         scr/utils/string_util.c
-        scr/parts/syntax/syntax.c)
+        scr/parts/parser/parser.c
+        scr/parts/scanner/scanner.c)
