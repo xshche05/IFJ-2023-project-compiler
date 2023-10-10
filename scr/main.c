@@ -5,19 +5,20 @@
 
 int main(int argc, char **argv) {
     char* file_name = "..\\test.swift";
-    file_t *file = File.ctor();
-    File.from_file(file_name, file);
+    File.ctor();
+    File.from_file(file_name);
 
-    token_array_t *token_array = source_code_to_tokens(file);
-    if (token_array == NULL) {
+    token_array_ctor();
+    int code = source_code_to_tokens();
+    if (code != 0) {
         fprintf(stderr, "Error: Failed to convert source code to tokens.\n");
-        printf("Line: %d\n", File.line(file)+1);
-        printf("Column: %d\n", File.column(file)+1);
+        printf("Line: %d\n", File.line()+1);
+        printf("Column: %d\n", File.column()+1);
     }
     else {
-        printf("Tokens:\nTOTAL: %d\n", token_array->length);
-        for (size_t i = 0; i < token_array->length; i++) {
-            token_t *token = token_array->array[i];
+        printf("Tokens:\nTOTAL: %d\n", tokens->length);
+        for (int i = 0; i < tokens->length; i++) {
+            token_t *token = tokens->array[i];
             token_print(token);
         }
     }
