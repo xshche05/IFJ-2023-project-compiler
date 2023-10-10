@@ -1,13 +1,13 @@
-#include "lexer.h"
+#include "scanner.h"
 #include <stdlib.h>
 #include <stdbool.h>
 #include <ctype.h>
 #include <string.h>
 
 
-static char control_char = ' ';
+char control_char = ' ';
 
-static file_t *curr_file = NULL;
+token_array_t *tokens = NULL;
 
 static int is_keyword(string_t *lexeme) {
     if str_eq_cstr(lexeme, "Double") return DOUBLE_TYPE;
@@ -27,10 +27,10 @@ static int is_keyword(string_t *lexeme) {
     return -1;
 }
 
-static int add_token(token_array_t *token_array, token_type_t type, token_subtype_t subtype, string_t *lexeme) {
+static int add_token(token_type_t type, token_subtype_t subtype, string_t *lexeme) {
     token_t *token = token_ctor(type, subtype, lexeme);
-    if (!isspace(control_char)) File.back_step(curr_file);
-    return token_array_add(token_array, token);
+    if (!isspace(control_char)) File.back_step();
+    return token_array_add(token);
 }
 
 token_t *token_ctor(token_type_t type, token_subtype_t subtype, string_t *lexeme) {
@@ -54,49 +54,49 @@ void token_dtor(token_t *token) {
     token = NULL;
 }
 
-token_array_t *token_array_ctor() {
-    token_array_t *token_array = malloc(sizeof(token_array_t));
-    if (token_array == NULL) {
+int token_array_ctor() {
+    tokens = malloc(sizeof(token_array_t));
+    if (tokens == NULL) {
         fprintf(stderr, "Error: malloc failed.\n");
-        return NULL;
-    }
-    token_array->array = malloc(sizeof(token_t *) * 16);
-    if (token_array->array == NULL) {
-        free(token_array);
-        fprintf(stderr, "Error: malloc failed.\n");
-        return NULL;
-    }
-    token_array->allocated = 16;
-    token_array->length = 0;
-    return token_array;
-}
-
-void token_array_dtor(token_array_t *token_array) {
-    if (token_array == NULL) {
-        return;
-    }
-    for (size_t i = 0; i < token_array->length; i++) {
-        token_dtor(token_array->array[i]);
-    }
-    free(token_array->array);
-    free(token_array);
-    token_array = NULL;
-}
-
-int token_array_add(token_array_t *token_array, token_t *token) {
-    if (token_array == NULL || token == NULL) {
         return -1;
     }
-    if (token_array->length >= token_array->allocated) {
-        void *tmp = realloc(token_array->array, sizeof(token_t *) * token_array->allocated * 2);
+    tokens->array = malloc(sizeof(token_t *) * 16);
+    if (tokens->array == NULL) {
+        free(tokens);
+        fprintf(stderr, "Error: malloc failed.\n");
+        return -1;
+    }
+    tokens->allocated = 16;
+    tokens->length = 0;
+    return 0;
+}
+
+void token_array_dtor() {
+    if (tokens == NULL) {
+        return;
+    }
+    for (int i = 0; i < tokens->length; i++) {
+        token_dtor(tokens->array[i]);
+    }
+    free(tokens->array);
+    free(tokens);
+    tokens = NULL;
+}
+
+int token_array_add(token_t *token) {
+    if (tokens == NULL || token == NULL) {
+        return -1;
+    }
+    if (tokens->length >= tokens->allocated) {
+        void *tmp = realloc(tokens->array, sizeof(token_t *) * tokens->allocated * 2);
         if (tmp == NULL) {
             return -1;
         }
-        token_array->array = tmp;
-        token_array->allocated *= 2;
+        tokens->array = tmp;
+        tokens->allocated *= 2;
     }
-    token_array->array[token_array->length] = token;
-    token_array->length++;
+    tokens->array[tokens->length] = token;
+    tokens->length++;
     return 0;
 }
 
@@ -128,12 +128,9 @@ void token_print(token_t *token) {
     if (token->lexeme != NULL) printf(", lexeme: \"%s\"\n", token->lexeme->str);
 }
 
-token_array_t *source_code_to_tokens(file_t *file) {
-
+int source_code_to_tokens() {
     // Initial values DO NOT CHANGE
-    curr_file = file;
     fsm_state_t fsm_state = START_S;
-    token_array_t *t_array = token_array_ctor();
     bool multiline = false;
     string_t *lexeme = String.ctor();
     token_subtype_t subtype;
@@ -142,7 +139,7 @@ token_array_t *source_code_to_tokens(file_t *file) {
     int keyword_code;
 
     // FSM loop
-    while ((c = File.getc(file)) != EOF) {
+    while ((c = File.getc()) != EOF) {
         control_char = c;
         switch (fsm_state) {
             case START_S:
@@ -243,20 +240,20 @@ token_array_t *source_code_to_tokens(file_t *file) {
                         break;
                         // Other
                     default:
-                        return NULL;
+                        return -1;
                 }
                 break;
             case PLUS_S:
                 type = TOKEN_OPERATOR;
                 subtype.operator_type = ADDITION;
-                add_token(t_array, type, subtype, lexeme);
+                add_token(type, subtype, lexeme);
                 fsm_state = START_S;
                 String.clear(lexeme);
                 break;
             case MUL_S:
                 type = TOKEN_OPERATOR;
                 subtype.operator_type = MULTIPLICATION;
-                add_token(t_array, type, subtype, lexeme);
+                add_token(type, subtype, lexeme);
                 fsm_state = START_S;
                 String.clear(lexeme);
                 break;
@@ -266,9 +263,14 @@ token_array_t *source_code_to_tokens(file_t *file) {
                     String.add_char(lexeme, c);
                 } else {
                     type = TOKEN_OPERATOR;
-                    if (isspace(prev_prev)) subtype.operator_type = LOGICAL_NOT;
+                    if (isspace(prev_prev) || (isalnum(c) || c == '_')) subtype.operator_type = LOGICAL_NOT;
                     else subtype.operator_type = UNWRAP_NILABLE;
-                    add_token(t_array, type, subtype, lexeme);
+//                    printf("c - %c\n", c);
+//                    printf("prev - %c\n", prev);
+//                    printf("prev_prev- %c\n", prev_prev);
+//                    printf(subtype.operator_type == LOGICAL_NOT ? "NOT" : "NIL");
+//                    printf("\n");
+                    add_token(type, subtype, lexeme);
                     fsm_state = START_S;
                     String.clear(lexeme);
                 }
@@ -276,7 +278,7 @@ token_array_t *source_code_to_tokens(file_t *file) {
             case NOT_EQUAL_S:
                 type = TOKEN_OPERATOR;
                 subtype.operator_type = NOT_EQUAL_TO;
-                add_token(t_array, type, subtype, lexeme);
+                add_token(type, subtype, lexeme);
                 fsm_state = START_S;
                 String.clear(lexeme);
                 break;
@@ -287,7 +289,7 @@ token_array_t *source_code_to_tokens(file_t *file) {
                 } else {
                     type = TOKEN_OPERATOR;
                     subtype.operator_type = NILABLE;
-                    add_token(t_array, type, subtype, lexeme);
+                    add_token(type, subtype, lexeme);
                     fsm_state = START_S;
                     String.clear(lexeme);
                 }
@@ -295,7 +297,7 @@ token_array_t *source_code_to_tokens(file_t *file) {
             case IS_NIL_S:
                 type = TOKEN_OPERATOR;
                 subtype.operator_type = IS_NIL;
-                add_token(t_array, type, subtype, lexeme);
+                add_token(type, subtype, lexeme);
                 fsm_state = START_S;
                 String.clear(lexeme);
                 break;
@@ -306,7 +308,7 @@ token_array_t *source_code_to_tokens(file_t *file) {
                 } else {
                     type = TOKEN_OPERATOR;
                     subtype.operator_type = GREATER_THAN;
-                    add_token(t_array, type, subtype, lexeme);
+                    add_token(type, subtype, lexeme);
                     fsm_state = START_S;
                     String.clear(lexeme);
                 }
@@ -314,7 +316,7 @@ token_array_t *source_code_to_tokens(file_t *file) {
             case GREATER_EQUAL_S:
                 type = TOKEN_OPERATOR;
                 subtype.operator_type = GREATER_THAN_OR_EQUAL_TO;
-                add_token(t_array, type, subtype, lexeme);
+                add_token(type, subtype, lexeme);
                 fsm_state = START_S;
                 String.clear(lexeme);
                 break;
@@ -325,7 +327,7 @@ token_array_t *source_code_to_tokens(file_t *file) {
                 } else {
                     type = TOKEN_OPERATOR;
                     subtype.operator_type = LESS_THAN;
-                    add_token(t_array, type, subtype, lexeme);
+                    add_token(type, subtype, lexeme);
                     fsm_state = START_S;
                     String.clear(lexeme);
                 }
@@ -333,7 +335,7 @@ token_array_t *source_code_to_tokens(file_t *file) {
             case LESS_EQUAL_S:
                 type = TOKEN_OPERATOR;
                 subtype.operator_type = LESS_THAN_OR_EQUAL_TO;
-                add_token(t_array, type, subtype, lexeme);
+                add_token(type, subtype, lexeme);
                 fsm_state = START_S;
                 String.clear(lexeme);
                 break;
@@ -344,7 +346,7 @@ token_array_t *source_code_to_tokens(file_t *file) {
                 } else {
                     type = TOKEN_OPERATOR;
                     subtype.operator_type = SUBTRACTION;
-                    add_token(t_array, type, subtype, lexeme);
+                    add_token(type, subtype, lexeme);
                     fsm_state = START_S;
                     String.clear(lexeme);
                 }
@@ -352,7 +354,7 @@ token_array_t *source_code_to_tokens(file_t *file) {
             case ARROW_S:
                 type = TOKEN_PUNCTUATOR;
                 subtype.punctuator_type = ARROW;
-                add_token(t_array, type, subtype, lexeme);
+                add_token(type, subtype, lexeme);
                 fsm_state = START_S;
                 String.clear(lexeme);
                 break;
@@ -363,7 +365,7 @@ token_array_t *source_code_to_tokens(file_t *file) {
                 } else {
                     type = TOKEN_OPERATOR;
                     subtype.operator_type = ASSIGNMENT;
-                    add_token(t_array, type, subtype, lexeme);
+                    add_token(type, subtype, lexeme);
                     fsm_state = START_S;
                     String.clear(lexeme);
                 }
@@ -371,56 +373,56 @@ token_array_t *source_code_to_tokens(file_t *file) {
             case EQUAL_S:
                 type = TOKEN_OPERATOR;
                 subtype.operator_type = EQUAL_TO;
-                add_token(t_array, type, subtype, lexeme);
+                add_token(type, subtype, lexeme);
                 fsm_state = START_S;
                 String.clear(lexeme);
                 break;
             case BRACE_L_S:
                 type = TOKEN_PUNCTUATOR;
                 subtype.punctuator_type = LEFT_BRACE;
-                add_token(t_array, type, subtype, lexeme);
+                add_token(type, subtype, lexeme);
                 fsm_state = START_S;
                 String.clear(lexeme);
                 break;
             case BRACE_R_S:
                 type = TOKEN_PUNCTUATOR;
                 subtype.punctuator_type = RIGHT_BRACE;
-                add_token(t_array, type, subtype, lexeme);
+                add_token(type, subtype, lexeme);
                 fsm_state = START_S;
                 String.clear(lexeme);
                 break;
             case BRACKET_L_S:
                 type = TOKEN_PUNCTUATOR;
                 subtype.punctuator_type = LEFT_BRACKET;
-                add_token(t_array, type, subtype, lexeme);
+                add_token(type, subtype, lexeme);
                 fsm_state = START_S;
                 String.clear(lexeme);
                 break;
             case BRACKET_R_S:
                 type = TOKEN_PUNCTUATOR;
                 subtype.punctuator_type = RIGHT_BRACKET;
-                add_token(t_array, type, subtype, lexeme);
+                add_token(type, subtype, lexeme);
                 fsm_state = START_S;
                 String.clear(lexeme);
                 break;
             case COLON_S:
                 type = TOKEN_PUNCTUATOR;
                 subtype.punctuator_type = COLON;
-                add_token(t_array, type, subtype, lexeme);
+                add_token(type, subtype, lexeme);
                 fsm_state = START_S;
                 String.clear(lexeme);
                 break;
             case SEMICOLON_S:
                 type = TOKEN_PUNCTUATOR;
                 subtype.punctuator_type = SEMICOLON;
-                add_token(t_array, type, subtype, lexeme);
+                add_token(type, subtype, lexeme);
                 fsm_state = START_S;
                 String.clear(lexeme);
                 break;
             case COMMA_S:
                 type = TOKEN_PUNCTUATOR;
                 subtype.punctuator_type = COMMA;
-                add_token(t_array, type, subtype, lexeme);
+                add_token(type, subtype, lexeme);
                 fsm_state = START_S;
                 String.clear(lexeme);
                 break;
@@ -441,7 +443,7 @@ token_array_t *source_code_to_tokens(file_t *file) {
                     default:
                         type = TOKEN_LITERAL;
                         subtype.literal_type = INTEGER_LITERAL;
-                        add_token(t_array, type, subtype, lexeme);
+                        add_token(type, subtype, lexeme);
                         fsm_state = START_S;
                         String.clear(lexeme);
                 }
@@ -476,7 +478,7 @@ token_array_t *source_code_to_tokens(file_t *file) {
                                 type = TOKEN_KEYWORD;
                                 subtype.keyword_type = keyword_code;
                         }
-                        add_token(t_array, type, subtype, lexeme);
+                        add_token(type, subtype, lexeme);
                         fsm_state = START_S;
                         String.clear(lexeme);
                 }
@@ -486,7 +488,7 @@ token_array_t *source_code_to_tokens(file_t *file) {
                     fsm_state = REAL_NUM_S;
                     String.add_char(lexeme, c);
                 } else {
-                    return NULL;
+                    return -1;
                 }
                 break;
             case REAL_NUM_S:
@@ -502,7 +504,7 @@ token_array_t *source_code_to_tokens(file_t *file) {
                     default:
                         type = TOKEN_LITERAL;
                         subtype.literal_type = REAL_LITERAL;
-                        add_token(t_array, type, subtype, lexeme);
+                        add_token(type, subtype, lexeme);
                         fsm_state = START_S;
                         String.clear(lexeme);
                 }
@@ -519,7 +521,7 @@ token_array_t *source_code_to_tokens(file_t *file) {
                         String.add_char(lexeme, c);
                         break;
                     default:
-                        return NULL;
+                        return -1;
                 }
                 break;
             case EXP_SIGN_S:
@@ -527,7 +529,7 @@ token_array_t *source_code_to_tokens(file_t *file) {
                     fsm_state = REAL_EXP_S;
                     String.add_char(lexeme, c);
                 } else {
-                    return NULL;
+                    return -1;
                 }
                 break;
             case REAL_EXP_S:
@@ -536,7 +538,7 @@ token_array_t *source_code_to_tokens(file_t *file) {
                 } else {
                     type = TOKEN_LITERAL;
                     subtype.literal_type = REAL_LITERAL;
-                    add_token(t_array, type, subtype, lexeme);
+                    add_token(type, subtype, lexeme);
                     fsm_state = START_S;
                     String.clear(lexeme);
                 }
@@ -558,7 +560,7 @@ token_array_t *source_code_to_tokens(file_t *file) {
                         String.add_char(lexeme, c);
                         break;
                     default:
-                        return NULL;
+                        return -1;
                 }
                 break;
             case STR_1_END_S:
@@ -568,7 +570,7 @@ token_array_t *source_code_to_tokens(file_t *file) {
                 } else {
                     type = TOKEN_LITERAL;
                     subtype.literal_type = STRING_LITERAL;
-                    add_token(t_array, type, subtype, lexeme);
+                    add_token(type, subtype, lexeme);
                     fsm_state = START_S;
                     String.clear(lexeme);
                 }
@@ -579,7 +581,7 @@ token_array_t *source_code_to_tokens(file_t *file) {
                     multiline = true;
                     String.add_char(lexeme, c);
                 } else {
-                    return NULL;
+                    return -1;
                 }
                 break;
             case STR_MULT_S:
@@ -597,7 +599,7 @@ token_array_t *source_code_to_tokens(file_t *file) {
                         String.add_char(lexeme, c);
                         break;
                     default:
-                        return NULL;
+                        return -1;
                 }
                 break;
             case STR_LF_S:
@@ -612,7 +614,7 @@ token_array_t *source_code_to_tokens(file_t *file) {
                         fsm_state = STR_MULT_S;
                         break;
                     default:
-                        return NULL;
+                        return -1;
                 }
                 break;
             case STR_2_E_S:
@@ -627,7 +629,7 @@ token_array_t *source_code_to_tokens(file_t *file) {
                         fsm_state = STR_MULT_S;
                         break;
                     default:
-                        return NULL;
+                        return -1;
                 }
                 break;
             case STR_2_EE_S:
@@ -642,13 +644,13 @@ token_array_t *source_code_to_tokens(file_t *file) {
                         fsm_state = STR_MULT_S;
                         break;
                     default:
-                        return NULL;
+                        return -1;
                 }
                 break;
             case STR_2_END_S:
                 type = TOKEN_LITERAL;
                 subtype.literal_type = STRING_LITERAL;
-                add_token(t_array, type, subtype, lexeme);
+                add_token(type, subtype, lexeme);
                 fsm_state = START_S;
                 String.clear(lexeme);
                 break;
@@ -668,7 +670,7 @@ token_array_t *source_code_to_tokens(file_t *file) {
                         break;
                     case '(':  // TODO interpolation
                     default:
-                        return NULL;
+                        return -1;
                 }
                 break;
             case U_SEC_S:
@@ -676,7 +678,7 @@ token_array_t *source_code_to_tokens(file_t *file) {
                     String.add_char(lexeme, c);
                     fsm_state = U_SEC_START_S;
                 } else {
-                    return NULL;
+                    return -1;
                 }
                 break;
             case U_SEC_START_S:
@@ -689,11 +691,11 @@ token_array_t *source_code_to_tokens(file_t *file) {
                         count = 1;
                         break;
                     default:
-                        return NULL;
+                        return -1;
                 }
                 break;
             case U_SEC_NUM_S:
-                if (count >= 8) return NULL;
+                if (count >= 8) return -1;
                 switch (c) {
                     case '0' ... '9':
                     case 'a' ... 'f':
@@ -707,7 +709,7 @@ token_array_t *source_code_to_tokens(file_t *file) {
                         fsm_state = multiline ? STR_MULT_S : STR_START_S;
                         break;
                     default:
-                        return NULL;
+                        return -1;
                 }
                 break;
                 // comments
@@ -722,7 +724,7 @@ token_array_t *source_code_to_tokens(file_t *file) {
                     default:
                         type = TOKEN_OPERATOR;
                         subtype.operator_type = DIVISION;
-                        add_token(t_array, type, subtype, lexeme);
+                        add_token(type, subtype, lexeme);
                         fsm_state = START_S;
                         String.clear(lexeme);
                 }
@@ -749,6 +751,9 @@ token_array_t *source_code_to_tokens(file_t *file) {
                 }
                 break;
             case COM_END_S:
+                if (!isspace(control_char)) File.back_step();
+                c = ' ';
+                String.clear(lexeme);
                 fsm_state = START_S;
                 break;
             case LOGICAL_AND1_S:
@@ -756,13 +761,13 @@ token_array_t *source_code_to_tokens(file_t *file) {
                     fsm_state = LOGICAL_AND2_S;
                     String.add_char(lexeme, c);
                 } else {
-                    return NULL;
+                    return -1;
                 }
                 break;
             case LOGICAL_AND2_S:
                 type = TOKEN_OPERATOR;
                 subtype.operator_type = LOGICAL_AND;
-                add_token(t_array, type, subtype, lexeme);
+                add_token(type, subtype, lexeme);
                 fsm_state = START_S;
                 String.clear(lexeme);
                 break;
@@ -771,13 +776,13 @@ token_array_t *source_code_to_tokens(file_t *file) {
                     fsm_state = LOGICAL_OR2_S;
                     String.add_char(lexeme, c);
                 } else {
-                    return NULL;
+                    return -1;
                 }
                 break;
             case LOGICAL_OR2_S:
                 type = TOKEN_OPERATOR;
                 subtype.operator_type = LOGICAL_OR;
-                add_token(t_array, type, subtype, lexeme);
+                add_token(type, subtype, lexeme);
                 fsm_state = START_S;
                 String.clear(lexeme);
                 break;
@@ -785,5 +790,5 @@ token_array_t *source_code_to_tokens(file_t *file) {
         prev_prev = prev;
         prev = c;
     }
-    return t_array;
+    return 0;
 }

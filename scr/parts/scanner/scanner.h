@@ -1,8 +1,7 @@
-#ifndef IFJ_PRJ_LEXER_H
-#define IFJ_PRJ_LEXER_H
+#ifndef IFJ_PRJ_SCANNER_H
+#define IFJ_PRJ_SCANNER_H
 
 #include "../utils/utils.h"
-
 
 typedef enum {
     TOKEN_IDENTIFIER,           //      S to [a-zA-Z_] to [a-zA-Z0-9_]
@@ -97,6 +96,8 @@ typedef struct {
     int allocated;
 } token_array_t;
 
+extern token_array_t *tokens;
+
 typedef enum {
     START_S,          // S
     PLUS_S,           // +
@@ -172,23 +173,23 @@ void token_dtor(token_t *token);
  *
  * @return pointer to token array structure
  */
-token_array_t *token_array_ctor();
+int token_array_ctor();
 
 /**
  * @brief deallocate token array structure
  *
  * @param token_array - pointer to token array structure
  */
-void token_array_dtor(token_array_t *token_array);
+void token_array_dtor();
 
 /**
  * @brief add token to token array
  *
- * @param token_array - pointer to token array structure
+ * @param tokens - pointer to token array structure
  * @param token - pointer to token structure
  * @return 0 if success, non-zero otherwise
  */
-int token_array_add(token_array_t *token_array, token_t *token);
+int token_array_add(token_t *token);
 
 /**
  * @brief convert source code to tokens
@@ -196,8 +197,8 @@ int token_array_add(token_array_t *token_array, token_t *token);
  * @param file - pointer to file structure
  * @return pointer to token array structure
  */
-token_array_t *source_code_to_tokens(file_t *file);
+int source_code_to_tokens();
 
 void token_print(token_t *token);
 
-#endif //IFJ_PRJ_LEXER_H
+#endif //IFJ_PRJ_SCANNER_H
