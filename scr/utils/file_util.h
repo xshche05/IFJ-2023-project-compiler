@@ -23,6 +23,8 @@ typedef struct {
     int current_position;
 } file_t;
 
+extern file_t *file;
+
 extern const struct file_interface File;
 
 /**
@@ -41,17 +43,17 @@ extern const struct file_interface File;
  * @param print - Print full file
  */
 struct file_interface {
-    file_t *(*ctor)();
-    void (*dtor)(file_t *file);
-    int (*add_line)(file_t *file, string_t *line);
-    int (*from_file)(char *file_name, file_t *file);
-    int (*from_stdin)(file_t *file);
-    int (*line)(file_t *file);
-    int (*column)(file_t *file);
-    char (*getc)(file_t *file);
-    void (*back_step)(file_t *file);
-    void (*print_line)(file_t *file, int line);
-    void (*print)(file_t *file);
+    int (*ctor)(void);
+    void (*dtor)(void);
+    int (*add_line)(string_t *line);
+    int (*from_file)(char *file_name);
+    int (*from_stdin)(void);
+    int (*line)(void);
+    int (*column)(void);
+    char (*getc)(void);
+    void (*back_step)(void);
+    void (*print_line)(int line);
+    void (*print)(void);
 };
 
 #endif //IFJ_PRJ_FILE_UTIL_H

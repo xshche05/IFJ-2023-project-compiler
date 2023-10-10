@@ -4,31 +4,36 @@
 
 #include "file_util.h"
 
+file_t *file = NULL;
 
-static file_t *file_init() {
-    file_t *file = malloc(sizeof(file_t));
+static int file_init(void) {
+    if (file != NULL) {
+        fprintf(stderr, "Error: file already initialized.\n");
+        return -1;
+    }
+    file = malloc(sizeof(file_t));
     if (file == NULL) {
         fprintf(stderr, "Error: malloc failed.\n");
-        return NULL;
+        return -1;
     }
     file->file_name = NULL;
     file->lines = malloc(sizeof(string_t*) * 8);
     if (file->lines == NULL) {
         fprintf(stderr, "Error: malloc failed.\n");
-        return NULL;
+        return -1;
     }
     file->line_allocated = 8;
     file->line_count = 0;
     file->current_line = 0;
     file->current_position = 0;
-    return file;
+    return 0;
 }
 
-static void file_dtor(file_t *file) {
+static void file_dtor(void) {
     if (file == NULL) {
         return;
     }
-    for (size_t i = 0; i < file->line_count; i++) {
+    for (int i = 0; i < file->line_count; i++) {
         String.dtor(file->lines[i]);
     }
     free(file->file_name);
@@ -37,7 +42,7 @@ static void file_dtor(file_t *file) {
     file = NULL;
 }
 
-static int file_add_line(file_t *file, string_t *line) {
+static int file_add_line(string_t *line) {
     if (file == NULL || line == NULL) {
         return -1;
     }
@@ -54,7 +59,7 @@ static int file_add_line(file_t *file, string_t *line) {
     return 0;
 }
 
-static int file_load_from_file(char *file_name, file_t *file) {
+static int file_load_from_file(char *file_name) {
     if (file == NULL) {
         return -1;
     }
@@ -70,7 +75,7 @@ static int file_load_from_file(char *file_name, file_t *file) {
     int c;
     while ((c = fgetc(f)) != EOF) {
         if (c == '\n') {
-            file_add_line(file, line);
+            file_add_line(line);
             line = String.ctor();
             if (line == NULL) {
                 return -1;
@@ -79,14 +84,14 @@ static int file_load_from_file(char *file_name, file_t *file) {
         }
         String.add_char(line, (char) c);
     }
-    file_add_line(file, line);
+    File.add_line(line);
     fclose(f);
     file->file_name = malloc(sizeof(char) * (strlen(file_name) + 1));
     strcpy(file->file_name, file_name);
     return 0;
 }
 
-static char file_getc(file_t *file) {
+static char file_getc(void) {
     if (file == NULL) {
         return -1;
     }
@@ -103,7 +108,7 @@ static char file_getc(file_t *file) {
     return c;
 }
 
-static void file_back_step(file_t *file) {
+static void file_back_step(void) {
     if (file == NULL) {
         return;
     }
@@ -115,25 +120,25 @@ static void file_back_step(file_t *file) {
     file->current_position--;
 }
 
-static int file_line(file_t *file) {
+static int file_line(void) {
     if (file == NULL) {
         return -1;
     }
     return file->current_line;
 }
 
-static int file_column(file_t *file) {
+static int file_column(void) {
     if (file == NULL) {
         return -1;
     }
     return file->current_position-1;
 }
 
-static void file_print(file_t *file) {
+static void file_print(void) {
     if (file == NULL) {
         return;
     }
-    for (size_t i = 0; i < file->line_count; i++) {
+    for (int i = 0; i < file->line_count; i++) {
         printf("%s\n", file->lines[i]->str);
     }
 }
