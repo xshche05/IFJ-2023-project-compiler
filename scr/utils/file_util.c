@@ -5,7 +5,7 @@
 #include "file_util.h"
 
 
-file_t *file_init() {
+static file_t *file_init() {
     file_t *file = malloc(sizeof(file_t));
     if (file == NULL) {
         fprintf(stderr, "Error: malloc failed.\n");
@@ -24,7 +24,7 @@ file_t *file_init() {
     return file;
 }
 
-void file_dtor(file_t *file) {
+static void file_dtor(file_t *file) {
     if (file == NULL) {
         return;
     }
@@ -37,7 +37,7 @@ void file_dtor(file_t *file) {
     file = NULL;
 }
 
-int file_add_line(file_t *file, string_t *line) {
+static int file_add_line(file_t *file, string_t *line) {
     if (file == NULL || line == NULL) {
         return -1;
     }
@@ -54,7 +54,7 @@ int file_add_line(file_t *file, string_t *line) {
     return 0;
 }
 
-int file_load_from_file(char *file_name, file_t *file) {
+static int file_load_from_file(char *file_name, file_t *file) {
     if (file == NULL) {
         return -1;
     }
@@ -86,7 +86,7 @@ int file_load_from_file(char *file_name, file_t *file) {
     return 0;
 }
 
-char file_getc(file_t *file) {
+static char file_getc(file_t *file) {
     if (file == NULL) {
         return -1;
     }
@@ -103,7 +103,7 @@ char file_getc(file_t *file) {
     return c;
 }
 
-void file_back_step(file_t *file) {
+static void file_back_step(file_t *file) {
     if (file == NULL) {
         return;
     }
@@ -115,21 +115,21 @@ void file_back_step(file_t *file) {
     file->current_position--;
 }
 
-int file_line(file_t *file) {
+static int file_line(file_t *file) {
     if (file == NULL) {
         return -1;
     }
     return file->current_line;
 }
 
-int file_column(file_t *file) {
+static int file_column(file_t *file) {
     if (file == NULL) {
         return -1;
     }
     return file->current_position-1;
 }
 
-void file_print(file_t *file) {
+static void file_print(file_t *file) {
     if (file == NULL) {
         return;
     }
