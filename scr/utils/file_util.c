@@ -29,7 +29,7 @@ void file_dtor(file_t *file) {
         return;
     }
     for (size_t i = 0; i < file->line_count; i++) {
-        string_dtor(file->lines[i]);
+        String.dtor(file->lines[i]);
     }
     free(file->file_name);
     free(file->lines);
@@ -54,7 +54,7 @@ int file_add_line(file_t *file, string_t *line) {
     return 0;
 }
 
-int file_load(char *file_name, file_t *file) {
+int file_load_from_file(char *file_name, file_t *file) {
     if (file == NULL) {
         return -1;
     }
@@ -63,7 +63,7 @@ int file_load(char *file_name, file_t *file) {
         fprintf(stderr, "Error: file %s not found.\n", file_name);
         return -1;
     }
-    string_t *line = string_init();
+    string_t *line = String.ctor();
     if (line == NULL) {
         return -1;
     }
@@ -71,13 +71,13 @@ int file_load(char *file_name, file_t *file) {
     while ((c = fgetc(f)) != EOF) {
         if (c == '\n') {
             file_add_line(file, line);
-            line = string_init();
+            line = String.ctor();
             if (line == NULL) {
                 return -1;
             }
             continue;
         }
-        string_add_char(line, (char) c);
+        String.add_char(line, (char) c);
     }
     file_add_line(file, line);
     fclose(f);
@@ -126,7 +126,7 @@ int file_column(file_t *file) {
     if (file == NULL) {
         return -1;
     }
-    return file->current_position;
+    return file->current_position-1;
 }
 
 void file_print(file_t *file) {
@@ -137,3 +137,16 @@ void file_print(file_t *file) {
         printf("%s\n", file->lines[i]->str);
     }
 }
+
+const struct file_interface File = {
+        .ctor = file_init,
+        .dtor = file_dtor,
+        .add_line = file_add_line,
+        .from_file = file_load_from_file,
+        .from_stdin = NULL,
+        .getc = file_getc,
+        .back_step = file_back_step,
+        .line = file_line,
+        .column = file_column,
+        .print = file_print
+};
