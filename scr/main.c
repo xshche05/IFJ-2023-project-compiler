@@ -14,6 +14,9 @@ int main(int argc, char **argv) {
         fprintf(stderr, "Error: Failed to convert source code to tokens.\n");
         printf("Line: %d\n", File.line()+1);
         printf("Column: %d\n", File.column()+1);
+        File.back_step();
+        printf("Char: %d\n", File.getc());
+        printf("Tokens:\nTOTAL: %d\n", tokens->length);
     }
     else {
         printf("Tokens:\nTOTAL: %d\n", tokens->length);

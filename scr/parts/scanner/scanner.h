@@ -1,93 +1,76 @@
 #ifndef IFJ_PRJ_SCANNER_H
 #define IFJ_PRJ_SCANNER_H
 
+#include <stdbool.h>
 #include "../utils/utils.h"
 
 typedef enum {
-    TOKEN_IDENTIFIER,           //      S to [a-zA-Z_] to [a-zA-Z0-9_]
-    TOKEN_OPERATOR,             //
-    TOKEN_KEYWORD,              //
-    TOKEN_LITERAL,              //
-    TOKEN_PUNCTUATOR,           //
+    // ID
+    TOKEN_IDENTIFIER,
+    // Keywords
+    TOKEN_DOUBLE_TYPE,                // Double
+    TOKEN_ELSE,                       // else
+    TOKEN_FUNC,                       // func
+    TOKEN_IF,                         // if
+    TOKEN_INT_TYPE,                   // Int
+    TOKEN_LET,                        // let
+    TOKEN_RETURN,                     // return
+    TOKEN_STRING_TYPE,                // String
+    TOKEN_VAR,                        // var
+    TOKEN_WHILE,                      // while
+    TOKEN_BOOL_TYPE,                  // Bool
+    TOKEN_FOR,                        // for
+    TOKEN_IN,                         // in
+    TOKEN_BREAK,                      // break
+    TOKEN_CONTINUE,                   // continue
+    // Operators
+    TOKEN_ASSIGNMENT,                 // =
+    TOKEN_ADDITION,                   // +
+    TOKEN_SUBTRACTION,                // -
+    TOKEN_MULTIPLICATION,             // *
+    TOKEN_DIVISION,                   // /
+    TOKEN_LESS_THAN,                  // <
+    TOKEN_LESS_THAN_OR_EQUAL_TO,      // <=
+    TOKEN_GREATER_THAN,               // >
+    TOKEN_GREATER_THAN_OR_EQUAL_TO,   // >=
+    TOKEN_EQUAL_TO,                   // ==
+    TOKEN_NOT_EQUAL_TO,               // !=
+    TOKEN_NILABLE,                    // ?
+    TOKEN_IS_NIL,                     // ??
+    TOKEN_UNWRAP_NILABLE,             // ID!
+    TOKEN_LOGICAL_AND,                // &&
+    TOKEN_LOGICAL_OR,                 // ||
+    TOKEN_LOGICAL_NOT,                // !ID
+    TOKEN_CLOSED_RANGE,               // ..
+    TOKEN_HALF_OPEN_RANGE,            // ..<
+    // Literals
+    TOKEN_INTEGER_LITERAL,
+    TOKEN_REAL_LITERAL,
+    TOKEN_STRING_LITERAL,
+    TOKEN_NIL_LITERAL,
+    TOKEN_TRUE_LITERAL,
+    TOKEN_FALSE_LITERAL,
+    // Punctuation
+    TOKEN_LEFT_BRACKET,
+    TOKEN_RIGHT_BRACKET,
+    TOKEN_LEFT_BRACE,
+    TOKEN_RIGHT_BRACE,
+    TOKEN_COMMA,
+    TOKEN_COLON,
+    TOKEN_SEMICOLON,
+    TOKEN_ARROW,
 } token_type_t;
 
-typedef enum {
-    ASSIGNMENT,                 // =    S to =
-
-    ADDITION,                   // +    S to +
-    SUBTRACTION,                // -    S to -
-    MULTIPLICATION,             // *    S to *
-    DIVISION,                   // /    S to /
-
-    LESS_THAN,                  // <    S to <
-    LESS_THAN_OR_EQUAL_TO,      // <=   S to < to =
-    GREATER_THAN,               // >    S to >
-    GREATER_THAN_OR_EQUAL_TO,   // >=   S to > to =
-    EQUAL_TO,                   // ==   S to = to =
-    NOT_EQUAL_TO,               // !=   S to ! to =
-
-    NILABLE,                    // ?    S to ?
-    IS_NIL,                     // ??   S to ? to ?
-    UNWRAP_NILABLE,             // .!   S to !
-
-    // PREMIUM
-    LOGICAL_AND,                // &&   S to & to &
-    LOGICAL_OR,                 // ||   S to | to |
-    LOGICAL_NOT,                // !.   S to !
-} operator_type_t;
-
-typedef enum {
-    INTEGER_LITERAL,                    // int      S to [0-9]
-    REAL_LITERAL,                       // real     S to [0-9] to . to [0-9]
-                                //          S to [0-9] to . to [0-9] to e|E to [0-9]
-                                //          S to [0-9] to . to [0-9] to e|E to +|- to [0-9]
-    STRING_LITERAL,                     // string   S to " to [^"] to "
-                                //          S to " to " to " to \n to [^"] to " to " to " to \n
-    NIL_LITERAL,                        // nil
-
-    // PREMIUM
-    TRUE_LITERAL,                       // bool
-    FALSE_LITERAL,                      // bool
-} literal_type_t;
-
-typedef enum {
-    DOUBLE_TYPE,                // Double
-    ELSE,                       // else
-    FUNC,                       // func
-    IF,                         // if
-    INT_TYPE,                   // Int
-    LET,                        // let
-    RETURN,                     // return
-    STRING_TYPE,                // String
-    VAR,                        // var
-    WHILE,                      // while
-
-    // PREMIUM
-    BOOL_TYPE,                  // Bool
-} keyword_type_t;
-
-typedef enum {
-    LEFT_BRACKET,               // (        S to (
-    RIGHT_BRACKET,              // )        S to )
-    LEFT_BRACE,                 // {        S to {
-    RIGHT_BRACE,                // }        S to }
-    COMMA,                      // ,        S to ,
-    COLON,                      // :        S to :
-    SEMICOLON,                  // ;        S to ;
-    ARROW,                      // ->       S to - to >
-} punctuator_type_t;
-
 typedef union {
-    operator_type_t operator_type;
-    literal_type_t literal_type;
-    keyword_type_t keyword_type;
-    punctuator_type_t punctuator_type;
-} token_subtype_t;
+    string_t *identifier;
+    string_t *string;
+    int integer;
+    double real;
+} token_attribute;
 
 typedef struct {
     token_type_t type;
-    token_subtype_t subtype;
-    string_t *lexeme;
+    token_attribute attribute;
 } token_t;
 
 typedef struct {
@@ -135,6 +118,7 @@ typedef enum {
     STR_START_S,      // "
     STR_1_END_S,      // ""
     STR_2_START_S,    // """  _S, }
+    STR_MULT_HALF_S,       // """\n
     STR_MULT_S,       // """\n
     STR_LF_S,         // """\n\n
     STR_2_E_S,        // """\n\n"
@@ -159,7 +143,7 @@ typedef enum {
  * @param lexeme - lexeme of token
  * @return pointer to token structure
  */
-token_t *token_ctor(token_type_t type, token_subtype_t subtype, string_t *lexeme);
+token_t *token_ctor(token_type_t type, token_attribute attribute, bool has_attribute);
 
 /**
  * @brief deallocate token structure

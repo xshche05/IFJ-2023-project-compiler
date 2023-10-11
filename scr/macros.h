@@ -54,4 +54,5 @@
 #define str_eq(str1, str2) (!String.cmp(str1, str2))
 #define str_eq_cstr(str1, str2) (!String.cmp_cstr(str1, str2))
 
+
 #endif //IFJ_PRJ_MACROS_H

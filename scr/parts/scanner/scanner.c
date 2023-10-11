@@ -3,45 +3,156 @@
 #include <stdbool.h>
 #include <ctype.h>
 #include <string.h>
+#include "lists.h"
 
+char *tokens_as_str[49] = {
+        "TOKEN_IDENTIFIER",
+        "TOKEN_DOUBLE_TYPE",
+        "TOKEN_ELSE",
+        "TOKEN_FUNC",
+        "TOKEN_IF",
+        "TOKEN_INT_TYPE",
+        "TOKEN_LET",
+        "TOKEN_RETURN",
+        "TOKEN_STRING_TYPE",
+        "TOKEN_VAR",
+        "TOKEN_WHILE",
+        "TOKEN_BOOL_TYPE",
+        "TOKEN_FOR",
+        "TOKEN_IN",
+        "TOKEN_BREAK",
+        "TOKEN_CONTINUE",
+        "TOKEN_ASSIGNMENT",
+        "TOKEN_ADDITION",
+        "TOKEN_SUBTRACTION",
+        "TOKEN_MULTIPLICATION",
+        "TOKEN_DIVISION",
+        "TOKEN_LESS_THAN",
+        "TOKEN_LESS_THAN_OR_EQUAL_TO",
+        "TOKEN_GREATER_THAN",
+        "TOKEN_GREATER_THAN_OR_EQUAL_TO",
+        "TOKEN_EQUAL_TO",
+        "TOKEN_NOT_EQUAL_TO",
+        "TOKEN_NILABLE",
+        "TOKEN_IS_NIL",
+        "TOKEN_UNWRAP_NILABLE",
+        "TOKEN_LOGICAL_AND",
+        "TOKEN_LOGICAL_OR",
+        "TOKEN_LOGICAL_NOT",
+        "TOKEN_CLOSED_RANGE",
+        "TOKEN_HALF_OPEN_RANGE",
+        "TOKEN_INTEGER_LITERAL",
+        "TOKEN_REAL_LITERAL",
+        "TOKEN_STRING_LITERAL",
+        "TOKEN_NIL_LITERAL",
+        "TOKEN_TRUE_LITERAL",
+        "TOKEN_FALSE_LITERAL",
+        "TOKEN_LEFT_BRACKET",
+        "TOKEN_RIGHT_BRACKET",
+        "TOKEN_LEFT_BRACE",
+        "TOKEN_RIGHT_BRACE",
+        "TOKEN_COMMA",
+        "TOKEN_COLON",
+        "TOKEN_SEMICOLON",
+        "TOKEN_ARROW"
+};
 
 char control_char = ' ';
 
 token_array_t *tokens = NULL;
 
 static int is_keyword(string_t *lexeme) {
-    if str_eq_cstr(lexeme, "Double") return DOUBLE_TYPE;
-    if str_eq_cstr(lexeme, "else") return ELSE;
-    if str_eq_cstr(lexeme, "func") return FUNC;
-    if str_eq_cstr(lexeme, "if") return IF;
-    if str_eq_cstr(lexeme, "Int") return INT_TYPE;
-    if str_eq_cstr(lexeme, "let") return LET;
-    if str_eq_cstr(lexeme, "return") return RETURN;
-    if str_eq_cstr(lexeme, "String") return STRING_TYPE;
-    if str_eq_cstr(lexeme, "var") return VAR;
-    if str_eq_cstr(lexeme, "while") return WHILE;
-    if str_eq_cstr(lexeme, "Bool") return BOOL_TYPE;
-    if str_eq_cstr(lexeme, "nil") return NIL_LITERAL;
-    if str_eq_cstr(lexeme, "true") return TRUE_LITERAL;
-    if str_eq_cstr(lexeme, "false") return FALSE_LITERAL;
+    if str_eq_cstr(lexeme, "Double") return TOKEN_DOUBLE_TYPE;
+    if str_eq_cstr(lexeme, "else") return TOKEN_ELSE;
+    if str_eq_cstr(lexeme, "func") return TOKEN_FUNC;
+    if str_eq_cstr(lexeme, "if") return TOKEN_IF;
+    if str_eq_cstr(lexeme, "Int") return TOKEN_INT_TYPE;
+    if str_eq_cstr(lexeme, "let") return TOKEN_LET;
+    if str_eq_cstr(lexeme, "return") return TOKEN_RETURN;
+    if str_eq_cstr(lexeme, "String") return TOKEN_STRING_TYPE;
+    if str_eq_cstr(lexeme, "var") return TOKEN_VAR;
+    if str_eq_cstr(lexeme, "while") return TOKEN_WHILE;
+    if str_eq_cstr(lexeme, "Bool") return TOKEN_BOOL_TYPE;
+    if str_eq_cstr(lexeme, "nil") return TOKEN_NIL_LITERAL;
+    if str_eq_cstr(lexeme, "true") return TOKEN_TRUE_LITERAL;
+    if str_eq_cstr(lexeme, "false") return TOKEN_FALSE_LITERAL;
+    if str_eq_cstr(lexeme, "for") return TOKEN_FOR;
+    if str_eq_cstr(lexeme, "in") return TOKEN_IN;
+    if str_eq_cstr(lexeme, "break") return TOKEN_BREAK;
+    if str_eq_cstr(lexeme, "continue") return TOKEN_CONTINUE;
     return -1;
 }
 
-static int add_token(token_type_t type, token_subtype_t subtype, string_t *lexeme) {
-    token_t *token = token_ctor(type, subtype, lexeme);
+static int verify_multiline_str(string_t *lexeme) {
+    // split multiline lexeme by '\n' to lines
+    two_way_list list;
+    list_init(&list);
+    string_t *copy = String.copy(lexeme);
+    char *str = copy->str;
+    char *token = strtok(str, "\n");
+    while (token != NULL) {
+        insert_last(&list, token);
+        token = strtok(NULL, "\n");
+    }
+    char *first = list.first->data;
+    list.first = list.first->next;
+    char *second = list.first->data;
+    list.first = list.first->next;
+    char *last = list.last->data;
+    list.last = list.last->prev;
+    list.last->next = NULL;
+    // go through lines and get minimum number of spaces in the beginning of each line, tab is one space
+    int min_spaces = INT_MAX, spaces;
+    element *tmp = list.first;
+    while (tmp != NULL) {
+        spaces = 0;
+        while (((char*)tmp->data)[spaces] == ' ' || ((char*)tmp->data)[spaces] == '\t') {
+            spaces++;
+        }
+        if (spaces < min_spaces) min_spaces = spaces;
+        tmp = tmp->next;
+    }
+    // count number of spaces in the beginning of the last line
+    spaces = 0;
+    while (last[spaces] == ' ' || last[spaces] == '\t') {
+        spaces++;
+    }
+    if (spaces > min_spaces) {
+        return -1;
+    }
+    string_t *new_lexeme = String.ctor();
+    if (new_lexeme == NULL) {
+        return -1;
+    }
+    String.add_cstr(new_lexeme, first);
+    String.add_char(new_lexeme, '\n');
+    String.add_cstr(new_lexeme, second);
+    String.add_char(new_lexeme, '\n');
+    tmp = list.first;
+    while (tmp != NULL) {
+        String.add_cstr(new_lexeme, (char*)tmp->data + spaces);
+        String.add_char(new_lexeme, '\n');
+        tmp = tmp->next;
+    }
+    String.add_cstr(new_lexeme, "\"\"\"");
+    String.assign(lexeme, new_lexeme);
+    return 0;
+}
+
+static int add_token(token_type_t type, token_attribute attribute, bool has_attribute) {
+    token_t *token = token_ctor(type, attribute, has_attribute);
     if (!isspace(control_char)) File.back_step();
     return token_array_add(token);
 }
 
-token_t *token_ctor(token_type_t type, token_subtype_t subtype, string_t *lexeme) {
+token_t *token_ctor(token_type_t type, token_attribute attribute, bool has_attribute) {
     token_t *token = malloc(sizeof(token_t));
     if (token == NULL) {
         fprintf(stderr, "Error: malloc failed.\n");
         return NULL;
     }
     token->type = type;
-    token->subtype = subtype;
-    token->lexeme = String.copy(lexeme);
+    if (has_attribute) token->attribute = attribute;
     return token;
 }
 
@@ -49,7 +160,9 @@ void token_dtor(token_t *token) {
     if (token == NULL) {
         return;
     }
-    String.dtor(token->lexeme);
+    if (token->type == TOKEN_IDENTIFIER) {
+        String.dtor(token->attribute.identifier);
+    }
     free(token);
     token = NULL;
 }
@@ -104,28 +217,17 @@ void token_print(token_t *token) {
     if (token == NULL) {
         return;
     }
-    printf("Token = ");
-    printf("type: ");
-    switch (token->type) {
-        case TOKEN_KEYWORD:
-            printf("KEYWORD");
-            break;
-        case TOKEN_LITERAL:
-            printf("LITERAL");
-            break;
-        case TOKEN_IDENTIFIER:
-            printf("IDENTIFIER");
-            break;
-        case TOKEN_OPERATOR:
-            printf("OPERATOR");
-            break;
-        case TOKEN_PUNCTUATOR:
-            printf("TOKEN_PUNCTUATOR");
-            break;
-        default:
-            printf("UNKNOWN");
+    printf("Token: %32s", tokens_as_str[token->type]);
+    if (token->type == TOKEN_IDENTIFIER) {
+        printf(",   ID:   %s", token->attribute.identifier->str);
+    } else if (token->type == TOKEN_INTEGER_LITERAL) {
+        printf(",   INT:  %d", token->attribute.integer);
+    } else if (token->type == TOKEN_REAL_LITERAL) {
+        printf(",   REAL: %a", token->attribute.real);
+    } else if (token->type == TOKEN_STRING_LITERAL) {
+        printf(",   STR:  %s", token->attribute.string->str);
     }
-    if (token->lexeme != NULL) printf(", lexeme: \"%s\"\n", token->lexeme->str);
+    printf("\n");
 }
 
 int source_code_to_tokens() {
@@ -133,7 +235,7 @@ int source_code_to_tokens() {
     fsm_state_t fsm_state = START_S;
     bool multiline = false;
     string_t *lexeme = String.ctor();
-    token_subtype_t subtype;
+    token_attribute attribute;
     token_type_t type;
     char c, prev = ' ', prev_prev = ' ', count = 0;
     int keyword_code;
@@ -151,6 +253,7 @@ int source_code_to_tokens() {
                         // String literals
                     case '"':
                         fsm_state = STR_START_S;
+                        multiline = false;
                         String.add_char(lexeme, c);
                         break;
                         // Number literals
@@ -161,76 +264,69 @@ int source_code_to_tokens() {
                         // Operators
                     case '+':
                         fsm_state = PLUS_S;
-                        String.add_char(lexeme, c);
                         break;
                     case '*':
                         fsm_state = MUL_S;
-                        String.add_char(lexeme, c);
                         break;
                     case '!':
                         fsm_state = EXCL_MARK_S;
-                        String.add_char(lexeme, c);
                         break;
                     case '?':
                         fsm_state = NILABLE_S;
-                        String.add_char(lexeme, c);
                         break;
                     case '>':
                         fsm_state = GREATER_S;
-                        String.add_char(lexeme, c);
                         break;
                     case '<':
                         fsm_state = LESS_S;
-                        String.add_char(lexeme, c);
                         break;
                     case '-':
                         fsm_state = MINUS_S;
-                        String.add_char(lexeme, c);
                         break;
                     case '=':
                         fsm_state = ASSIGN_S;
-                        String.add_char(lexeme, c);
+
                         break;
                     case '&':
                         fsm_state = LOGICAL_AND1_S;
-                        String.add_char(lexeme, c);
+
                         break;
                     case '|':
                         fsm_state = LOGICAL_OR1_S;
-                        String.add_char(lexeme, c);
+
                         break;
                         // Punctuators
                     case '{':
                         fsm_state = BRACE_L_S;
-                        String.add_char(lexeme, c);
+
                         break;
                     case '}':
                         fsm_state = BRACE_R_S;
-                        String.add_char(lexeme, c);
+
                         break;
                     case '(':
                         fsm_state = BRACKET_L_S;
-                        String.add_char(lexeme, c);
+
                         break;
                     case ')':
                         fsm_state = BRACKET_R_S;
-                        String.add_char(lexeme, c);
+
                         break;
                     case ':':
                         fsm_state = COLON_S;
-                        String.add_char(lexeme, c);
+
                         break;
                     case ';':
                         fsm_state = SEMICOLON_S;
-                        String.add_char(lexeme, c);
+
                         break;
                     case ',':
                         fsm_state = COMMA_S;
-                        String.add_char(lexeme, c);
+
                         break;
                     case '/':
                         fsm_state = DIV_S;
-                        String.add_char(lexeme, c);
+
                         break;
                     case '_':
                     case 'a' ... 'z':
@@ -244,187 +340,135 @@ int source_code_to_tokens() {
                 }
                 break;
             case PLUS_S:
-                type = TOKEN_OPERATOR;
-                subtype.operator_type = ADDITION;
-                add_token(type, subtype, lexeme);
+                type = TOKEN_ADDITION;
+                add_token(type, attribute, false);
                 fsm_state = START_S;
-                String.clear(lexeme);
                 break;
             case MUL_S:
-                type = TOKEN_OPERATOR;
-                subtype.operator_type = MULTIPLICATION;
-                add_token(type, subtype, lexeme);
+                type = TOKEN_MULTIPLICATION;
+                add_token(type, attribute, false);
                 fsm_state = START_S;
-                String.clear(lexeme);
                 break;
             case EXCL_MARK_S:
                 if (c == '=') {
                     fsm_state = NOT_EQUAL_S;
-                    String.add_char(lexeme, c);
                 } else {
-                    type = TOKEN_OPERATOR;
-                    if (isspace(prev_prev) || (isalnum(c) || c == '_')) subtype.operator_type = LOGICAL_NOT;
-                    else subtype.operator_type = UNWRAP_NILABLE;
-//                    printf("c - %c\n", c);
-//                    printf("prev - %c\n", prev);
-//                    printf("prev_prev- %c\n", prev_prev);
-//                    printf(subtype.operator_type == LOGICAL_NOT ? "NOT" : "NIL");
-//                    printf("\n");
-                    add_token(type, subtype, lexeme);
+                    if (isspace(prev_prev) || (isalnum(c) || c == '_')) type = TOKEN_LOGICAL_NOT;
+                    else type = TOKEN_UNWRAP_NILABLE;
+                    add_token(type, attribute, false);
                     fsm_state = START_S;
-                    String.clear(lexeme);
                 }
                 break;
             case NOT_EQUAL_S:
-                type = TOKEN_OPERATOR;
-                subtype.operator_type = NOT_EQUAL_TO;
-                add_token(type, subtype, lexeme);
+                type = TOKEN_NOT_EQUAL_TO;
+                add_token(type, attribute, false);
                 fsm_state = START_S;
-                String.clear(lexeme);
                 break;
             case NILABLE_S:
                 if (c == '?') {
                     fsm_state = IS_NIL_S;
-                    String.add_char(lexeme, c);
                 } else {
-                    type = TOKEN_OPERATOR;
-                    subtype.operator_type = NILABLE;
-                    add_token(type, subtype, lexeme);
+                    type = TOKEN_NILABLE;
+                    add_token(type, attribute, false);
                     fsm_state = START_S;
-                    String.clear(lexeme);
                 }
                 break;
             case IS_NIL_S:
-                type = TOKEN_OPERATOR;
-                subtype.operator_type = IS_NIL;
-                add_token(type, subtype, lexeme);
+                type = TOKEN_IS_NIL;
+                add_token(type, attribute, false);
                 fsm_state = START_S;
-                String.clear(lexeme);
                 break;
             case GREATER_S:
                 if (c == '=') {
                     fsm_state = GREATER_EQUAL_S;
-                    String.add_char(lexeme, c);
                 } else {
-                    type = TOKEN_OPERATOR;
-                    subtype.operator_type = GREATER_THAN;
-                    add_token(type, subtype, lexeme);
+                    type = TOKEN_GREATER_THAN;
+                    add_token(type, attribute, false);
                     fsm_state = START_S;
-                    String.clear(lexeme);
                 }
                 break;
             case GREATER_EQUAL_S:
-                type = TOKEN_OPERATOR;
-                subtype.operator_type = GREATER_THAN_OR_EQUAL_TO;
-                add_token(type, subtype, lexeme);
+                type = TOKEN_GREATER_THAN_OR_EQUAL_TO;
+                add_token(type, attribute, false);
                 fsm_state = START_S;
-                String.clear(lexeme);
                 break;
             case LESS_S:
                 if (c == '=') {
                     fsm_state = LESS_EQUAL_S;
-                    String.add_char(lexeme, c);
                 } else {
-                    type = TOKEN_OPERATOR;
-                    subtype.operator_type = LESS_THAN;
-                    add_token(type, subtype, lexeme);
+                    type = TOKEN_LESS_THAN;
+                    add_token(type, attribute, false);
                     fsm_state = START_S;
-                    String.clear(lexeme);
                 }
                 break;
             case LESS_EQUAL_S:
-                type = TOKEN_OPERATOR;
-                subtype.operator_type = LESS_THAN_OR_EQUAL_TO;
-                add_token(type, subtype, lexeme);
+                type = TOKEN_LESS_THAN_OR_EQUAL_TO;
+                add_token(type, attribute, false);
                 fsm_state = START_S;
-                String.clear(lexeme);
                 break;
             case MINUS_S:
                 if (c == '>') {
                     fsm_state = ARROW_S;
-                    String.add_char(lexeme, c);
                 } else {
-                    type = TOKEN_OPERATOR;
-                    subtype.operator_type = SUBTRACTION;
-                    add_token(type, subtype, lexeme);
+                    type = TOKEN_SUBTRACTION;
+                    add_token(type, attribute, false);
                     fsm_state = START_S;
-                    String.clear(lexeme);
                 }
                 break;
             case ARROW_S:
-                type = TOKEN_PUNCTUATOR;
-                subtype.punctuator_type = ARROW;
-                add_token(type, subtype, lexeme);
+                type = TOKEN_ARROW;
+                add_token(type, attribute, false);
                 fsm_state = START_S;
-                String.clear(lexeme);
                 break;
             case ASSIGN_S:
                 if (c == '=') {
                     fsm_state = EQUAL_S;
-                    String.add_char(lexeme, c);
+
                 } else {
-                    type = TOKEN_OPERATOR;
-                    subtype.operator_type = ASSIGNMENT;
-                    add_token(type, subtype, lexeme);
+                    type = TOKEN_ASSIGNMENT;
+                    add_token(type, attribute, false);
                     fsm_state = START_S;
-                    String.clear(lexeme);
                 }
                 break;
             case EQUAL_S:
-                type = TOKEN_OPERATOR;
-                subtype.operator_type = EQUAL_TO;
-                add_token(type, subtype, lexeme);
+                type = TOKEN_EQUAL_TO;
+                add_token(type, attribute, false);
                 fsm_state = START_S;
-                String.clear(lexeme);
                 break;
             case BRACE_L_S:
-                type = TOKEN_PUNCTUATOR;
-                subtype.punctuator_type = LEFT_BRACE;
-                add_token(type, subtype, lexeme);
+                type = TOKEN_LEFT_BRACE;
+                add_token(type, attribute, false);
                 fsm_state = START_S;
-                String.clear(lexeme);
                 break;
             case BRACE_R_S:
-                type = TOKEN_PUNCTUATOR;
-                subtype.punctuator_type = RIGHT_BRACE;
-                add_token(type, subtype, lexeme);
+                type = TOKEN_RIGHT_BRACE;
+                add_token(type, attribute, false);
                 fsm_state = START_S;
-                String.clear(lexeme);
                 break;
             case BRACKET_L_S:
-                type = TOKEN_PUNCTUATOR;
-                subtype.punctuator_type = LEFT_BRACKET;
-                add_token(type, subtype, lexeme);
+                type = TOKEN_LEFT_BRACKET;
+                add_token(type, attribute, false);
                 fsm_state = START_S;
-                String.clear(lexeme);
                 break;
             case BRACKET_R_S:
-                type = TOKEN_PUNCTUATOR;
-                subtype.punctuator_type = RIGHT_BRACKET;
-                add_token(type, subtype, lexeme);
+                type = TOKEN_RIGHT_BRACKET;
+                add_token(type, attribute, false);
                 fsm_state = START_S;
-                String.clear(lexeme);
                 break;
             case COLON_S:
-                type = TOKEN_PUNCTUATOR;
-                subtype.punctuator_type = COLON;
-                add_token(type, subtype, lexeme);
+                type = TOKEN_COLON;
+                add_token(type, attribute, false);
                 fsm_state = START_S;
-                String.clear(lexeme);
                 break;
             case SEMICOLON_S:
-                type = TOKEN_PUNCTUATOR;
-                subtype.punctuator_type = SEMICOLON;
-                add_token(type, subtype, lexeme);
+                type = TOKEN_SEMICOLON;
+                add_token(type, attribute, false);
                 fsm_state = START_S;
-                String.clear(lexeme);
                 break;
             case COMMA_S:
-                type = TOKEN_PUNCTUATOR;
-                subtype.punctuator_type = COMMA;
-                add_token(type, subtype, lexeme);
+                type = TOKEN_COMMA;
+                add_token(type, attribute, false);
                 fsm_state = START_S;
-                String.clear(lexeme);
                 break;
             case INTEGER_S:
                 switch (c) {
@@ -441,9 +485,9 @@ int source_code_to_tokens() {
                         String.add_char(lexeme, c);
                         break;
                     default:
-                        type = TOKEN_LITERAL;
-                        subtype.literal_type = INTEGER_LITERAL;
-                        add_token(type, subtype, lexeme);
+                        type = TOKEN_INTEGER_LITERAL;
+                        attribute.integer = strtol(lexeme->str, NULL, 10);
+                        add_token(type, attribute, true);
                         fsm_state = START_S;
                         String.clear(lexeme);
                 }
@@ -458,27 +502,14 @@ int source_code_to_tokens() {
                         break;
                     default:
                         keyword_code = is_keyword(lexeme);
-                        switch (keyword_code) {
-                            case -1:
-                                type = TOKEN_IDENTIFIER;
-                                break;
-                            case NIL_LITERAL:
-                                type = TOKEN_LITERAL;
-                                subtype.literal_type = NIL_LITERAL;
-                                break;
-                            case TRUE_LITERAL:
-                                type = TOKEN_LITERAL;
-                                subtype.literal_type = TRUE_LITERAL;
-                                break;
-                            case FALSE_LITERAL:
-                                type = TOKEN_LITERAL;
-                                subtype.literal_type = FALSE_LITERAL;
-                                break;
-                            default:
-                                type = TOKEN_KEYWORD;
-                                subtype.keyword_type = keyword_code;
+                        if (keyword_code == -1) {
+                            type = TOKEN_IDENTIFIER;
+                            attribute.identifier = String.copy(lexeme);
+                            add_token(type, attribute, true);
+                        } else {
+                            type = keyword_code;
+                            add_token(type, attribute, false);
                         }
-                        add_token(type, subtype, lexeme);
                         fsm_state = START_S;
                         String.clear(lexeme);
                 }
@@ -502,9 +533,9 @@ int source_code_to_tokens() {
                         String.add_char(lexeme, c);
                         break;
                     default:
-                        type = TOKEN_LITERAL;
-                        subtype.literal_type = REAL_LITERAL;
-                        add_token(type, subtype, lexeme);
+                        type = TOKEN_REAL_LITERAL;
+                        attribute.real = strtod(lexeme->str, NULL);
+                        add_token(type, attribute, true);
                         fsm_state = START_S;
                         String.clear(lexeme);
                 }
@@ -536,9 +567,9 @@ int source_code_to_tokens() {
                 if ('0' <= c && c <= '9') {
                     String.add_char(lexeme, c);
                 } else {
-                    type = TOKEN_LITERAL;
-                    subtype.literal_type = REAL_LITERAL;
-                    add_token(type, subtype, lexeme);
+                    type = TOKEN_REAL_LITERAL;
+                    attribute.real = strtod(lexeme->str, NULL);
+                    add_token(type, attribute, true);
                     fsm_state = START_S;
                     String.clear(lexeme);
                 }
@@ -554,7 +585,7 @@ int source_code_to_tokens() {
                         fsm_state = ESC_S;
                         String.add_char(lexeme, c);
                         break;
-                    case 31 ... 33:
+                    case 32 ... 33:
                     case 35 ... 91:
                     case 93 ... 126:
                         String.add_char(lexeme, c);
@@ -568,17 +599,27 @@ int source_code_to_tokens() {
                     fsm_state = STR_2_START_S;
                     String.add_char(lexeme, c);
                 } else {
-                    type = TOKEN_LITERAL;
-                    subtype.literal_type = STRING_LITERAL;
-                    add_token(type, subtype, lexeme);
+                    type = TOKEN_STRING_LITERAL;
+                    attribute.string = String.copy(lexeme);
+                    add_token(type, attribute, true);
                     fsm_state = START_S;
                     String.clear(lexeme);
                 }
                 break;
             case STR_2_START_S:
                 if (c == '\n') {
-                    fsm_state = STR_MULT_S;
+                    fsm_state = STR_MULT_HALF_S;
                     multiline = true;
+                    String.add_char(lexeme, c);
+                } else {
+                    return -1;
+                }
+                break;
+            case STR_MULT_HALF_S:
+                if ((9 <= c && c <= 13) || c == 32) {
+                    fsm_state = STR_MULT_HALF_S;
+                } else if (c > 31) {
+                    fsm_state = STR_MULT_S;
                     String.add_char(lexeme, c);
                 } else {
                     return -1;
@@ -594,7 +635,9 @@ int source_code_to_tokens() {
                         String.add_char(lexeme, c);
                         fsm_state = ESC_S;
                         break;
-                    case 31 ... 91:
+                    case 9:
+                    case 11 ... 13:
+                    case 32 ... 91:
                     case 93 ... 126:
                         String.add_char(lexeme, c);
                         break;
@@ -608,7 +651,12 @@ int source_code_to_tokens() {
                         String.add_char(lexeme, c);
                         fsm_state = STR_2_E_S;
                         break;
-                    case 31 ... 33:
+                    case 9 ... 13:
+                    case 32:
+                        String.add_char(lexeme, c);
+                        fsm_state = STR_LF_S;
+                        break;
+                    case 33:
                     case 35 ... 126:
                         String.add_char(lexeme, c);
                         fsm_state = STR_MULT_S;
@@ -623,7 +671,7 @@ int source_code_to_tokens() {
                         String.add_char(lexeme, c);
                         fsm_state = STR_2_EE_S;
                         break;
-                    case 31 ... 33:
+                    case 32 ... 33:
                     case 35 ... 126:
                         String.add_char(lexeme, c);
                         fsm_state = STR_MULT_S;
@@ -638,7 +686,7 @@ int source_code_to_tokens() {
                         String.add_char(lexeme, c);
                         fsm_state = STR_2_END_S;
                         break;
-                    case 31 ... 33:
+                    case 32 ... 33:
                     case 35 ... 126:
                         String.add_char(lexeme, c);
                         fsm_state = STR_MULT_S;
@@ -648,9 +696,10 @@ int source_code_to_tokens() {
                 }
                 break;
             case STR_2_END_S:
-                type = TOKEN_LITERAL;
-                subtype.literal_type = STRING_LITERAL;
-                add_token(type, subtype, lexeme);
+                type = TOKEN_STRING_LITERAL;
+                attribute.string = String.copy(lexeme);
+                if (verify_multiline_str(attribute.string)) return -1;
+                add_token(type, attribute, true);
                 fsm_state = START_S;
                 String.clear(lexeme);
                 break;
@@ -695,7 +744,9 @@ int source_code_to_tokens() {
                 }
                 break;
             case U_SEC_NUM_S:
-                if (count >= 8) return -1;
+                if (count >= 8) {
+                    return -1;
+                }
                 switch (c) {
                     case '0' ... '9':
                     case 'a' ... 'f':
@@ -722,9 +773,8 @@ int source_code_to_tokens() {
                         fsm_state = COM_MULT_S;
                         break;
                     default:
-                        type = TOKEN_OPERATOR;
-                        subtype.operator_type = DIVISION;
-                        add_token(type, subtype, lexeme);
+                        type = TOKEN_DIVISION;
+                        add_token(type, attribute, false);
                         fsm_state = START_S;
                         String.clear(lexeme);
                 }
@@ -753,38 +803,31 @@ int source_code_to_tokens() {
             case COM_END_S:
                 if (!isspace(control_char)) File.back_step();
                 c = ' ';
-                String.clear(lexeme);
                 fsm_state = START_S;
                 break;
             case LOGICAL_AND1_S:
                 if (c == '&') {
                     fsm_state = LOGICAL_AND2_S;
-                    String.add_char(lexeme, c);
                 } else {
                     return -1;
                 }
                 break;
             case LOGICAL_AND2_S:
-                type = TOKEN_OPERATOR;
-                subtype.operator_type = LOGICAL_AND;
-                add_token(type, subtype, lexeme);
+                type = TOKEN_LOGICAL_AND;
+                add_token(type, attribute, false);
                 fsm_state = START_S;
-                String.clear(lexeme);
                 break;
             case LOGICAL_OR1_S:
                 if (c == '|') {
                     fsm_state = LOGICAL_OR2_S;
-                    String.add_char(lexeme, c);
                 } else {
                     return -1;
                 }
                 break;
             case LOGICAL_OR2_S:
-                type = TOKEN_OPERATOR;
-                subtype.operator_type = LOGICAL_OR;
-                add_token(type, subtype, lexeme);
+                type = TOKEN_LOGICAL_OR;
+                add_token(type, attribute, false);
                 fsm_state = START_S;
-                String.clear(lexeme);
                 break;
         }
         prev_prev = prev;

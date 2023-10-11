@@ -178,6 +178,18 @@ static int string_compare_cstr(string_t *string1, char *string2) {
     return strcmp(string1->str, string2);
 }
 
+static int string_add_cstr(string_t *dest, char *source) {
+    int length = (int)strlen(source);
+    if (dest->length + length + 1 >= dest->allocated) {
+        if (string_extend_memory(dest, length) != 0) {
+            return -1;
+        }
+    }
+    strcat(dest->str, source);
+    dest->length += length;
+    return 0;
+}
+
 const struct string_interface String = {
         .ctor = string_ctor,
         .copy = string_copy,
@@ -187,6 +199,7 @@ const struct string_interface String = {
         .cmp_cstr = string_compare_cstr,
         .add_char = string_add_char,
         .add_string = string_add_string,
+        .add_cstr = string_add_cstr,
         .assign = string_assign,
         .assign_cstr = string_assign_cstr
 };
