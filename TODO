@@ -1,5 +1,13 @@
+TODO:
+
 Add logical operators to schematic
 Redo mutiline str verifications, add changes to schematic
 Add normal list
 Add stack structure
+Range operators
+add string conversion for asm
 
+
+READY:
+
+fix nillable

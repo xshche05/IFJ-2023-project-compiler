@@ -23,6 +23,7 @@ typedef enum {
     TOKEN_IN,                         // in
     TOKEN_BREAK,                      // break
     TOKEN_CONTINUE,                   // continue
+    TOKEN_UNDERSCORE,                 // _
     // Operators
     TOKEN_ASSIGNMENT,                 // =
     TOKEN_ADDITION,                   // +
@@ -35,7 +36,7 @@ typedef enum {
     TOKEN_GREATER_THAN_OR_EQUAL_TO,   // >=
     TOKEN_EQUAL_TO,                   // ==
     TOKEN_NOT_EQUAL_TO,               // !=
-    TOKEN_NILABLE,                    // ?
+    //TOKEN_NILABLE,                    // ?
     TOKEN_IS_NIL,                     // ??
     TOKEN_UNWRAP_NILABLE,             // ID!
     TOKEN_LOGICAL_AND,                // &&
@@ -63,6 +64,7 @@ typedef enum {
 
 typedef union {
     string_t *identifier;
+    bool nilable;
     string_t *string;
     int integer;
     double real;
@@ -87,8 +89,8 @@ typedef enum {
     MUL_S,            // *
     EXCL_MARK_S,      // !
     NOT_EQUAL_S,      // !=
-    NILABLE_S,        // ?
-    IS_NIL_S,         // ??
+    IS_NIL_1_S,       // ?
+    IS_NIL_2_S,       // ??
     GREATER_S,        // >
     GREATER_EQUAL_S,  // >=
     LESS_S,           // <
@@ -101,6 +103,9 @@ typedef enum {
     LOGICAL_AND2_S,   // &&
     LOGICAL_OR1_S,    // |
     LOGICAL_OR2_S,    // ||
+    RANGE_START_S,    // .
+    RANGE_CLOSED_S,   // ..
+    RANGE_HALF_OPEN_S,// ..<
     BRACE_L_S,        // {
     BRACE_R_S,        // }
     BRACKET_L_S,      // (
@@ -110,6 +115,7 @@ typedef enum {
     COMMA_S,          // ,
     INTEGER_S,        // 0-9
     ID_S,             // a-zA-Z_
+    TYPE_NIL_S,       // TYPE?
     REAL_S,           // 0-9.
     REAL_NUM_S,       // 0-9.0-9
     REAL_E_S,         // 0-9.eE
@@ -118,7 +124,7 @@ typedef enum {
     STR_START_S,      // "
     STR_1_END_S,      // ""
     STR_2_START_S,    // """  _S, }
-    STR_MULT_HALF_S,       // """\n
+    STR_MULT_HALF_S,  //     """\n
     STR_MULT_S,       // """\n
     STR_LF_S,         // """\n\n
     STR_2_E_S,        // """\n\n"

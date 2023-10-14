@@ -5,7 +5,11 @@
 #include <string.h>
 #include "lists.h"
 
-char *tokens_as_str[49] = {
+#define SUCCESS 0
+#define LEX_INTERNAL_ERROR 1
+#define LEX_ERROR 2
+
+char *tokens_as_str[50] = {
         "TOKEN_IDENTIFIER",
         "TOKEN_DOUBLE_TYPE",
         "TOKEN_ELSE",
@@ -22,6 +26,7 @@ char *tokens_as_str[49] = {
         "TOKEN_IN",
         "TOKEN_BREAK",
         "TOKEN_CONTINUE",
+        "TOKEN_UNDERSCORE",
         "TOKEN_ASSIGNMENT",
         "TOKEN_ADDITION",
         "TOKEN_SUBTRACTION",
@@ -33,7 +38,7 @@ char *tokens_as_str[49] = {
         "TOKEN_GREATER_THAN_OR_EQUAL_TO",
         "TOKEN_EQUAL_TO",
         "TOKEN_NOT_EQUAL_TO",
-        "TOKEN_NILABLE",
+//        "TOKEN_NILABLE",
         "TOKEN_IS_NIL",
         "TOKEN_UNWRAP_NILABLE",
         "TOKEN_LOGICAL_AND",
@@ -80,6 +85,7 @@ static int is_keyword(string_t *lexeme) {
     if str_eq_cstr(lexeme, "in") return TOKEN_IN;
     if str_eq_cstr(lexeme, "break") return TOKEN_BREAK;
     if str_eq_cstr(lexeme, "continue") return TOKEN_CONTINUE;
+    if str_eq_cstr(lexeme, "_") return TOKEN_UNDERSCORE;
     return -1;
 }
 
@@ -106,7 +112,7 @@ static int verify_multiline_str(string_t *lexeme) {
     element *tmp = list.first;
     while (tmp != NULL) {
         spaces = 0;
-        while (((char*)tmp->data)[spaces] == ' ' || ((char*)tmp->data)[spaces] == '\t') {
+        while (((char *) tmp->data)[spaces] == ' ' || ((char *) tmp->data)[spaces] == '\t') {
             spaces++;
         }
         if (spaces < min_spaces) min_spaces = spaces;
@@ -130,7 +136,7 @@ static int verify_multiline_str(string_t *lexeme) {
     String.add_char(new_lexeme, '\n');
     tmp = list.first;
     while (tmp != NULL) {
-        String.add_cstr(new_lexeme, (char*)tmp->data + spaces);
+        String.add_cstr(new_lexeme, (char *) tmp->data + spaces);
         String.add_char(new_lexeme, '\n');
         tmp = tmp->next;
     }
@@ -171,17 +177,17 @@ int token_array_ctor() {
     tokens = malloc(sizeof(token_array_t));
     if (tokens == NULL) {
         fprintf(stderr, "Error: malloc failed.\n");
-        return -1;
+        return LEX_INTERNAL_ERROR;
     }
     tokens->array = malloc(sizeof(token_t *) * 16);
     if (tokens->array == NULL) {
         free(tokens);
         fprintf(stderr, "Error: malloc failed.\n");
-        return -1;
+        return LEX_INTERNAL_ERROR;
     }
     tokens->allocated = 16;
     tokens->length = 0;
-    return 0;
+    return SUCCESS;
 }
 
 void token_array_dtor() {
@@ -197,20 +203,26 @@ void token_array_dtor() {
 }
 
 int token_array_add(token_t *token) {
-    if (tokens == NULL || token == NULL) {
-        return -1;
+    if (tokens == NULL) {
+        fprintf(stderr, "Error: token array not initialized.\n");
+        return LEX_INTERNAL_ERROR;
+    }
+    if (token == NULL) {
+        fprintf(stderr, "Error: token is NULL.\n");
+        return LEX_INTERNAL_ERROR;
     }
     if (tokens->length >= tokens->allocated) {
         void *tmp = realloc(tokens->array, sizeof(token_t *) * tokens->allocated * 2);
         if (tmp == NULL) {
-            return -1;
+            fprintf(stderr, "Error: realloc failed.\n");
+            return LEX_INTERNAL_ERROR;
         }
         tokens->array = tmp;
         tokens->allocated *= 2;
     }
     tokens->array[tokens->length] = token;
     tokens->length++;
-    return 0;
+    return SUCCESS;
 }
 
 void token_print(token_t *token) {
@@ -226,6 +238,18 @@ void token_print(token_t *token) {
         printf(",   REAL: %a", token->attribute.real);
     } else if (token->type == TOKEN_STRING_LITERAL) {
         printf(",   STR:  %s", token->attribute.string->str);
+    }
+    switch (token->type)
+    {
+        case TOKEN_BOOL_TYPE:
+        case TOKEN_DOUBLE_TYPE:
+        case TOKEN_INT_TYPE:
+        case TOKEN_STRING_TYPE:
+            if (token->attribute.nilable) printf(",   NILABLE");
+            else printf(",   NON-NILABLE");
+            break;
+        default:
+            break;
     }
     printf("\n");
 }
@@ -272,7 +296,7 @@ int source_code_to_tokens() {
                         fsm_state = EXCL_MARK_S;
                         break;
                     case '?':
-                        fsm_state = NILABLE_S;
+                        fsm_state = IS_NIL_1_S;
                         break;
                     case '>':
                         fsm_state = GREATER_S;
@@ -285,48 +309,40 @@ int source_code_to_tokens() {
                         break;
                     case '=':
                         fsm_state = ASSIGN_S;
-
                         break;
                     case '&':
                         fsm_state = LOGICAL_AND1_S;
-
                         break;
                     case '|':
                         fsm_state = LOGICAL_OR1_S;
-
                         break;
                         // Punctuators
                     case '{':
                         fsm_state = BRACE_L_S;
-
                         break;
                     case '}':
                         fsm_state = BRACE_R_S;
-
                         break;
                     case '(':
                         fsm_state = BRACKET_L_S;
-
                         break;
                     case ')':
                         fsm_state = BRACKET_R_S;
-
                         break;
                     case ':':
                         fsm_state = COLON_S;
-
                         break;
                     case ';':
                         fsm_state = SEMICOLON_S;
-
                         break;
                     case ',':
                         fsm_state = COMMA_S;
-
+                        break;
+                    case '.':
+                        fsm_state = RANGE_START_S;
                         break;
                     case '/':
                         fsm_state = DIV_S;
-
                         break;
                     case '_':
                     case 'a' ... 'z':
@@ -336,7 +352,8 @@ int source_code_to_tokens() {
                         break;
                         // Other
                     default:
-                        return -1;
+                        fprintf(stderr, "Error: Unknown character '%c' (0x%02x).\n", c, c);
+                        return LEX_ERROR;
                 }
                 break;
             case PLUS_S:
@@ -364,16 +381,15 @@ int source_code_to_tokens() {
                 add_token(type, attribute, false);
                 fsm_state = START_S;
                 break;
-            case NILABLE_S:
+            case IS_NIL_1_S:
                 if (c == '?') {
-                    fsm_state = IS_NIL_S;
+                    fsm_state = IS_NIL_2_S;
                 } else {
-                    type = TOKEN_NILABLE;
-                    add_token(type, attribute, false);
-                    fsm_state = START_S;
+                    fprintf(stderr, "Error: Unknown character '%c' (0x%02x). Expected '%c' (0x%02x)", c, c, '?', '?');
+                    return LEX_ERROR;
                 }
                 break;
-            case IS_NIL_S:
+            case IS_NIL_2_S:
                 type = TOKEN_IS_NIL;
                 add_token(type, attribute, false);
                 fsm_state = START_S;
@@ -500,6 +516,15 @@ int source_code_to_tokens() {
                     case '0' ... '9':
                         String.add_char(lexeme, c);
                         break;
+                    case '?':
+                        fsm_state = TYPE_NIL_S;
+                        keyword_code = is_keyword(lexeme);
+                        if (keyword_code == -1) {
+                            fprintf(stderr, "Expected data type (Int, Double, Bool, String). Got: %s\n", lexeme->str);
+                            return LEX_ERROR;
+                        }
+                        String.add_char(lexeme, c);
+                        break;
                     default:
                         keyword_code = is_keyword(lexeme);
                         if (keyword_code == -1) {
@@ -508,18 +533,27 @@ int source_code_to_tokens() {
                             add_token(type, attribute, true);
                         } else {
                             type = keyword_code;
-                            add_token(type, attribute, false);
+                            attribute.nilable = false;
+                            add_token(type, attribute, true);
                         }
                         fsm_state = START_S;
                         String.clear(lexeme);
                 }
+                break;
+            case TYPE_NIL_S:
+                type = keyword_code;
+                attribute.nilable = true;
+                add_token(type, attribute, true);
+                fsm_state = START_S;
+                String.clear(lexeme);
                 break;
             case REAL_S:
                 if ('0' <= c && c <= '9') {
                     fsm_state = REAL_NUM_S;
                     String.add_char(lexeme, c);
                 } else {
-                    return -1;
+                    fprintf(stderr, "Error: Unknown character '%c' (0x%02x). Expected decimal digit", c, c);
+                    return LEX_ERROR;
                 }
                 break;
             case REAL_NUM_S:
@@ -552,7 +586,8 @@ int source_code_to_tokens() {
                         String.add_char(lexeme, c);
                         break;
                     default:
-                        return -1;
+                        fprintf(stderr, "Error: Unknown character '%c' (0x%02x). Expected decimal digit or '+' or '-'", c, c);
+                        return LEX_ERROR;
                 }
                 break;
             case EXP_SIGN_S:
@@ -560,7 +595,8 @@ int source_code_to_tokens() {
                     fsm_state = REAL_EXP_S;
                     String.add_char(lexeme, c);
                 } else {
-                    return -1;
+                    fprintf(stderr, "Error: Unknown character '%c' (0x%02x). Expected decimal digit", c, c);
+                    return LEX_ERROR;
                 }
                 break;
             case REAL_EXP_S:
@@ -591,7 +627,8 @@ int source_code_to_tokens() {
                         String.add_char(lexeme, c);
                         break;
                     default:
-                        return -1;
+                        fprintf(stderr, "Error: Unknown character '%c' (0x%02x). Expected printable character", c, c);
+                        return LEX_ERROR;
                 }
                 break;
             case STR_1_END_S:
@@ -612,17 +649,19 @@ int source_code_to_tokens() {
                     multiline = true;
                     String.add_char(lexeme, c);
                 } else {
-                    return -1;
+                    fprintf(stderr, "Error: Unknown character '%c' (0x%02x). Expected newline", c, c);
+                    return LEX_ERROR;
                 }
                 break;
             case STR_MULT_HALF_S:
-                if ((9 <= c && c <= 13) || c == 32) {
+                if ((9 <= c && c <= 13) || c == 32 || c == 0) {
                     fsm_state = STR_MULT_HALF_S;
                 } else if (c > 31) {
                     fsm_state = STR_MULT_S;
                     String.add_char(lexeme, c);
                 } else {
-                    return -1;
+                    fprintf(stderr, "Error: Unknown character '%c' (0x%02x). Expected printable character", c, c);
+                    return LEX_ERROR;
                 }
                 break;
             case STR_MULT_S:
@@ -642,7 +681,7 @@ int source_code_to_tokens() {
                         String.add_char(lexeme, c);
                         break;
                     default:
-                        return -1;
+                        return LEX_ERROR;
                 }
                 break;
             case STR_LF_S:
@@ -662,7 +701,7 @@ int source_code_to_tokens() {
                         fsm_state = STR_MULT_S;
                         break;
                     default:
-                        return -1;
+                        return LEX_ERROR;
                 }
                 break;
             case STR_2_E_S:
@@ -677,7 +716,7 @@ int source_code_to_tokens() {
                         fsm_state = STR_MULT_S;
                         break;
                     default:
-                        return -1;
+                        return LEX_ERROR;
                 }
                 break;
             case STR_2_EE_S:
@@ -692,13 +731,13 @@ int source_code_to_tokens() {
                         fsm_state = STR_MULT_S;
                         break;
                     default:
-                        return -1;
+                        return LEX_ERROR;
                 }
                 break;
             case STR_2_END_S:
                 type = TOKEN_STRING_LITERAL;
                 attribute.string = String.copy(lexeme);
-                if (verify_multiline_str(attribute.string)) return -1;
+                if (verify_multiline_str(attribute.string)) return LEX_ERROR;
                 add_token(type, attribute, true);
                 fsm_state = START_S;
                 String.clear(lexeme);
@@ -719,7 +758,7 @@ int source_code_to_tokens() {
                         break;
                     case '(':  // TODO interpolation
                     default:
-                        return -1;
+                        return LEX_ERROR;
                 }
                 break;
             case U_SEC_S:
@@ -727,7 +766,7 @@ int source_code_to_tokens() {
                     String.add_char(lexeme, c);
                     fsm_state = U_SEC_START_S;
                 } else {
-                    return -1;
+                    return LEX_ERROR;
                 }
                 break;
             case U_SEC_START_S:
@@ -740,12 +779,12 @@ int source_code_to_tokens() {
                         count = 1;
                         break;
                     default:
-                        return -1;
+                        return LEX_ERROR;
                 }
                 break;
             case U_SEC_NUM_S:
                 if (count >= 8) {
-                    return -1;
+                    return LEX_ERROR;
                 }
                 switch (c) {
                     case '0' ... '9':
@@ -760,7 +799,7 @@ int source_code_to_tokens() {
                         fsm_state = multiline ? STR_MULT_S : STR_START_S;
                         break;
                     default:
-                        return -1;
+                        return LEX_ERROR;
                 }
                 break;
                 // comments
@@ -809,7 +848,7 @@ int source_code_to_tokens() {
                 if (c == '&') {
                     fsm_state = LOGICAL_AND2_S;
                 } else {
-                    return -1;
+                    return LEX_ERROR;
                 }
                 break;
             case LOGICAL_AND2_S:
@@ -818,14 +857,33 @@ int source_code_to_tokens() {
                 fsm_state = START_S;
                 break;
             case LOGICAL_OR1_S:
-                if (c == '|') {
+                if (c == '|')
                     fsm_state = LOGICAL_OR2_S;
-                } else {
-                    return -1;
-                }
+                else
+                    return LEX_ERROR;
                 break;
             case LOGICAL_OR2_S:
                 type = TOKEN_LOGICAL_OR;
+                add_token(type, attribute, false);
+                fsm_state = START_S;
+                break;
+            case RANGE_START_S:
+                if (c == '.')
+                    fsm_state = RANGE_CLOSED_S;
+                else
+                    return LEX_ERROR;
+                break;
+            case RANGE_CLOSED_S:
+                if (c == '<')
+                    fsm_state = RANGE_HALF_OPEN_S;
+                else {
+                    type = TOKEN_CLOSED_RANGE;
+                    add_token(type, attribute, false);
+                    fsm_state = START_S;
+                }
+                break;
+            case RANGE_HALF_OPEN_S:
+                type = TOKEN_HALF_OPEN_RANGE;
                 add_token(type, attribute, false);
                 fsm_state = START_S;
                 break;
@@ -833,5 +891,5 @@ int source_code_to_tokens() {
         prev_prev = prev;
         prev = c;
     }
-    return 0;
+    return SUCCESS;
 }
