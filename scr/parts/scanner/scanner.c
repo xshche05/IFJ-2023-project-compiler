@@ -385,7 +385,7 @@ int source_code_to_tokens() {
                 if (c == '?') {
                     fsm_state = IS_NIL_2_S;
                 } else {
-                    fprintf(stderr, "Error: Unknown character '%c' (0x%02x). Expected '%c' (0x%02x)", c, c, '?', '?');
+                    fprintf(stderr, "Error: Unknown character '%c' (0x%02x). Expected '%c' (0x%02x)\n", c, c, '?', '?');
                     return LEX_ERROR;
                 }
                 break;
@@ -552,7 +552,7 @@ int source_code_to_tokens() {
                     fsm_state = REAL_NUM_S;
                     String.add_char(lexeme, c);
                 } else {
-                    fprintf(stderr, "Error: Unknown character '%c' (0x%02x). Expected decimal digit", c, c);
+                    fprintf(stderr, "Error: Unknown character '%c' (0x%02x). Expected decimal digit\n", c, c);
                     return LEX_ERROR;
                 }
                 break;
@@ -586,7 +586,7 @@ int source_code_to_tokens() {
                         String.add_char(lexeme, c);
                         break;
                     default:
-                        fprintf(stderr, "Error: Unknown character '%c' (0x%02x). Expected decimal digit or '+' or '-'", c, c);
+                        fprintf(stderr, "Error: Unknown character '%c' (0x%02x). Expected decimal digit or '+' or '-'\n", c, c);
                         return LEX_ERROR;
                 }
                 break;
@@ -595,7 +595,7 @@ int source_code_to_tokens() {
                     fsm_state = REAL_EXP_S;
                     String.add_char(lexeme, c);
                 } else {
-                    fprintf(stderr, "Error: Unknown character '%c' (0x%02x). Expected decimal digit", c, c);
+                    fprintf(stderr, "Error: Unknown character '%c' (0x%02x). Expected decimal digit\n", c, c);
                     return LEX_ERROR;
                 }
                 break;
@@ -627,7 +627,7 @@ int source_code_to_tokens() {
                         String.add_char(lexeme, c);
                         break;
                     default:
-                        fprintf(stderr, "Error: Unknown character '%c' (0x%02x). Expected printable character", c, c);
+                        fprintf(stderr, "Error: Unknown character '%c' (0x%02x). Expected printable character\n", c, c);
                         return LEX_ERROR;
                 }
                 break;
@@ -649,7 +649,7 @@ int source_code_to_tokens() {
                     multiline = true;
                     String.add_char(lexeme, c);
                 } else {
-                    fprintf(stderr, "Error: Unknown character '%c' (0x%02x). Expected newline", c, c);
+                    fprintf(stderr, "Error: Unknown character '%c' (0x%02x). Expected newline\n", c, c);
                     return LEX_ERROR;
                 }
                 break;
@@ -660,7 +660,7 @@ int source_code_to_tokens() {
                     fsm_state = STR_MULT_S;
                     String.add_char(lexeme, c);
                 } else {
-                    fprintf(stderr, "Error: Unknown character '%c' (0x%02x). Expected printable character", c, c);
+                    fprintf(stderr, "Error: Unknown character '%c' (0x%02x). Expected printable character\n", c, c);
                     return LEX_ERROR;
                 }
                 break;
@@ -681,6 +681,7 @@ int source_code_to_tokens() {
                         String.add_char(lexeme, c);
                         break;
                     default:
+                        fprintf(stderr, "Error: Unknown character '%c' (0x%02x). Expected printable character\n", c, c);
                         return LEX_ERROR;
                 }
                 break;
@@ -701,6 +702,7 @@ int source_code_to_tokens() {
                         fsm_state = STR_MULT_S;
                         break;
                     default:
+                        fprintf(stderr, "Error: Unknown character '%c' (0x%02x). Expected printable character\n", c, c);
                         return LEX_ERROR;
                 }
                 break;
@@ -716,6 +718,7 @@ int source_code_to_tokens() {
                         fsm_state = STR_MULT_S;
                         break;
                     default:
+                        fprintf(stderr, "Error: Unknown character '%c' (0x%02x). Expected printable character\n", c, c);
                         return LEX_ERROR;
                 }
                 break;
@@ -731,13 +734,17 @@ int source_code_to_tokens() {
                         fsm_state = STR_MULT_S;
                         break;
                     default:
+                        fprintf(stderr, "Error: Unknown character '%c' (0x%02x). Expected printable character\n", c, c);
                         return LEX_ERROR;
                 }
                 break;
             case STR_2_END_S:
                 type = TOKEN_STRING_LITERAL;
                 attribute.string = String.copy(lexeme);
-                if (verify_multiline_str(attribute.string)) return LEX_ERROR;
+                if (verify_multiline_str(attribute.string)) {
+                    fprintf(stderr, "Error: Invalid multiline string. Before closing quotes too many whitespaces\n");
+                    return LEX_ERROR;
+                }
                 add_token(type, attribute, true);
                 fsm_state = START_S;
                 String.clear(lexeme);
@@ -758,6 +765,7 @@ int source_code_to_tokens() {
                         break;
                     case '(':  // TODO interpolation
                     default:
+                        fprintf(stderr, "Error: Unknown character '%c' (0x%02x). Unknown escape sequence. Expected '\"', 'n', 'r', 't', '\\', 'u'\n", c, c);
                         return LEX_ERROR;
                 }
                 break;
@@ -766,6 +774,7 @@ int source_code_to_tokens() {
                     String.add_char(lexeme, c);
                     fsm_state = U_SEC_START_S;
                 } else {
+                    fprintf(stderr, "Error: Unknown character '%c' (0x%02x). Expected '{'\n", c, c);
                     return LEX_ERROR;
                 }
                 break;
@@ -779,11 +788,13 @@ int source_code_to_tokens() {
                         count = 1;
                         break;
                     default:
+                        fprintf(stderr, "Error: Unknown character '%c' (0x%02x). Expected hexadecimal digit\n", c, c);
                         return LEX_ERROR;
                 }
                 break;
             case U_SEC_NUM_S:
                 if (count >= 8) {
+                    fprintf(stderr, "Too many hex digits in string escape sequence, maximum allowed is 8 digits\n");
                     return LEX_ERROR;
                 }
                 switch (c) {
@@ -799,6 +810,7 @@ int source_code_to_tokens() {
                         fsm_state = multiline ? STR_MULT_S : STR_START_S;
                         break;
                     default:
+                        fprintf(stderr, "Error: Unknown character '%c' (0x%02x). Expected hexadecimal digit or '}'\n", c, c);
                         return LEX_ERROR;
                 }
                 break;
@@ -848,6 +860,7 @@ int source_code_to_tokens() {
                 if (c == '&') {
                     fsm_state = LOGICAL_AND2_S;
                 } else {
+                    fprintf(stderr, "Error: Unknown character '%c' (0x%02x). Expected '&'\n", c, c);
                     return LEX_ERROR;
                 }
                 break;
@@ -857,10 +870,13 @@ int source_code_to_tokens() {
                 fsm_state = START_S;
                 break;
             case LOGICAL_OR1_S:
-                if (c == '|')
+                if (c == '|') {
                     fsm_state = LOGICAL_OR2_S;
-                else
+                }
+                else {
+                    fprintf(stderr, "Error: Unknown character '%c' (0x%02x). Expected '|'\n", c, c);
                     return LEX_ERROR;
+                }
                 break;
             case LOGICAL_OR2_S:
                 type = TOKEN_LOGICAL_OR;
@@ -868,10 +884,13 @@ int source_code_to_tokens() {
                 fsm_state = START_S;
                 break;
             case RANGE_START_S:
-                if (c == '.')
+                if (c == '.') {
                     fsm_state = RANGE_CLOSED_S;
-                else
+                }
+                else {
+                    fprintf(stderr, "Error: Unknown character '%c' (0x%02x). Expected '.'\n", c, c);
                     return LEX_ERROR;
+                }
                 break;
             case RANGE_CLOSED_S:
                 if (c == '<')
