@@ -11,3 +11,57 @@ add string conversion for asm
 READY:
 
 fix nillable
+
+
+
+two_way_list list;
+    list_init(&list);
+    string_t *copy = String.copy(lexeme);
+    char *str = copy->str;
+    char *token = strtok(str, "\n");
+    while (token != NULL) {
+        insert_last(&list, token);
+        token = strtok(NULL, "\n");
+    }
+    char *first = list.first->data;
+    list.first = list.first->next;
+    char *second = list.first->data;
+    list.first = list.first->next;
+    char *last = list.last->data;
+    list.last = list.last->prev;
+    list.last->next = NULL;
+    // go through lines and get minimum number of spaces in the beginning of each line, tab is one space
+    int min_spaces = INT_MAX, spaces;
+    element *tmp = list.first;
+    while (tmp != NULL) {
+        spaces = 0;
+        while (((char *) tmp->data)[spaces] == ' ' || ((char *) tmp->data)[spaces] == '\t') {
+            spaces++;
+        }
+        if (spaces < min_spaces) min_spaces = spaces;
+        tmp = tmp->next;
+    }
+    // count number of spaces in the beginning of the last line
+    spaces = 0;
+    while (last[spaces] == ' ' || last[spaces] == '\t') {
+        spaces++;
+    }
+    if (spaces > min_spaces) {
+        return -1;
+    }
+    string_t *new_lexeme = String.ctor();
+    if (new_lexeme == NULL) {
+        return -1;
+    }
+    String.add_cstr(new_lexeme, first);
+    String.add_char(new_lexeme, '\n');
+    String.add_cstr(new_lexeme, second);
+    String.add_char(new_lexeme, '\n');
+    tmp = list.first;
+    while (tmp != NULL) {
+        String.add_cstr(new_lexeme, (char *) tmp->data + spaces);
+        String.add_char(new_lexeme, '\n');
+        tmp = tmp->next;
+    }
+    String.add_cstr(new_lexeme, "\"\"\"");
+    String.assign(lexeme, new_lexeme);

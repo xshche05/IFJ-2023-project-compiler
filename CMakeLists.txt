@@ -1,6 +1,6 @@
 # https://github.com/vsaltxx/IFJ_PRJ
 
-cmake_minimum_required(VERSION 3.26)
+cmake_minimum_required(VERSION 3.10)
 project(IFJ_PRJ C)
 
 set(CMAKE_C_STANDARD 99)
@@ -17,7 +17,9 @@ add_executable(IFJ_PRJ
         scr/parts/parser/parser.c
         scr/parts/scanner/scanner.c
         scr/utils/lists.c
-        scr/utils/lists.h)
+        scr/utils/lists.h
+        scr/parts/token/token.c
+        scr/parts/token/token.h)
 
 add_executable(tests
         tests/test.c
@@ -26,4 +28,6 @@ add_executable(tests
         scr/utils/string_util.c
         scr/parts/parser/parser.c
         scr/utils/lists.c
-        scr/parts/scanner/scanner.c)
+        scr/parts/scanner/scanner.c
+        scr/parts/token/token.c
+        scr/parts/token/token.h)
