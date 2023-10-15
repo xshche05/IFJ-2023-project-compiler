@@ -45,7 +45,7 @@ typedef enum {
     STR_START_S,      // "
     STR_1_END_S,      // ""
     STR_2_START_S,    // """  _S, }
-    STR_MULT_HALF_S,  //     """\n
+//    STR_MULT_HALF_S,  //     """\n
     STR_MULT_S,       // """\n
     STR_LF_S,         // """\n\n
     STR_2_E_S,        // """\n\n"

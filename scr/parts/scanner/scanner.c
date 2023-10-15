@@ -584,18 +584,6 @@ int source_code_to_tokens() {
                     return LEX_ERROR;
                 }
                 break;
-                // TODO
-//            case STR_MULT_HALF_S:
-//                if ((9 <= c && c <= 13) || c == 32 || c == 0) {
-//                    fsm_state = STR_MULT_HALF_S;
-//                } else if (c > 31) {
-//                    fsm_state = STR_MULT_S;
-//                    String.add_char(lexeme, c);
-//                } else {
-//                    fprintf(stderr, "Error: Unknown character '%c' (0x%02x). Expected printable character\n", c, c);
-//                    return LEX_ERROR;
-//                }
-//                break;
             case STR_MULT_S:
                 switch (c) {
                     case '\n':
