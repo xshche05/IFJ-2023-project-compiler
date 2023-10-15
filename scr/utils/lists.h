@@ -5,23 +5,20 @@
 #ifndef IFJ_PRJ_LISTS_H
 #define IFJ_PRJ_LISTS_H
 
-typedef struct element {
-    void *data;
-    struct element* next;
-    struct element* prev;
-} element;
-
 typedef struct {
-    element* first;
-    element* last;
-} two_way_list;
+    void** array;
+    int size;
+    int allocated;
+} dynamic_array_t;
 
-void list_init(two_way_list* list);
+extern const struct dynamic_array_interface DynamicArray;
 
-void insert_last(two_way_list* list, void* data);
-
-void list_dtor(two_way_list* list);
-
-
+struct dynamic_array_interface {
+    dynamic_array_t *(*ctor)(void);
+    void (*dtor)(dynamic_array_t *array);
+    int (*add)(dynamic_array_t *array, void *item);
+    int (*del)(dynamic_array_t *array, int index);
+    void *(*get)(dynamic_array_t *array, int index);
+};
 
 #endif //IFJ_PRJ_LISTS_H

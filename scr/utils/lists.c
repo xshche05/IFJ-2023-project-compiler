@@ -5,32 +5,72 @@
 #include "lists.h"
 #include <stdlib.h>
 
-void list_init(two_way_list* list){
-    list->first = NULL;
-    list->last = NULL;
+dynamic_array_t *dynamic_array_ctor() {
+    dynamic_array_t *array = malloc(sizeof(dynamic_array_t));
+    array->array = malloc(sizeof(void *) * 10);
+    array->size = 0;
+    array->allocated = 10;
+    return array;
 }
 
-void insert_last(two_way_list* list, void* data){
-    element* new_element = malloc(sizeof(element));
-    new_element->data = data;
-    new_element->next = NULL;
-    new_element->prev = list->last;
-    if(list->last != NULL){
-        list->last->next = new_element;
+void dynamic_array_dtor(dynamic_array_t *array) {
+    if (array == NULL) {
+        return;
     }
-    list->last = new_element;
-    if(list->first == NULL){
-        list->first = new_element;
+    for (int i = 0; i < array->size; i++) {
+        free(array->array[i]);
     }
+    free(array->array);
+    free(array);
+    array = NULL;
 }
 
-void list_dtor(two_way_list* list){
-    element* tmp = list->first;
-    while(tmp != NULL){
-        element* tmp2 = tmp->next;
-        free(tmp);
-        tmp = tmp2;
+int dynamic_array_add(dynamic_array_t *array, void *item) {
+    if (array == NULL) {
+        return -1;
     }
-    list->first = NULL;
-    list->last = NULL;
+    if (array->size == array->allocated) {
+        void *tmp = realloc(array->array, sizeof(void *) * array->allocated * 2);
+        if (tmp == NULL) {
+            return -1;
+        }
+        array->array = tmp;
+        array->allocated *= 2;
+    }
+    array->array[array->size] = item;
+    array->size++;
+    return 0;
 }
+
+int dynamic_array_del(dynamic_array_t *array, int index) {
+    if (array == NULL) {
+        return -1;
+    }
+    if (index < 0 || index >= array->size) {
+        return -1;
+    }
+    for (int i = index; i < array->size - 1; i++) {
+        array->array[i] = array->array[i + 1];
+    }
+    array->size--;
+    return 0;
+}
+
+void* dynamic_array_get(dynamic_array_t *array, int index) {
+    if (array == NULL) {
+        return NULL;
+    }
+    if (index < 0 || index >= array->size) {
+        return NULL;
+    }
+    return array->array[index];
+}
+
+const struct dynamic_array_interface DynamicArray = {
+        .ctor = dynamic_array_ctor,
+        .dtor = dynamic_array_dtor,
+        .add = dynamic_array_add,
+        .del = dynamic_array_del,
+        .get = dynamic_array_get
+};
+

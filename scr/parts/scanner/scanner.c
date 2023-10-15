@@ -4,63 +4,11 @@
 #include <ctype.h>
 #include <string.h>
 #include "lists.h"
+#include "token/token.h"
 
 #define SUCCESS 0
 #define LEX_INTERNAL_ERROR 1
 #define LEX_ERROR 2
-
-char *tokens_as_str[50] = {
-        "TOKEN_IDENTIFIER",
-        "TOKEN_DOUBLE_TYPE",
-        "TOKEN_ELSE",
-        "TOKEN_FUNC",
-        "TOKEN_IF",
-        "TOKEN_INT_TYPE",
-        "TOKEN_LET",
-        "TOKEN_RETURN",
-        "TOKEN_STRING_TYPE",
-        "TOKEN_VAR",
-        "TOKEN_WHILE",
-        "TOKEN_BOOL_TYPE",
-        "TOKEN_FOR",
-        "TOKEN_IN",
-        "TOKEN_BREAK",
-        "TOKEN_CONTINUE",
-        "TOKEN_UNDERSCORE",
-        "TOKEN_ASSIGNMENT",
-        "TOKEN_ADDITION",
-        "TOKEN_SUBTRACTION",
-        "TOKEN_MULTIPLICATION",
-        "TOKEN_DIVISION",
-        "TOKEN_LESS_THAN",
-        "TOKEN_LESS_THAN_OR_EQUAL_TO",
-        "TOKEN_GREATER_THAN",
-        "TOKEN_GREATER_THAN_OR_EQUAL_TO",
-        "TOKEN_EQUAL_TO",
-        "TOKEN_NOT_EQUAL_TO",
-//        "TOKEN_NILABLE",
-        "TOKEN_IS_NIL",
-        "TOKEN_UNWRAP_NILABLE",
-        "TOKEN_LOGICAL_AND",
-        "TOKEN_LOGICAL_OR",
-        "TOKEN_LOGICAL_NOT",
-        "TOKEN_CLOSED_RANGE",
-        "TOKEN_HALF_OPEN_RANGE",
-        "TOKEN_INTEGER_LITERAL",
-        "TOKEN_REAL_LITERAL",
-        "TOKEN_STRING_LITERAL",
-        "TOKEN_NIL_LITERAL",
-        "TOKEN_TRUE_LITERAL",
-        "TOKEN_FALSE_LITERAL",
-        "TOKEN_LEFT_BRACKET",
-        "TOKEN_RIGHT_BRACKET",
-        "TOKEN_LEFT_BRACE",
-        "TOKEN_RIGHT_BRACE",
-        "TOKEN_COMMA",
-        "TOKEN_COLON",
-        "TOKEN_SEMICOLON",
-        "TOKEN_ARROW"
-};
 
 char control_char = ' ';
 
@@ -89,169 +37,148 @@ static int is_keyword(string_t *lexeme) {
     return -1;
 }
 
-static int verify_multiline_str(string_t *lexeme) {
-    // split multiline lexeme by '\n' to lines
-    two_way_list list;
-    list_init(&list);
-    string_t *copy = String.copy(lexeme);
-    char *str = copy->str;
-    char *token = strtok(str, "\n");
-    while (token != NULL) {
-        insert_last(&list, token);
-        token = strtok(NULL, "\n");
-    }
-    char *first = list.first->data;
-    list.first = list.first->next;
-    char *second = list.first->data;
-    list.first = list.first->next;
-    char *last = list.last->data;
-    list.last = list.last->prev;
-    list.last->next = NULL;
-    // go through lines and get minimum number of spaces in the beginning of each line, tab is one space
-    int min_spaces = INT_MAX, spaces;
-    element *tmp = list.first;
-    while (tmp != NULL) {
-        spaces = 0;
-        while (((char *) tmp->data)[spaces] == ' ' || ((char *) tmp->data)[spaces] == '\t') {
-            spaces++;
+static string_t *verify_str(string_t *lexeme, bool multiline) {
+    // if multiline string, split by '\n'
+    string_t *tmp_lex = String.copy(lexeme);
+    string_t *new_lex = String.ctor();
+    if (multiline) {
+        dynamic_array_t *lines = DynamicArray.ctor();
+        char *line = strtok(tmp_lex->str, "\n");
+        while (line != NULL) {
+            char *tmp = malloc(sizeof(char) * (strlen(line) + 1));
+            strcpy(tmp, line);
+            DynamicArray.add(lines, tmp);
+            line = strtok(NULL, "\n");
         }
-        if (spaces < min_spaces) min_spaces = spaces;
-        tmp = tmp->next;
+        int spaces_before_closing_quotes = 0;
+        while (isspace(*((char *) DynamicArray.get(lines, lines->size - 1) + spaces_before_closing_quotes))) {
+            spaces_before_closing_quotes++;
+        }
+        int number_of_spaces_in_first_line = 0;
+        while (isspace(*((char *) DynamicArray.get(lines, 1) + number_of_spaces_in_first_line))) {
+            number_of_spaces_in_first_line++;
+        }
+        if (number_of_spaces_in_first_line < spaces_before_closing_quotes) {
+            fprintf(stderr, "Error: Invalid multiline string. Before closing quotes too many whitespaces\n");
+            String.dtor(tmp_lex);
+            String.dtor(new_lex);
+            return NULL;
+        } else if (number_of_spaces_in_first_line)
+        {
+            char *new_first = (char*) DynamicArray.get(lines, 1) + number_of_spaces_in_first_line;
+            String.add_cstr(new_lex, new_first);
+        } else {
+            String.add_cstr(new_lex, DynamicArray.get(lines, 1));
+        }
+        if (lines->size > 3) String.add_char(new_lex, '\n');
+        if (spaces_before_closing_quotes > 0) {
+            for (int i = 2; i < lines->size - 1; i++) {
+                int spaces_to_remove = spaces_before_closing_quotes;
+                char *cur_line = DynamicArray.get(lines, i) + spaces_to_remove;
+                if (!isspace(*(cur_line-1))) {
+                    fprintf(stderr, "Error: Invalid multiline string. Before closing quotes too many whitespaces\n");
+                    String.dtor(tmp_lex);
+                    String.dtor(new_lex);
+                    return NULL;
+                }
+                String.add_cstr(new_lex, cur_line);
+                if (i != lines->size - 2) String.add_char(new_lex, '\n');
+            }
+        }
+        else {
+            for (int i = 2; i < lines->size-1; i++) {
+                String.add_cstr(new_lex, DynamicArray.get(lines, i));
+                if (i != lines->size - 2) String.add_char(new_lex, '\n');
+            }
+        }
+        DynamicArray.dtor(lines);
     }
-    // count number of spaces in the beginning of the last line
-    spaces = 0;
-    while (last[spaces] == ' ' || last[spaces] == '\t') {
-        spaces++;
+    else {
+        for (int i = 1; i < tmp_lex->length - 1; i++) {
+            String.add_char(new_lex, tmp_lex->str[i]);
+        }
     }
-    if (spaces > min_spaces) {
-        return -1;
+    String.clear(tmp_lex);
+    // replace all escape sequences in new_lex to form "\ddd", where ddd is decimal ascii code
+    char *tmp = new_lex->str;
+    for (int i = 0; i < new_lex->length; i++) {
+        if (tmp[i] == '\\') {
+            if (tmp[i+1] != 'u') {
+                char *c;
+                if (i + 1 >= new_lex->length) {
+                    fprintf(stderr, "Error: Invalid string literal. Backslash at the end of string\n");
+                    String.dtor(tmp_lex);
+                    String.dtor(new_lex);
+                    return NULL;
+                }
+                switch (tmp[i + 1]) {
+                    case 'n':
+                        c = "\\010";
+                        break;
+                    case 't':
+                        c = "\\009";
+                        break;
+                    case 'r':
+                        c = "\\013";
+                        break;
+                    case '\\':
+                        c = "\\092";
+                        break;
+                    case '"':
+                        c = "\\034";
+                        break;
+                    default:
+                        fprintf(stderr, "Error: Invalid string literal. Unknown escape sequence '\\%c'\n", tmp[i + 1]);
+                        String.dtor(tmp_lex);
+                        String.dtor(new_lex);
+                        return NULL;
+                }
+                String.add_cstr(tmp_lex, c);
+                i++;
+            }
+            else {
+                i+=3;
+                char num[9];
+                int number;
+                // while dont get '}' uppend chars to num
+                int j = 0;
+                while (tmp[i] != '}') {
+                    if (j > 7) {
+                        fprintf(stderr, "Error: Invalid string literal. Unicode escape sequence too long\n");
+                        String.dtor(tmp_lex);
+                        String.dtor(new_lex);
+                        return NULL;
+                    }
+                    num[j] = tmp[i];
+                    i++;
+                    j++;
+                }
+                num[j] = '\0';
+                number = strtol(num, NULL, 16);
+                if (number < 256) {
+                    char c[20];
+                    sprintf(c, "\\%03d", number);
+                    String.add_cstr(tmp_lex, c);
+                }
+            }
+        }
+        else if ((0 <= tmp[i] && tmp[i] <= 32) || tmp[i] == 35 || tmp[i] == 92) {
+            char c[20];
+            sprintf(c, "\\%03d", tmp[i]);
+            String.add_cstr(tmp_lex, c);
+        }
+        else {
+            String.add_char(tmp_lex, tmp[i]);
+        }
     }
-    string_t *new_lexeme = String.ctor();
-    if (new_lexeme == NULL) {
-        return -1;
-    }
-    String.add_cstr(new_lexeme, first);
-    String.add_char(new_lexeme, '\n');
-    String.add_cstr(new_lexeme, second);
-    String.add_char(new_lexeme, '\n');
-    tmp = list.first;
-    while (tmp != NULL) {
-        String.add_cstr(new_lexeme, (char *) tmp->data + spaces);
-        String.add_char(new_lexeme, '\n');
-        tmp = tmp->next;
-    }
-    String.add_cstr(new_lexeme, "\"\"\"");
-    String.assign(lexeme, new_lexeme);
-    return 0;
+    String.dtor(new_lex);
+    return tmp_lex;
 }
 
 static int add_token(token_type_t type, token_attribute attribute, bool has_attribute) {
-    token_t *token = token_ctor(type, attribute, has_attribute);
+    token_t *token = Token.ctor(type, attribute, has_attribute);
     if (!isspace(control_char)) File.back_step();
-    return token_array_add(token);
-}
-
-token_t *token_ctor(token_type_t type, token_attribute attribute, bool has_attribute) {
-    token_t *token = malloc(sizeof(token_t));
-    if (token == NULL) {
-        fprintf(stderr, "Error: malloc failed.\n");
-        return NULL;
-    }
-    token->type = type;
-    if (has_attribute) token->attribute = attribute;
-    return token;
-}
-
-void token_dtor(token_t *token) {
-    if (token == NULL) {
-        return;
-    }
-    if (token->type == TOKEN_IDENTIFIER) {
-        String.dtor(token->attribute.identifier);
-    }
-    free(token);
-    token = NULL;
-}
-
-int token_array_ctor() {
-    tokens = malloc(sizeof(token_array_t));
-    if (tokens == NULL) {
-        fprintf(stderr, "Error: malloc failed.\n");
-        return LEX_INTERNAL_ERROR;
-    }
-    tokens->array = malloc(sizeof(token_t *) * 16);
-    if (tokens->array == NULL) {
-        free(tokens);
-        fprintf(stderr, "Error: malloc failed.\n");
-        return LEX_INTERNAL_ERROR;
-    }
-    tokens->allocated = 16;
-    tokens->length = 0;
-    return SUCCESS;
-}
-
-void token_array_dtor() {
-    if (tokens == NULL) {
-        return;
-    }
-    for (int i = 0; i < tokens->length; i++) {
-        token_dtor(tokens->array[i]);
-    }
-    free(tokens->array);
-    free(tokens);
-    tokens = NULL;
-}
-
-int token_array_add(token_t *token) {
-    if (tokens == NULL) {
-        fprintf(stderr, "Error: token array not initialized.\n");
-        return LEX_INTERNAL_ERROR;
-    }
-    if (token == NULL) {
-        fprintf(stderr, "Error: token is NULL.\n");
-        return LEX_INTERNAL_ERROR;
-    }
-    if (tokens->length >= tokens->allocated) {
-        void *tmp = realloc(tokens->array, sizeof(token_t *) * tokens->allocated * 2);
-        if (tmp == NULL) {
-            fprintf(stderr, "Error: realloc failed.\n");
-            return LEX_INTERNAL_ERROR;
-        }
-        tokens->array = tmp;
-        tokens->allocated *= 2;
-    }
-    tokens->array[tokens->length] = token;
-    tokens->length++;
-    return SUCCESS;
-}
-
-void token_print(token_t *token) {
-    if (token == NULL) {
-        return;
-    }
-    printf("Token: %32s", tokens_as_str[token->type]);
-    if (token->type == TOKEN_IDENTIFIER) {
-        printf(",   ID:   %s", token->attribute.identifier->str);
-    } else if (token->type == TOKEN_INTEGER_LITERAL) {
-        printf(",   INT:  %d", token->attribute.integer);
-    } else if (token->type == TOKEN_REAL_LITERAL) {
-        printf(",   REAL: %a", token->attribute.real);
-    } else if (token->type == TOKEN_STRING_LITERAL) {
-        printf(",   STR:  %s", token->attribute.string->str);
-    }
-    switch (token->type)
-    {
-        case TOKEN_BOOL_TYPE:
-        case TOKEN_DOUBLE_TYPE:
-        case TOKEN_INT_TYPE:
-        case TOKEN_STRING_TYPE:
-            if (token->attribute.nilable) printf(",   NILABLE");
-            else printf(",   NON-NILABLE");
-            break;
-        default:
-            break;
-    }
-    printf("\n");
+    return TokenArray.add(token);
 }
 
 int source_code_to_tokens() {
@@ -637,7 +564,11 @@ int source_code_to_tokens() {
                     String.add_char(lexeme, c);
                 } else {
                     type = TOKEN_STRING_LITERAL;
-                    attribute.string = String.copy(lexeme);
+                    attribute.string = verify_str(lexeme, false);
+                    if (attribute.string == NULL) {
+                        fprintf(stderr, "Error: Invalid string literal\n");
+                        return LEX_ERROR;
+                    }
                     add_token(type, attribute, true);
                     fsm_state = START_S;
                     String.clear(lexeme);
@@ -645,7 +576,7 @@ int source_code_to_tokens() {
                 break;
             case STR_2_START_S:
                 if (c == '\n') {
-                    fsm_state = STR_MULT_HALF_S;
+                    fsm_state = STR_MULT_S;
                     multiline = true;
                     String.add_char(lexeme, c);
                 } else {
@@ -653,17 +584,18 @@ int source_code_to_tokens() {
                     return LEX_ERROR;
                 }
                 break;
-            case STR_MULT_HALF_S:
-                if ((9 <= c && c <= 13) || c == 32 || c == 0) {
-                    fsm_state = STR_MULT_HALF_S;
-                } else if (c > 31) {
-                    fsm_state = STR_MULT_S;
-                    String.add_char(lexeme, c);
-                } else {
-                    fprintf(stderr, "Error: Unknown character '%c' (0x%02x). Expected printable character\n", c, c);
-                    return LEX_ERROR;
-                }
-                break;
+                // TODO
+//            case STR_MULT_HALF_S:
+//                if ((9 <= c && c <= 13) || c == 32 || c == 0) {
+//                    fsm_state = STR_MULT_HALF_S;
+//                } else if (c > 31) {
+//                    fsm_state = STR_MULT_S;
+//                    String.add_char(lexeme, c);
+//                } else {
+//                    fprintf(stderr, "Error: Unknown character '%c' (0x%02x). Expected printable character\n", c, c);
+//                    return LEX_ERROR;
+//                }
+//                break;
             case STR_MULT_S:
                 switch (c) {
                     case '\n':
@@ -740,9 +672,9 @@ int source_code_to_tokens() {
                 break;
             case STR_2_END_S:
                 type = TOKEN_STRING_LITERAL;
-                attribute.string = String.copy(lexeme);
-                if (verify_multiline_str(attribute.string)) {
-                    fprintf(stderr, "Error: Invalid multiline string. Before closing quotes too many whitespaces\n");
+                attribute.string = verify_str(lexeme, true);
+                if (attribute.string == NULL) {
+                    fprintf(stderr, "Error: Invalid string literal\n");
                     return LEX_ERROR;
                 }
                 add_token(type, attribute, true);
@@ -910,5 +842,6 @@ int source_code_to_tokens() {
         prev_prev = prev;
         prev = c;
     }
+    String.dtor(lexeme);
     return SUCCESS;
 }
