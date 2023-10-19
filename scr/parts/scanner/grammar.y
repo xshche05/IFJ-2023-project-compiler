@@ -1,4 +1,4 @@
-%token id type name underscore
+%token id type name underscore expr
 %% /* LL(1) */
 PROG : CODE 
 | /*eps*/ ;
@@ -8,22 +8,22 @@ CODE : VAR_DECL '\n' CODE
 | FUNC_DECL '\n' CODE
 | WHILE_LOOP '\n' CODE
 | BRANCH '\n' CODE
-| ASSINGMENT '\n' CODE
+| ASSIGNMENT'\n' CODE
 | FUNC_CALL '\n' CODE 
 | RETURN;
 
 RETURN : 'return' RET_EXPR;
 
-RET_EXPR : EXPR
+RET_EXPR : expr
 | /*eps*/ ;
 
-VAR_DECL : 'var' id ':' type '=' EXPR
+VAR_DECL : 'var' id ':' type '=' expr
 | 'var' id ':' type
-| 'var' id '=' EXPR ;
+| 'var' id '=' expr ;
 
-LET_DECL : 'let' id ':' type '=' EXPR
+LET_DECL : 'let' id ':' type '=' expr
 | 'let' id ':' type
-| 'let' id '=' EXPR ;
+| 'let' id '=' expr ;
 
 FUNC_DECL : 'func' id '(' PARAM_LIST ')' '->' type '{' CODE '}' '\n'
 |'func' id '(' PARAM_LIST ')' '{' CODE '}' '\n';
@@ -39,16 +39,24 @@ NEXT_PARAM : ',' PARAM NEXT_PARAM
 
 
 BRANCH : 'if' BR_EXPR '{' CODE '}' 'else' '{' CODE '}' ;
-BR_EXPR : EXPR
+BR_EXPR : expr
 | 'let' id ;
 
-WHILE_LOOP : 'while' EXPR '{' CODE '}' ;
+WHILE_LOOP : 'while' expr '{' CODE '}' ;
 
-ASASSINGMENT : id '=' EXPR;
-
-FUNC_CALL : id '(' CALL_PARAM_LIST ')'
+FUNC_CALL : id '(' CALL_PARAM_LIST ')' ;
 
 CALL_PARAM_LIST : CALL_PARAM NEXT_CALL_PARAM
 | /*eps*/ ;
 
-CALL_PARAM : 
+CALL_PARAM : NAMED_CALL_PARAM
+| POS_CALL_PARAM ;
+
+NAMED_CALL_PARAM : name ':' expr ;
+
+POS_CALL_PARAM : expr ;
+
+NEXT_CALL_PARAM : ',' CALL_PARAM NEXT_CALL_PARAM
+| /*eps*/ ;
+
+ASSIGNMENT : id '=' expr ;
