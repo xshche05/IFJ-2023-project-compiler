@@ -7,6 +7,7 @@ int main(int argc, char **argv) {
     char* file_name = "../test.swift";
     File.ctor();
     File.from_file(file_name);
+    File.print();
     TokenArray.ctor();
 
     int code = source_code_to_tokens();
@@ -15,7 +16,7 @@ int main(int argc, char **argv) {
         printf("Line: %d\n", File.line()+1);
         printf("Column: %d\n", File.column()+1);
         File.back_step();
-        printf("Char: %d\n", File.getc());
+        printf("Char: '%c'\n", File.getc());
         printf("Tokens:\nTOTAL: %d\n", TokenArray.total());
     }
     else {
