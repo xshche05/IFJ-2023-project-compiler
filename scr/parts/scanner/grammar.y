@@ -1,62 +1,66 @@
 %token id type name underscore expr
 %% /* LL(1) */
-PROG : CODE 
+PROG : CODE
 | /*eps*/ ;
 
 CODE : VAR_DECL '\n' CODE
-| LET_DECL '\n' CODE
-| FUNC_DECL '\n' CODE
-| WHILE_LOOP '\n' CODE
-| BRANCH '\n' CODE
-| ASSIGNMENT'\n' CODE
-| FUNC_CALL '\n' CODE 
-| RETURN;
+     | LET_DECL '\n' CODE
+     | FUNC_DECL '\n' CODE
+     | WHILE_LOOP '\n' CODE
+     | BRANCH '\n' CODE
+     | ASSIGNMENT'\n' CODE
+     | VOID_FUNC_CALL '\n' CODE
+     | RETURN '\n';
 
 RETURN : 'return' RET_EXPR;
 
 RET_EXPR : expr
-| /*eps*/ ;
+         | /*eps*/ ;
 
-VAR_DECL : 'var' id ':' type '=' expr
-| 'var' id ':' type
-| 'var' id '=' expr ;
+VAR_DECL : 'var' id VAR_LET_TYPE VAR_LET_EXP ;
 
-LET_DECL : 'let' id ':' type '=' expr
-| 'let' id ':' type
-| 'let' id '=' expr ;
+VAR_LET_TYPE : ':' type
+             | /*eps*/ ;
 
-FUNC_DECL : 'func' id '(' PARAM_LIST ')' '->' type '{' CODE '}' '\n'
-|'func' id '(' PARAM_LIST ')' '{' CODE '}' '\n';
+VAR_LET_EXP : '=' expr
+            | /*eps*/ ;
+
+LET_DECL : 'let' id VAR_LET_TYPE VAR_LET_EXP ;
+
+FUNC_DECL : 'func' id '(' PARAM_LIST ')' FUNC_RET_TYPE '{' CODE '}' '\n' ;
+
+FUNC_RET_TYPE : '->' type
+              | /*eps*/ ;
 
 PARAM_LIST : PARAM NEXT_PARAM
-| /*eps*/ ;
+           | /*eps*/ ;
 
 PARAM : PARAM_NAME id ':' type ;
 PARAM_NAME : id
-| underscore ;
+           | underscore ;
 NEXT_PARAM : ',' PARAM NEXT_PARAM
-| /*eps*/ ;
+           | /*eps*/ ;
 
 
 BRANCH : 'if' BR_EXPR '{' CODE '}' 'else' '{' CODE '}' ;
 BR_EXPR : expr
-| 'let' id ;
+        | 'let' id ;
 
 WHILE_LOOP : 'while' expr '{' CODE '}' ;
 
-FUNC_CALL : id '(' CALL_PARAM_LIST ')' ;
+VOID_FUNC_CALL : id '(' CALL_PARAM_LIST ')' ;
 
 CALL_PARAM_LIST : CALL_PARAM NEXT_CALL_PARAM
-| /*eps*/ ;
+                | /*eps*/ ;
 
 CALL_PARAM : NAMED_CALL_PARAM
-| POS_CALL_PARAM ;
+           | POS_CALL_PARAM ;
 
 NAMED_CALL_PARAM : name ':' expr ;
 
 POS_CALL_PARAM : expr ;
 
 NEXT_CALL_PARAM : ',' CALL_PARAM NEXT_CALL_PARAM
-| /*eps*/ ;
+                | /*eps*/ ;
 
 ASSIGNMENT : id '=' expr ;
