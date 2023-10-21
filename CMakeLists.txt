@@ -17,7 +17,11 @@ add_executable(IFJ_PRJ
         scr/parts/parser/parser.c
         scr/parts/scanner/scanner.c
         scr/utils/lists.c
-        scr/parts/token/token.c)
+        scr/parts/token/token.c
+        scr/parts/parser/expr_parser.c
+        scr/parts/parser/expr_parser.h
+        scr/utils/stack.c
+        scr/utils/stack.h)
 
 add_executable(tests
         tests/test.c

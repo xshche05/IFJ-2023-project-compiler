@@ -63,6 +63,8 @@ typedef enum {
     TOKEN_COLON,
     TOKEN_SEMICOLON,
     TOKEN_ARROW,
+    TOKEN_NEWLINE,
+    TOKEN_EOF
 } token_type_t;
 
 typedef union {

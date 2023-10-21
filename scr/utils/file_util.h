@@ -52,7 +52,7 @@ struct file_interface {
     int (*column)(void);
     char (*getc)(void);
     void (*back_step)(void);
-    void (*print_line)(int line);
+    char* (*print_line)(void);
     void (*print)(void);
 };
 

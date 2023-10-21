@@ -143,6 +143,16 @@ static void file_print(void) {
     }
 }
 
+static char* print_current_line(void) {
+    if (file == NULL) {
+        return "NONE";
+    }
+    if (file->current_line >= file->line_count) {
+        return "NONE";
+    }
+    return file->lines[file->current_line]->str;
+}
+
 const struct file_interface File = {
         .ctor = file_init,
         .dtor = file_dtor,
@@ -153,5 +163,6 @@ const struct file_interface File = {
         .back_step = file_back_step,
         .line = file_line,
         .column = file_column,
-        .print = file_print
+        .print = file_print,
+        .print_line = print_current_line
 };

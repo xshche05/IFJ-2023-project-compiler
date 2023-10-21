@@ -57,9 +57,12 @@ typedef enum {
     U_SEC_NUM_S,      // \u{0-9
     DIV_S,            // /
     COM_SINGL_S,      // //
-    COM_MULT_S,       // /** _S,
+    COM_MULT_START_S,       // /** _S,
+    COM_MULT_NEW_S,         // /** */
+    COM_MULT_S,     // /** */
     COM_HALF_END_S,   // /* _S, **
-    COM_END_S       // /* , */
+    COM_MULT_END_S,
+    COM_END_SINGL_S       // /* , */
 } fsm_state_t;
 
 int source_code_to_tokens();

@@ -5,7 +5,7 @@
 #include "token.h"
 #include <stdlib.h>
 
-char *tokens_as_str[50] = {
+char *tokens_as_str[51] = {
         "TOKEN_IDENTIFIER",
         "TOKEN_DOUBLE_TYPE",
         "TOKEN_ELSE",
@@ -55,7 +55,9 @@ char *tokens_as_str[50] = {
         "TOKEN_COMMA",
         "TOKEN_COLON",
         "TOKEN_SEMICOLON",
-        "TOKEN_ARROW"
+        "TOKEN_ARROW",
+        "TOKEN_NEWLINE",
+        "TOKEN_EOF"
 };
 
 static token_array_t *tokens;
@@ -220,11 +222,11 @@ static token_t *token_array_current() {
 
 static token_t *token_array_next() {
     if (tokens == NULL) {
-        fprintf(stderr, "Error: token array not initialized.\n");
+        //fprintf(stderr, "Error: token array not initialized.\n");
         return NULL;
     }
     if (tokens->current >= tokens->length) {
-        fprintf(stderr, "Error: token array out of bounds.\n");
+        //fprintf(stderr, "Error: token array out of bounds.\n");
         return NULL;
     }
     tokens->current++;

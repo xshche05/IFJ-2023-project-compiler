@@ -1,16 +1,18 @@
 #include "macros.h"
 #include "utils/utils.h"
 #include "parts/parts.h"
+#include "parser/expr_parser.h"
 
 
 int main(int argc, char **argv) {
     char* file_name = "../test.swift";
     File.ctor();
     File.from_file(file_name);
-    File.print();
+    //File.print();
     TokenArray.ctor();
 
     int code = source_code_to_tokens();
+    parse_expr();
     if (code != 0) {
         fprintf(stderr, "Error: Failed to convert source code to tokens.\n");
         printf("Line: %d\n", File.line()+1);

@@ -7,9 +7,12 @@ CODE : VAR_DECL '\n' CODE
 | LET_DECL '\n' CODE
 | FUNC_DECL '\n' CODE
 | WHILE_LOOP '\n' CODE
+| FOR_LOOP '\n' CODE
 | BRANCH '\n' CODE
 | ID_CALL_OR_ASSING '\n' CODE
-| RETURN '\n';
+| RETURN '\n'
+| 'break'
+| 'continue' ;
 
 RETURN : 'return' RET_EXPR;
 
@@ -41,11 +44,21 @@ NEXT_PARAM : ',' PARAM NEXT_PARAM
 | /*eps*/ ;
 
 
-BRANCH : 'if' BR_EXPR '{' CODE '}' 'else' '{' CODE '}' ;
+BRANCH : 'if' BR_EXPR '{' CODE '}' ELSE ;
 BR_EXPR : expr
 | 'let' id ;
+ELSE : 'else' ELSE_IF
+| /*eps*/ ;
+ELSE_IF : 'if' BR_EXPR '{' CODE '}' ELSE_IF
+| '{' CODE '}' ;
 
 WHILE_LOOP : 'while' expr '{' CODE '}' ;
+
+FOR_LOOP : 'for' FOR_ID 'in' expr RANGE '{' CODE '}' ;
+FOR_ID : id
+| underscore ;
+RANGE : '..' expr
+| '..<' expr ;
 
 CALL_PARAM_LIST : CALL_PARAM NEXT_CALL_PARAM
 | /*eps*/ ;
