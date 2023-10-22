@@ -1,6 +1,6 @@
 
 (1)	    PROG → CODE
-(2)	    PROG → ε
+(2)	    PROG → eof
 (3)	    CODE → VAR_DECL '\n' CODE
 (4)	    CODE → LET_DECL '\n' CODE
 (5)	    CODE → FUNC_DECL '\n' CODE

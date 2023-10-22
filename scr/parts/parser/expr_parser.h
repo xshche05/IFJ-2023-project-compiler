@@ -6,6 +6,7 @@
 #define IFJ_PRJ_EXPR_PARSER_H
 
 #include <stdbool.h>
+#include "parser.h"
 
 bool parse_expr();
 

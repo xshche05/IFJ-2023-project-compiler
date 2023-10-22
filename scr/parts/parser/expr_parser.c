@@ -44,8 +44,9 @@ static int get_op_priority(token_t *token) {
 
 
 bool parse_expr() {
+    TokenArray.prev();
     token_t *token;
-    token_t *last_expr_token;
+    token_t *last_expr_token = NULL;
     bool cont = true;
     stack_t *op_stack = Stack.init();
     stack_t *out_stack = Stack.init();
@@ -72,8 +73,8 @@ bool parse_expr() {
                     // function call
                     Stack.push(out_stack, token);
                     while (last_expr_token->type != TOKEN_RIGHT_BRACKET) {
-                        tmp = TokenArray.next();
-                        Stack.push(out_stack, tmp);
+                        last_expr_token = TokenArray.next();
+                        Stack.push(out_stack, last_expr_token);
                     }
                 } else {
                     // expression
@@ -175,6 +176,9 @@ bool parse_expr() {
         Stack.pop(tmp_stack);
         Token.print(op);
     }
+    TokenArray.prev();
+    lookahead = TokenArray.next()->type;
+    printf("\n\n\n");
     return true;
     // LAST TOKEN CHECK IN PARSER!!!!
 }
