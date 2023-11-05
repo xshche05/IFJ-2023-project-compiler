@@ -1,0 +1,87 @@
+rel_expr ::= ar_expr next_rel_expr
+next_rel_expr ::= rel_op ar_expr next_rel_expr
+next_rel_expr ::= ''
+rel_op ::= <
+rel_op ::= >
+rel_op ::= <=
+rel_op ::= >=
+rel_op ::= ==
+rel_op ::= !=
+ar_expr ::= ar_term next_ar_expr
+next_ar_expr ::= add_op ar_term next_ar_expr
+next_ar_expr ::= ''
+ar_term ::= not_ar_factor next_ar_term
+next_ar_term ::= mul_op not_ar_factor next_ar_term
+next_ar_term ::= ''
+not_op ::= !
+not_op ::= ''
+not_ar_factor ::= not_op ar_factor
+ar_factor ::= id func
+ar_factor ::= literal
+ar_factor ::= ( rel_expr )
+
+func ::= ( args )
+func ::= ''
+
+args ::= rel_expr next_arg
+args ::= ''
+
+next_arg ::= , rel_expr next_arg
+next_arg ::= ''
+
+add_op ::= +
+add_op ::= -
+add_op ::= ||
+mul_op ::= *
+mul_op ::= /
+mul_op ::= &&
+
+
+expr -> rel_expr
+expr -> bool_expr
+expr -> ar_expr
+
+rel_expr -> ar_expr rel_op ar_expr
+rel_expr -> bool_expr eq_op bool_expr
+
+rel_op -> >
+rel_op -> <
+rel_op -> <=
+rel_op -> >=
+rel_op -> eq_op
+eq_op -> ==
+eq_op -> !=
+
+bool_expr -> bool_prod
+bool_expr -> bool_sum
+bool_expr -> bool_value
+
+bool_prod -> bool_expr next_bool_prod
+next_bool_prod -> && bool_expr next_bool_prod
+next_bool_prod -> ''
+
+bool_sum -> bool_expr next_bool_sum
+next_bool_sum -> || bool_expr next_bool_sum
+next_bool_sum -> ''
+
+bool_value -> bool_lit
+bool_value -> ( bool_expr )
+bool_value -> rel_expr
+
+ar_expr -> ar_sum
+ar_expr -> ar_prod
+ar_expr -> ar_value
+
+ar_prod -> ar_expr next_ar_prod
+next_ar_prod -> * ar_expr next_ar_prod
+next_ar_prod -> / ar_expr next_ar_prod
+next_ar_prod -> ''
+
+ar_sum -> ar_expr next_ar_sum
+next_ar_sum -> + ar_expr next_ar_sum
+next_ar_sum -> - ar_expr next_ar_sum
+next_ar_sum -> ''
+
+ar_value -> num_lit
+ar_value -> ( ar_expr )
+

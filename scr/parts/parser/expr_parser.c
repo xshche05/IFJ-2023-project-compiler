@@ -10,11 +10,77 @@
 #include "stack.h"
 
 
-// expression to reverse polish notation
-// returns 0 if success, 1 if error
+token_t *previous_token = NULL;
+token_t *current_token = NULL;
+token_t *next_token = NULL;
+
+void next() {
+    token_t *tmp = TokenArray.next();
+    while (tmp != NULL && tmp->type == TOKEN_NEWLINE) {
+        tmp = TokenArray.next();
+    }
+    previous_token = current_token;
+    current_token = next_token;
+    next_token = tmp;
+}
+
+bool validate_end() {
+    if (previous_token->type == TOKEN_LOGICAL_NOT) return false;
+    if (previous_token->type == TOKEN_LEFT_BRACKET) return false;
+    if (previous_token->type == TOKEN_ADDITION) return false;
+    if (previous_token->type == TOKEN_SUBTRACTION) return false;
+    if (previous_token->type == TOKEN_MULTIPLICATION) return false;
+    if (previous_token->type == TOKEN_DIVISION) return false;
+    if (previous_token->type == TOKEN_LESS_THAN) return false;
+    if (previous_token->type == TOKEN_LESS_THAN_OR_EQUAL_TO) return false;
+    if (previous_token->type == TOKEN_GREATER_THAN) return false;
+    if (previous_token->type == TOKEN_GREATER_THAN_OR_EQUAL_TO) return false;
+    if (previous_token->type == TOKEN_EQUAL_TO) return false;
+    if (previous_token->type == TOKEN_NOT_EQUAL_TO) return false;
+    if (previous_token->type == TOKEN_LOGICAL_AND) return false;
+    if (previous_token->type == TOKEN_LOGICAL_OR) return false;
+    if (previous_token->type == TOKEN_LOGICAL_NOT) return false;
+    return true;
+}
+
+bool continue_parse_expr() {
+    // if previous token is ID or RIGHT_BRACKET or INT_LITERAL or DOUBLE_LITERAL or STR_LITERAL or NIL_LITERAL or TRUE_LITERAL or FALSE_LITERAL or UNWRAP_NILABLE
+    // and next token is OPERATOR or LEFT_BRACKET return true
+
+    // if previous token is OPERATOR (exept UNWRAP_NILABLE) and next token is ID or LEFT_BRACKET or INT_LITERAL or DOUBLE_LITERAL or STR_LITERAL or NIL_LITERAL or TRUE_LITERAL or FALSE_LITERAL or UNWRAP_NILABLE return true
+
+    // else return false
+    if (previous_token == NULL) {
+        return true;
+    } else if (previous_token->type == TOKEN_IDENTIFIER || previous_token->type == TOKEN_RIGHT_BRACKET || previous_token->type == TOKEN_INTEGER_LITERAL || previous_token->type == TOKEN_REAL_LITERAL || previous_token->type == TOKEN_STRING_LITERAL || previous_token->type == TOKEN_NIL_LITERAL || previous_token->type == TOKEN_TRUE_LITERAL || previous_token->type == TOKEN_FALSE_LITERAL) {
+        if (current_token->type == TOKEN_ADDITION || current_token->type == TOKEN_SUBTRACTION || current_token->type == TOKEN_MULTIPLICATION || current_token->type == TOKEN_DIVISION || current_token->type == TOKEN_LESS_THAN || current_token->type == TOKEN_LESS_THAN_OR_EQUAL_TO || current_token->type == TOKEN_GREATER_THAN || current_token->type == TOKEN_GREATER_THAN_OR_EQUAL_TO || current_token->type == TOKEN_EQUAL_TO || current_token->type == TOKEN_NOT_EQUAL_TO || current_token->type == TOKEN_LOGICAL_AND || current_token->type == TOKEN_LOGICAL_OR || current_token->type == TOKEN_LOGICAL_NOT || current_token->type == TOKEN_RIGHT_BRACKET || current_token->type == TOKEN_UNWRAP_NILABLE) {
+            return true;
+        }
+    } else if (previous_token->type == TOKEN_ADDITION || previous_token->type == TOKEN_SUBTRACTION || previous_token->type == TOKEN_MULTIPLICATION || previous_token->type == TOKEN_DIVISION || previous_token->type == TOKEN_LESS_THAN || previous_token->type == TOKEN_LESS_THAN_OR_EQUAL_TO || previous_token->type == TOKEN_GREATER_THAN || previous_token->type == TOKEN_GREATER_THAN_OR_EQUAL_TO || previous_token->type == TOKEN_EQUAL_TO || previous_token->type == TOKEN_NOT_EQUAL_TO || previous_token->type == TOKEN_LOGICAL_AND || previous_token->type == TOKEN_LOGICAL_OR || previous_token->type == TOKEN_LOGICAL_NOT || previous_token->type == TOKEN_LEFT_BRACKET) {
+        if (current_token->type == TOKEN_IDENTIFIER || current_token->type == TOKEN_LEFT_BRACKET || current_token->type == TOKEN_INTEGER_LITERAL || current_token->type == TOKEN_REAL_LITERAL || current_token->type == TOKEN_STRING_LITERAL || current_token->type == TOKEN_NIL_LITERAL || current_token->type == TOKEN_TRUE_LITERAL || current_token->type == TOKEN_FALSE_LITERAL || current_token->type == TOKEN_LOGICAL_NOT) {
+            return true;
+        }
+    } else if (previous_token->type == TOKEN_UNWRAP_NILABLE) {
+        if (current_token->type == TOKEN_ADDITION || current_token->type == TOKEN_SUBTRACTION || current_token->type == TOKEN_MULTIPLICATION || current_token->type == TOKEN_DIVISION || current_token->type == TOKEN_LESS_THAN || current_token->type == TOKEN_LESS_THAN_OR_EQUAL_TO || current_token->type == TOKEN_GREATER_THAN || current_token->type == TOKEN_GREATER_THAN_OR_EQUAL_TO || current_token->type == TOKEN_EQUAL_TO || current_token->type == TOKEN_NOT_EQUAL_TO || current_token->type == TOKEN_LOGICAL_AND || current_token->type == TOKEN_LOGICAL_OR || current_token->type == TOKEN_LOGICAL_NOT || current_token->type == TOKEN_LEFT_BRACKET) {
+            return true;
+        }
+    } else if (current_token->type == TOKEN_UNWRAP_NILABLE) {
+        if (previous_token->type == TOKEN_IDENTIFIER || previous_token->type == TOKEN_RIGHT_BRACKET) {
+            return true;
+        }
+    } else if (previous_token->type == TOKEN_LOGICAL_NOT) {
+        if (current_token->type == TOKEN_IDENTIFIER || current_token->type == TOKEN_LEFT_BRACKET || current_token->type == TOKEN_TRUE_LITERAL || current_token->type == TOKEN_FALSE_LITERAL) {
+            return true;
+        }
+    }
+    return false;
+}
 
 // operator priority_table
 static int get_op_priority(token_t *token) {
+    if (token == NULL) {
+        return -1;
+    }
     switch (token->type) {
         case TOKEN_LOGICAL_NOT:
             return 0;
@@ -35,28 +101,26 @@ static int get_op_priority(token_t *token) {
             return 4;
         case TOKEN_LOGICAL_OR:
             return 5;
-        case TOKEN_UNWRAP_NILABLE:
-            return 100;
         default:
             return -1;
     }
 }
 
 
-bool parse_expr() {
-    TokenArray.prev();
-    token_t *token;
-    token_t *last_expr_token = NULL;
-    bool cont = true;
-    stack_t *op_stack = Stack.init();
-    stack_t *out_stack = Stack.init();
-    token_t *tmp;
-    while (cont) {
-        token = TokenArray.next();
-        if (token == NULL) {
-            break;
-        }
-        switch (token->type) {
+bool parse_expr(bool none) {
+    previous_token = NULL;
+    current_token = lookahead;
+    next_token = TokenArray.next();
+
+    token_t *tmp_token = NULL;
+
+    stack_t *operator_stack = Stack.init();
+    stack_t *expr_stack = Stack.init();
+
+    int brackets = 0;
+
+    while (continue_parse_expr()) {
+        switch (current_token->type) {
             case TOKEN_IDENTIFIER:
             case TOKEN_INTEGER_LITERAL:
             case TOKEN_REAL_LITERAL:
@@ -64,122 +128,87 @@ bool parse_expr() {
             case TOKEN_NIL_LITERAL:
             case TOKEN_TRUE_LITERAL:
             case TOKEN_FALSE_LITERAL:
-                Stack.push(out_stack, token);
-                last_expr_token = token;
+            case TOKEN_UNWRAP_NILABLE:
+                Stack.push(expr_stack, current_token);
                 break;
             case TOKEN_LEFT_BRACKET:
-                // tmp = Stack.top(out_stack);
-                if (last_expr_token != NULL && last_expr_token->type == TOKEN_IDENTIFIER) {
+                // if previous token is ID - function call
+                // else - expression
+                if (previous_token->type == TOKEN_IDENTIFIER) {
                     // function call
-                    Stack.push(out_stack, token);
-                    while (last_expr_token->type != TOKEN_RIGHT_BRACKET) {
-                        last_expr_token = TokenArray.next();
-                        Stack.push(out_stack, last_expr_token);
+                    Stack.push(expr_stack, current_token);
+                    while (current_token->type != TOKEN_RIGHT_BRACKET) {
+                        next();
+                        Stack.push(expr_stack, current_token);
                     }
                 } else {
                     // expression
-                    Stack.push(op_stack, token);
-                    last_expr_token = token;
+                    brackets++;
+                    Stack.push(operator_stack, current_token);
                 }
                 break;
-            case TOKEN_RIGHT_BRACKET: // pop operators from op_stack to out_stack until left bracket
-                while (true) {
-                    token_t *op = Stack.top(op_stack);
-                    Stack.pop(op_stack);
-                    if (op == NULL) {
-                        fprintf(stderr, "Error: Missing left bracket.\n");
-                        return false;
-                    }
-                    if (op->type == TOKEN_LEFT_BRACKET) {
-                        break;
-                    }
-                    Stack.push(out_stack, op);
+            case TOKEN_RIGHT_BRACKET:
+                tmp_token = Stack.top(operator_stack);
+                while (tmp_token->type != TOKEN_LEFT_BRACKET) {
+                    Stack.push(expr_stack, tmp_token);
+                    Stack.pop(operator_stack);
+                    tmp_token = Stack.top(operator_stack);
                 }
-                last_expr_token = token;
+                brackets--;
+                Stack.pop(operator_stack);
                 break;
-            case TOKEN_UNWRAP_NILABLE:
-                // switch id flag to unnillable
-                tmp = Stack.top(out_stack);
-                if (tmp->type != TOKEN_IDENTIFIER && tmp->type != TOKEN_RIGHT_BRACKET) {
-                    fprintf(stderr, "Error: Unwrap nilable operator must be after ID or func call.\n");
-                    return false;
-                }
-                Stack.push(out_stack, token);
-                break;
-            case TOKEN_LOGICAL_NOT:
-//                Stack.push(out_stack, token);
-//                break;
-            case TOKEN_MULTIPLICATION:
-            case TOKEN_DIVISION:
             case TOKEN_ADDITION:
             case TOKEN_SUBTRACTION:
-            case TOKEN_EQUAL_TO:
-            case TOKEN_NOT_EQUAL_TO:
+            case TOKEN_MULTIPLICATION:
+            case TOKEN_DIVISION:
             case TOKEN_LESS_THAN:
             case TOKEN_LESS_THAN_OR_EQUAL_TO:
             case TOKEN_GREATER_THAN:
             case TOKEN_GREATER_THAN_OR_EQUAL_TO:
+            case TOKEN_EQUAL_TO:
+            case TOKEN_NOT_EQUAL_TO:
             case TOKEN_LOGICAL_AND:
             case TOKEN_LOGICAL_OR:
-                // pop operators from op_stack to out_stack until operator with lower priority
+            case TOKEN_LOGICAL_NOT:
                 while (true) {
-                    token_t *op = Stack.top(op_stack);
-                    if (op == NULL || op->type == TOKEN_LEFT_BRACKET) {
+                    tmp_token = Stack.top(operator_stack);
+                    if (tmp_token == NULL) {
                         break;
                     }
-                    if (get_op_priority(op) >= get_op_priority(token)) {
+                    if (tmp_token->type == TOKEN_LEFT_BRACKET) {
                         break;
                     }
-                    Stack.pop(op_stack);
-                    Stack.push(out_stack, op);
+                    if (get_op_priority(tmp_token) >= get_op_priority(current_token)) {
+                        break;
+                    }
+                    Stack.pop(operator_stack);
+                    Stack.push(expr_stack, tmp_token);
                 }
-                Stack.push(op_stack, token);
-                last_expr_token = token;
+                Stack.push(operator_stack, current_token);
                 break;
-            case TOKEN_NEWLINE:
-                continue;
             default:
-                cont = false;
-                TokenArray.prev();
-                break;
+                return false;
         }
+        next();
     }
-    if (get_op_priority(last_expr_token) != -1) {
-        fprintf(stderr, "Error: Unexpected operator at the end of expression.\n");
-        return false;
+
+    while (Stack.top(operator_stack) != NULL) {
+        Stack.push(expr_stack, Stack.top(operator_stack));
+        Stack.pop(operator_stack);
     }
-    // pop operators from op_stack to out_stack
-    while (true) {
-        token_t *op = Stack.top(op_stack);
-        if (op == NULL) {
-            break;
-        }
-        Stack.pop(op_stack);
-        Stack.push(out_stack, op);
-    }
-    // reverse out_stack
+
+    // reverse expr_stack
     stack_t *tmp_stack = Stack.init();
-    while (true) {
-        token_t *op = Stack.top(out_stack);
-        if (op == NULL) {
-            break;
-        }
-        Stack.pop(out_stack);
-        Stack.push(tmp_stack, op);
+    while (Stack.top(expr_stack) != NULL) {
+        Stack.push(tmp_stack, Stack.top(expr_stack));
+        Stack.pop(expr_stack);
     }
-    // print out_stack
-    while (true) {
-        token_t *op = Stack.top(tmp_stack);
-        if (op == NULL) {
-            break;
-        }
+
+    // print expr_stack
+    while (Stack.top(tmp_stack) != NULL) {
+        Token.print(Stack.top(tmp_stack));
         Stack.pop(tmp_stack);
-        Token.print(op);
     }
-    TokenArray.prev();
-    lookahead = TokenArray.next()->type;
-    printf("\n\n\n");
-    return true;
-    // LAST TOKEN CHECK IN PARSER!!!!
+    return validate_end();
 }
 
