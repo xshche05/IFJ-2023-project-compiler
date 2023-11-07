@@ -1,44 +1,89 @@
+%token id underscore expr
+%% /* LL(1) */
 
-(1)	    PROG → CODE
-(2)	    PROG → eof
-(3)	    CODE → VAR_DECL '\n' CODE
-(4)	    CODE → LET_DECL '\n' CODE
-(5)	    CODE → FUNC_DECL '\n' CODE
-(6)	    CODE → WHILE_LOOP '\n' CODE
-(7)	    CODE → BRANCH '\n' CODE
-(8)	    CODE → ID_CALL_OR_ASSING '\n' CODE
-(9)	    CODE → RETURN '\n'
-(10)	RETURN → 'return' RET_EXPR
-(11)	RET_EXPR → expr
-(12)	RET_EXPR → ε
-(13)	VAR_DECL → 'var' id VAR_LET_TYPE VAR_LET_EXP
-(14)	VAR_LET_TYPE → ':' type
-(15)	VAR_LET_TYPE → ε
-(16)	VAR_LET_EXP → '=' expr
-(17)	VAR_LET_EXP → ε
-(18)	LET_DECL → 'let' id VAR_LET_TYPE VAR_LET_EXP
-(19)	FUNC_DECL → 'func' id '(' PARAM_LIST ')' FUNC_RET_TYPE '{' CODE '}' '\n'
-(20)	FUNC_RET_TYPE → '->' type
-(21)	FUNC_RET_TYPE → ε
-(22)	PARAM_LIST → PARAM NEXT_PARAM
-(23)	PARAM_LIST → ε
-(24)	PARAM → PARAM_NAME id ':' type
-(25)	PARAM_NAME → id
-(26)	PARAM_NAME → underscore
-(27)	NEXT_PARAM → ',' PARAM NEXT_PARAM
-(28)	NEXT_PARAM → ε
-(29)	BRANCH → 'if' BR_EXPR '{' CODE '}' 'else' '{' CODE '}'
-(30)	BR_EXPR → expr
-(31)	BR_EXPR → 'let' id
-(32)	WHILE_LOOP → 'while' expr '{' CODE '}'
-(33)	CALL_PARAM_LIST → CALL_PARAM NEXT_CALL_PARAM
-(34)	CALL_PARAM_LIST → ε
-(35)	CALL_PARAM → NAMED_CALL_PARAM
-(36)	CALL_PARAM → POS_CALL_PARAM
-(37)	NAMED_CALL_PARAM → name ':' expr
-(38)	POS_CALL_PARAM → expr
-(39)	NEXT_CALL_PARAM → ',' CALL_PARAM NEXT_CALL_PARAM
-(40)	NEXT_CALL_PARAM → ε
-(41)	ID_CALL_OR_ASSING → id NEXT_ID_CALL_OR_ASSING
-(42)	NEXT_ID_CALL_OR_ASSING → '(' CALL_PARAM_LIST ')'
-(43)	NEXT_ID_CALL_OR_ASSING → '=' expr
+CODE ::= VAR_DECL CODE
+CODE ::= LET_DECL CODE
+CODE ::= FUNC_DECL CODE
+CODE ::= WHILE_LOOP CODE
+CODE ::= FOR_LOOP CODE
+CODE ::= BRANCH CODE
+CODE ::= ID_CALL_OR_ASSING CODE
+CODE ::= RETURN
+CODE ::= break
+CODE ::= continue
+CODE ::= ''
+
+RETURN ::= return RET_EXPR NL
+
+RET_EXPR ::= expr
+RET_EXPR ::= ''
+
+VAR_DECL ::= var id VAR_LET_TYPE VAR_LET_EXP NL
+
+VAR_LET_TYPE ::= : TYPE
+VAR_LET_TYPE ::= ''
+
+VAR_LET_EXP ::= = expr
+VAR_LET_EXP ::= ''
+
+LET_DECL ::= let id VAR_LET_TYPE VAR_LET_EXP NL
+
+FUNC_DECL ::= func id ( PARAM_LIST ) FUNC_RET_TYPE { CODE } NL
+
+FUNC_RET_TYPE ::= -> TYPE
+FUNC_RET_TYPE ::= ''
+
+PARAM_LIST ::= PARAM NEXT_PARAM
+PARAM_LIST ::= ''
+
+PARAM ::= PARAM_NAME id : TYPE
+PARAM_NAME ::= id
+PARAM_NAME ::= underscore
+NEXT_PARAM ::= , PARAM NEXT_PARAM
+NEXT_PARAM ::= ''
+
+
+BRANCH ::= if BR_EXPR { CODE } ELSE NL
+BR_EXPR ::= expr
+BR_EXPR ::= let id
+ELSE ::= else ELSE_IF
+ELSE ::= ''
+ELSE_IF ::= if BR_EXPR { CODE } ELSE_IF
+ELSE_IF ::= { CODE }
+
+WHILE_LOOP ::= while expr { CODE } NL
+
+FOR_LOOP ::= for FOR_ID in expr RANGE { CODE } NL
+FOR_ID ::= id
+FOR_ID ::= underscore
+RANGE ::= ... expr
+RANGE ::= ..< expr
+
+CALL_PARAM_LIST ::= CALL_PARAM NEXT_CALL_PARAM
+CALL_PARAM_LIST ::= ''
+
+CALL_PARAM ::= NAMED_CALL_PARAM
+CALL_PARAM ::= POS_CALL_PARAM
+
+NAMED_CALL_PARAM ::= CALL_PARAM_NAME : expr
+CALL_PARAM_NAME ::= id
+CALL_PARAM_NAME ::= underscore
+
+POS_CALL_PARAM ::= expr
+
+NEXT_CALL_PARAM ::= , CALL_PARAM NEXT_CALL_PARAM
+NEXT_CALL_PARAM ::= ''
+
+ID_CALL_OR_ASSING ::= id NEXT_ID_CALL_OR_ASSING NL
+NEXT_ID_CALL_OR_ASSING ::= ( CALL_PARAM_LIST )
+NEXT_ID_CALL_OR_ASSING ::= = expr
+
+SOFT_NL ::= \n SOFT_NL
+SOFT_NL ::= ''
+
+NL ::= \n SOFT_NL
+
+TYPE ::= String
+TYPE ::= Int
+TYPE ::= Bool
+TYPE ::= Double

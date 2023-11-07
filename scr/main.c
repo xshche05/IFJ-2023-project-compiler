@@ -12,7 +12,7 @@ int main(int argc, char **argv) {
     TokenArray.ctor();
 
     int code = source_code_to_tokens();
-    code = parse();
+    //code = parse();
     printf("Parse code: %d\n", code);
     if (code != 0) {
         fprintf(stderr, "Error: Failed to convert source code to tokens.\n");
