@@ -84,7 +84,7 @@ void BSTDispose(tBVSNodePtr *rootPtr);
 
 
 /*    FUNCTIONS FOR WORKING WITH THE TABLE    */
-
+//some functions are not implemented yet
 
 
 
