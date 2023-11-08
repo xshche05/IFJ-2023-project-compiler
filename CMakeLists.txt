@@ -5,7 +5,7 @@ project(IFJ_PRJ C)
 
 set(CMAKE_C_STANDARD 99)
 
-include_directories(scr/utils scr/parts src)
+include_directories(scr/utils scr/parts src scr/parts/scanner scr/parts/parser)
 
 add_compile_options(-Wall -Wextra -std=c99 -g)
 
@@ -17,18 +17,25 @@ add_executable(IFJ_PRJ
         scr/parts/parser/parser.c
         scr/parts/scanner/scanner.c
         scr/utils/lists.c
-        scr/parts/token/token.c
+        scr/parts/scanner/token.c
         scr/parts/parser/expr_parser.c
         scr/parts/parser/expr_parser.h
         scr/utils/stack.c
-        scr/utils/stack.h scr/parts/scanner/symtable.c scr/parts/scanner/symtable.h)
+        scr/utils/stack.h scr/parts/parser/symtable.c scr/parts/parser/symtable.h)
 
 add_executable(tests
-        tests/test.c
         scr/parts/scanner/scanner.c
         scr/utils/file_util.c
         scr/utils/string_util.c
         scr/parts/parser/parser.c
         scr/utils/lists.c
         scr/parts/scanner/scanner.c
-        scr/parts/token/token.c)
+        scr/parts/scanner/token.c)
+
+add_executable(sym_test
+        tests/sym_test.c
+        scr/parts/parser/symtable.c
+        scr/utils/stack.c
+        scr/utils/string_util.c
+        scr/parts/parser/new_symtable.c
+)
