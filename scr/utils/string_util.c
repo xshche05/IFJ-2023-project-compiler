@@ -174,10 +174,23 @@ static int string_compare(string_t *string1, string_t *string2) {
     return strcmp(string1->str, string2->str);
 }
 
+/**
+ * @brief This function compares string_t and c string.
+ *
+ * @param string1 - Pointer to string_t structure.
+ * @param string2 - Pointer to c string.
+ * @return 1, -1 or 0 like strcmp.
+ */
 static int string_compare_cstr(string_t *string1, char *string2) {
     return strcmp(string1->str, string2);
 }
 
+/**
+ * @brief This function adds c string to string_t.
+ * @param dest - Pointer to destination string_t structure.
+ * @param source - Pointer to source c string.
+ * @return zero if success, non-zero otherwise.
+ */
 static int string_add_cstr(string_t *dest, char *source) {
     int length = (int)strlen(source);
     if (dest->length + length + 1 >= dest->allocated) {
@@ -188,6 +201,23 @@ static int string_add_cstr(string_t *dest, char *source) {
     strcat(dest->str, source);
     dest->length += length;
     return 0;
+}
+
+/**
+ * @brief This function creates string from c string.
+ * @param source - Pointer to source c string.
+ * @return pointer to string_t structure if success, NULL otherwise.
+ */
+static string_t *string_create(char *source) {
+    string_t *string = string_ctor();
+    if (string == NULL) {
+        return NULL;
+    }
+    if (string_assign_cstr(string, source) != 0) {
+        string_dtor(string);
+        return NULL;
+    }
+    return string;
 }
 
 const struct string_interface String = {
@@ -201,5 +231,6 @@ const struct string_interface String = {
         .add_string = string_add_string,
         .add_cstr = string_add_cstr,
         .assign = string_assign,
-        .assign_cstr = string_assign_cstr
+        .assign_cstr = string_assign_cstr,
+        .create = string_create,
 };
