@@ -4,7 +4,9 @@
 #include <ctype.h>
 #include <string.h>
 #include "lists.h"
-#include "token/token.h"
+#include "token.h"
+
+// TODO: fix range operator form '..' to '...'
 
 char control_char = ' ';
 
