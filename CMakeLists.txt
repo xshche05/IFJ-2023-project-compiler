@@ -21,7 +21,7 @@ add_executable(IFJ_PRJ
         scr/parts/parser/expr_parser.c
         scr/parts/parser/expr_parser.h
         scr/utils/stack.c
-        scr/utils/stack.h scr/parts/parser/symtable.c scr/parts/parser/symtable.h)
+        scr/utils/stack.h archive/symtable.c archive/symtable.h)
 
 add_executable(tests
         scr/parts/scanner/scanner.c
@@ -34,7 +34,7 @@ add_executable(tests
 
 add_executable(sym_test
         tests/sym_test.c
-        scr/parts/parser/symtable.c
+        archive/symtable.c
         scr/utils/stack.c
         scr/utils/string_util.c
         scr/parts/parser/new_symtable.c

@@ -1,23 +1,23 @@
 d = {
-    'unwrap' : [1, 'non'],
-    'not' : [2, 'right'],
-    'mul' : [3, 'left'],
+    'unwrap': [1, 'non'],
+    'not': [2, 'right'],
+    'mul': [3, 'left'],
     # 'div' : [3, 'left'],
-    'add' : [4, 'left'],
+    'add': [4, 'left'],
     # 'sub' : [4, 'left'],
-    'nil_col' : [5, 'right'],
-    'eq' : [6, 'non'],
+    'nil_col': [5, 'right'],
+    'eq': [6, 'non'],
     # 'neq' : [6, 'non'],
     # 'gt' : [6, 'non'],
     # 'lt' : [6, 'non'],
     # 'gte' : [6, 'non'],
     # 'lte' : [6, 'non'],
-    'and' : [7, 'left'],
-    'or' : [8, 'left'],
-    '(' : [],
-    'i' : [],
-    ')' : [],
-    '$' : [],
+    'and': [7, 'left'],
+    'or': [8, 'left'],
+    '(': [],
+    'i': [],
+    ')': [],
+    '$': [],
 }
 
 operators = ['unwrap',
@@ -86,6 +86,3 @@ for yellow_x in d.keys():
         else:
             print(' ', end=',')
     print()
-
-
-
