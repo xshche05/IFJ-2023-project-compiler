@@ -1,5 +1,5 @@
-%token id underscore expr
-%% /* LL(1) */
+S ::= CODE $
+S ::= $
 
 CODE ::= VAR_DECL CODE
 CODE ::= LET_DECL CODE
