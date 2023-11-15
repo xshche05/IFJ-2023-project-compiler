@@ -143,9 +143,6 @@ from functools import lru_cache
 
 rules: dict[int, dict[str, list[str]]] = {}
 
-N = set() # non terminals
-T = set() # terminals
-
 with open("grammar", "r") as file:
     i = 1
     for line in file:
@@ -161,10 +158,12 @@ with open("grammar", "r") as file:
 terminals = set()
 non_terminals = set()
 
+# Get non terminals set
 for rule in rules.values():
     for left in rule.keys():
         non_terminals.add(left)
 
+# Get terminals set
 for rule in rules.values():
     for right in rule.values():
         for word_list in right:
@@ -172,6 +171,7 @@ for rule in rules.values():
                 if word not in non_terminals:
                     terminals.add(word)
 terminals.discard("EPS")
+
 
 def compute_first(n_or_t) -> set[str]:
     if n_or_t in terminals:
@@ -190,6 +190,7 @@ def compute_first(n_or_t) -> set[str]:
                         break
         return fir
 
+
 def first(a: str):
     if a == "EPS":
         return {"EPS"}
@@ -197,6 +198,7 @@ def first(a: str):
         return {a}
     elif a in non_terminals:
         return compute_first(a)
+
 
 def first_l(a: list[str]):
     fir = set()
@@ -210,6 +212,7 @@ def first_l(a: list[str]):
             break
     return fir
 
+
 def empty(a: str):
     if a == "EPS":
         return {"EPS"}
@@ -219,11 +222,13 @@ def empty(a: str):
             return {"EPS"}
     return {}
 
+
 def empty_l(a: list[str]):
     for i in range(len(a)):
         if empty(a[i]) != {"EPS"}:
             return set()
     return {"EPS"}
+
 
 def compute_follows():
     follows = dict()
@@ -259,9 +264,84 @@ def compute_follows():
 
     return follows
 
+
+def compute_firsts():
+    fir = dict()
+    for non_terminal in non_terminals:
+        fir[non_terminal] = first(non_terminal)
+    return fir
+
+
+def predict(rule_num: int):
+    rule = rules[rule_num]
+    left = list(rule.keys())[0]
+    right = list(rule.values())[0][0]
+    if empty_l(right) != {"EPS"}:
+        return first_l(right)
+    elif empty_l(right) == {"EPS"}:
+        ret = first_l(right)
+        ret.update(follows[left])
+        return ret
+
+
 follows = compute_follows()
-for key in non_terminals:
-    follows[key].discard("EPS")
-    if not empty(key):
-        continue
-    print(key, ":", follows[key])
+firsts = compute_firsts()
+# for rule_num in rules.keys():
+#     rule = rules[rule_num]
+#     left = list(rule.keys())[0]
+#     right = list(rule.values())[0][0]
+#     print(rule_num, left, right)
+#     print(rule_num, predict(rule_num))
+
+rule_dict_2 = dict() # {left: {predict_value: rule_num}}
+
+for rule_num in rules.keys():
+    rule = rules[rule_num]
+    left = list(rule.keys())[0]
+    right = list(rule.values())[0][0]
+    predict_values = predict(rule_num)
+    predict_values.discard("EPS")
+    for val in predict_values:
+        if left not in rule_dict_2.keys():
+            rule_dict_2[left] = dict()
+        rule_dict_2[left][val] = rule_num
+
+
+def gen_header(name: str):
+    func = f"bool {name}() " + "{\n"
+    func += f"{' '*4}bool s;\n"
+    func += f"{' '*4}switch (lookahead->type) " + "{\n"
+    return func
+
+def gen_case(predict_value: str, rule_num: int):
+    rule_right = list(rules[rule_num].values())[0][0]
+    func = f"{' '*8}case {predict_value}:\n"
+    func += f"{' '*12}s = "
+    for NT in rule_right:
+        if NT in non_terminals:
+            func += F"{NT}() && "
+        elif NT != "EPS":
+            func += F"match({NT}) && "
+    func += "true;\n"
+    func += f"{' '*12}break;\n"
+    return func
+
+
+def gen_footer():
+    func = f"{' '*8}default:\n"
+    func += f"{' '*12}return false;\n"
+    func += f"{' '*4}}}\n"
+    func += f"{' '*4}return s;\n"
+    func += "}\n"
+    return func
+
+
+def gen_func(name: str):
+    func = gen_header(name)
+    for predict_value in rule_dict_2[name].keys():
+        func += gen_case(predict_value, rule_dict_2[name][predict_value])
+    func += gen_footer()
+    return func
+
+for non_terminal in rule_dict_2.keys():
+    print(gen_func(non_terminal))
