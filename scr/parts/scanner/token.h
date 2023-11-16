@@ -29,6 +29,15 @@ typedef enum {
     TOKEN_UNDERSCORE,                 // _
     // Operators
     TOKEN_ASSIGNMENT,                 // =
+    TOKEN_CLOSED_RANGE,               // ..
+    TOKEN_HALF_OPEN_RANGE,            // ..<
+    // Literals
+    TOKEN_REAL_LITERAL,
+    TOKEN_STRING_LITERAL,
+    TOKEN_NIL_LITERAL,
+    TOKEN_TRUE_LITERAL,
+    TOKEN_FALSE_LITERAL,
+    TOKEN_INTEGER_LITERAL,
     TOKEN_ADDITION,                   // +
     TOKEN_SUBTRACTION,                // -
     TOKEN_MULTIPLICATION,             // *
@@ -45,15 +54,6 @@ typedef enum {
     TOKEN_LOGICAL_AND,                // &&
     TOKEN_LOGICAL_OR,                 // ||
     TOKEN_LOGICAL_NOT,                // !ID
-    TOKEN_CLOSED_RANGE,               // ..
-    TOKEN_HALF_OPEN_RANGE,            // ..<
-    // Literals
-    TOKEN_INTEGER_LITERAL,
-    TOKEN_REAL_LITERAL,
-    TOKEN_STRING_LITERAL,
-    TOKEN_NIL_LITERAL,
-    TOKEN_TRUE_LITERAL,
-    TOKEN_FALSE_LITERAL,
     // Punctuation
     TOKEN_LEFT_BRACKET,
     TOKEN_RIGHT_BRACKET,
@@ -78,6 +78,7 @@ typedef union {
 typedef struct {
     token_type_t type;
     token_attribute attribute;
+    bool has_newline_after;
 } token_t;
 
 typedef struct {
@@ -121,5 +122,6 @@ struct token_array_interface {
     token_t *(*next)(void);
     token_t *(*prev)(void);
     int (*total)(void);
+    int (*set_nl_after)(void);
 };
 #endif //IFJ_PRJ_TOKEN_H

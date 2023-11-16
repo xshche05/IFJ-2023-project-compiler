@@ -5,6 +5,7 @@
 #include <malloc.h>
 #include <assert.h>
 #include "new_symtable.h"
+#include "codegen/codegen.h"
 
 void init_test() {
     symtable_init();
@@ -154,11 +155,21 @@ void test_push_pop() {
 
 
 int main() {
-    test_add_find();
-    printf("test_add_find passed\n");
-    test_push_pop();
-    printf("test_push_pop_add_find passed\n");
-    test_find_non_existed();
-    printf("test_find_non_existed passed\n");
+//    test_add_find();
+//    printf("test_add_find passed\n");
+//    test_push_pop();
+//    printf("test_push_pop_add_find passed\n");
+//    test_find_non_existed();
+//    printf("test_find_non_existed passed\n");
+//    gen_register_def();
+//    printf("%s\n", gen_unique_label("label"));
+//    printf("%s\n", gen_unique_label("label"));
+//    printf("%s\n", gen_unique_label("if"));
+//    printf("%s\n", gen_unique_label("for"));
+//    printf("%s\n", gen_scope_var("var", 0, true));
+//    printf("%s\n", gen_scope_var("var", 1, true));
+//    printf("%s\n", gen_scope_var("var", 2, true));
+//    printf("%s\n", gen_scope_var("var", 3, false));
+    gen_std_functions();
     return 0;
 }

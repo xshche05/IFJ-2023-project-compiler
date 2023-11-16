@@ -9,40 +9,74 @@ bool nl_flag;    // new line
 
 bool match(token_type_t type);
 
-bool parse();
+bool call_expr_parser();
 
-bool code();
-bool return_r();
-bool ret_expr();
-bool var_decl();
-bool var_let_type();
-bool var_let_exp();
-bool let_decl();
-bool func_decl();
-bool func_ret_type();
-bool param_list();
-bool param();
-bool param_name();
-bool next_param();
-bool branch();
-bool br_expr();
-bool else_r();
-bool else_if();
-bool while_loop();
-bool for_loop();
-bool for_id();
-bool range();
-bool call_param_list();
-bool call_param();
-bool named_call_param();
-bool call_param_name();
-bool pos_call_param();
-bool next_call_param();
-bool id_call_or_assign();
-bool next_id_call_or_assign();
-bool soft_nl();
-bool nl();
-bool type();
+bool S();
 
+bool CODE();
+
+bool RETURN();
+
+bool RET_EXPR();
+
+bool VAR_DECL();
+
+bool VAR_LET_TYPE();
+
+bool VAR_LET_EXP();
+
+bool LET_DECL();
+
+bool FUNC_DECL();
+
+bool FUNC_RET_TYPE();
+
+bool PARAM_LIST();
+
+bool PARAM();
+
+bool PARAM_NAME();
+
+bool NEXT_PARAM();
+
+bool BRANCH();
+
+bool BR_EXPR();
+
+bool ELSE();
+
+bool ELSE_IF();
+
+bool WHILE_LOOP();
+
+bool FOR_LOOP();
+
+bool FOR_ID();
+
+bool RANGE();
+
+bool CALL_PARAM_LIST();
+
+bool CALL_PARAM();
+
+bool NAMED_CALL_PARAM();
+
+bool CALL_PARAM_NAME();
+
+bool POS_CALL_PARAM();
+
+bool NEXT_CALL_PARAM();
+
+bool ID_CALL_OR_ASSIGN();
+
+bool NEXT_ID_CALL_OR_ASSIGN();
+
+bool SOFT_NL();
+
+bool NL();
+
+bool TYPE();
+
+bool EXPR();
 
 #endif //IFJ_PRJ_PARSER_H

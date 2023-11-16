@@ -1,13 +1,13 @@
-#ifndef IFJ_PRJ_FILE_UTIL_H
-#define IFJ_PRJ_FILE_UTIL_H
+#ifndef IFJ_PRJ_SOURCE_FILE_H
+#define IFJ_PRJ_SOURCE_FILE_H
 
 #include <stdio.h>
 #include "string_util.h"
 
 /**
- * @brief This structure represents source code file.
+ * @brief This structure represents source code sourceFile.
  *
- * @param file_name - Name of file
+ * @param file_name - Name of sourceFile
  * @param lines - Array of lines
  * @param line_allocated - Number of allocated lines
  * @param line_count - Number of lines
@@ -23,24 +23,24 @@ typedef struct {
     int current_position;
 } file_t;
 
-extern file_t *file;
+extern file_t *sourceFile;
 
-extern const struct file_interface File;
+extern const struct file_interface SourceCode;
 
 /**
- * @brief Structure of file interface.
+ * @brief Structure of sourceFile interface.
  *
  * @param ctor - Constructor
  * @param dtor - Destructor
- * @param add_line - Add line to file, line must be allocated
- * @param from_file - Load text from file
+ * @param add_line - Add line to sourceFile, line must be allocated
+ * @param from_file - Load text from sourceFile
  * @param from_stdin - Load text from stdin
  * @param line - Get current line (starts from 0)
  * @param column - Get current column (starts from 0)
- * @param getc - Get char from file and move pointer
- * @param back_step - Back step in file, move pointer back for one char
+ * @param getc - Get char from sourceFile and move pointer
+ * @param back_step - Back step in sourceFile, move pointer back for one char
  * @param print_line - Print line
- * @param print - Print full file
+ * @param print - Print full sourceFile
  */
 struct file_interface {
     int (*ctor)(void);
@@ -56,4 +56,4 @@ struct file_interface {
     void (*print)(void);
 };
 
-#endif //IFJ_PRJ_FILE_UTIL_H
+#endif //IFJ_PRJ_SOURCE_FILE_H

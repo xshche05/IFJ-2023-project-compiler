@@ -14,9 +14,9 @@ token_array_t *tokens = NULL;
 bool token_added = false;
 
 #define ERROR(stream, msg, ...) fprintf(stream, "Error: " msg "\n\n", ##__VA_ARGS__); \
-fprintf(stderr, "%s\n", File.print_line());                                          \
-fprintf(stderr, "%*c\n\n", File.column()+1, '^');                                     \
-fprintf(stderr, "Line:   %d\nColumn: %d\n\n\n", File.line()+1, File.column()+1);                                         \
+fprintf(stderr, "%s\n", SourceCode.print_line());                                          \
+fprintf(stderr, "%*c\n\n", SourceCode.column()+1, '^');                                     \
+fprintf(stderr, "Line:   %d\nColumn: %d\n\n\n", SourceCode.line()+1, SourceCode.column()+1);                                         \
 
 
 static int is_keyword(string_t *lexeme) {
@@ -182,9 +182,9 @@ static string_t *verify_str(string_t *lexeme, bool multiline) {
 
 static int add_token(token_type_t type, token_attribute attribute, bool has_attribute) {
     token_t *token = Token.ctor(type, attribute, has_attribute);
-    if (!isspace(control_char) && type != TOKEN_NEWLINE) File.back_step();
-    if (type == TOKEN_NEWLINE) token_added = false;
-    else token_added = true;
+    token->has_newline_after = false;
+    if (!isspace(control_char)) SourceCode.back_step();
+    token_added = true;
     return TokenArray.add(token);
 }
 
@@ -200,12 +200,13 @@ int source_code_to_tokens() {
     int comment_cnt = 0;
 
     // FSM loop
-    while ((c = File.getc()) != EOF) {
+    while ((c = SourceCode.getc()) != EOF) {
         control_char = c;
         switch (fsm_state) {
             case START_S:
                 if (prev == '\n' && token_added) {
-                    add_token(TOKEN_NEWLINE, attribute, false);
+                    token_added = false;
+                    TokenArray.set_nl_after();
                 }
                 switch (c) {
                     // White symbols
@@ -820,7 +821,7 @@ int source_code_to_tokens() {
             case COM_MULT_END_S:
                 comment_cnt--;
                 if (comment_cnt == 0) {
-                    if (!isspace(control_char)) File.back_step();
+                    if (!isspace(control_char)) SourceCode.back_step();
                     c = ' ';
                     fsm_state = START_S;
                 } else {
@@ -832,7 +833,7 @@ int source_code_to_tokens() {
                 }
                 break;
             case COM_END_SINGL_S:
-                if (!isspace(control_char)) File.back_step();
+                if (!isspace(control_char)) SourceCode.back_step();
                 c = '\n';
                 fsm_state = START_S;
                 break;

@@ -5,7 +5,7 @@
 #include "token.h"
 #include <stdlib.h>
 
-char *tokens_as_str[51] = {
+static char *tokens_as_str[] = {
         "TOKEN_IDENTIFIER",
         "TOKEN_DOUBLE_TYPE",
         "TOKEN_ELSE",
@@ -24,6 +24,14 @@ char *tokens_as_str[51] = {
         "TOKEN_CONTINUE",
         "TOKEN_UNDERSCORE",
         "TOKEN_ASSIGNMENT",
+        "TOKEN_CLOSED_RANGE",
+        "TOKEN_HALF_OPEN_RANGE",
+        "TOKEN_REAL_LITERAL",
+        "TOKEN_STRING_LITERAL",
+        "TOKEN_NIL_LITERAL",
+        "TOKEN_TRUE_LITERAL",
+        "TOKEN_FALSE_LITERAL",
+        "TOKEN_INTEGER_LITERAL",
         "TOKEN_ADDITION",
         "TOKEN_SUBTRACTION",
         "TOKEN_MULTIPLICATION",
@@ -34,20 +42,11 @@ char *tokens_as_str[51] = {
         "TOKEN_GREATER_THAN_OR_EQUAL_TO",
         "TOKEN_EQUAL_TO",
         "TOKEN_NOT_EQUAL_TO",
-//        "TOKEN_NILABLE",
         "TOKEN_IS_NIL",
         "TOKEN_UNWRAP_NILABLE",
         "TOKEN_LOGICAL_AND",
         "TOKEN_LOGICAL_OR",
         "TOKEN_LOGICAL_NOT",
-        "TOKEN_CLOSED_RANGE",
-        "TOKEN_HALF_OPEN_RANGE",
-        "TOKEN_INTEGER_LITERAL",
-        "TOKEN_REAL_LITERAL",
-        "TOKEN_STRING_LITERAL",
-        "TOKEN_NIL_LITERAL",
-        "TOKEN_TRUE_LITERAL",
-        "TOKEN_FALSE_LITERAL",
         "TOKEN_LEFT_BRACKET",
         "TOKEN_RIGHT_BRACKET",
         "TOKEN_LEFT_BRACE",
@@ -130,6 +129,9 @@ static void token_print(token_t *token) {
             break;
         default:
             break;
+    }
+    if (token->has_newline_after) {
+        printf(",   NL");
     }
     printf("\n");
 }
@@ -254,6 +256,16 @@ static int token_array_total() {
     return tokens->length;
 }
 
+static int token_array_set_nl_after() {
+    token_t *token = tokens->array[tokens->length-1];
+    if (token == NULL) {
+        fprintf(stderr, "Error: token array out of bounds.\n");
+        return -1;
+    }
+    token->has_newline_after = true;
+    return 0;
+}
+
 const struct token_interface Token = {
         .ctor = token_ctor,
         .dtor = token_dtor,
@@ -267,5 +279,6 @@ const struct token_array_interface TokenArray = {
         .curr = token_array_current,
         .next = token_array_next,
         .prev = token_array_prev,
-        .total = token_array_total
+        .total = token_array_total,
+        .set_nl_after = token_array_set_nl_after
 };
