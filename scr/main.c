@@ -13,15 +13,15 @@ int main(int argc, char **argv) {
 
     int code = source_code_to_tokens();
 
-    for (int i = 0; i < TokenArray.total(); i++) {
-        Token.print(TokenArray.next());
-    }
-
-//    if (code != 0) {
-//        return code;
+//    for (int i = 0; i < TokenArray.total(); i++) {
+//        Token.print(TokenArray.next());
 //    }
-//    code = S();
-//    printf("code: %d\n", code);
+
+    if (code != 0) {
+        return code;
+    }
+    code = S();
+    printf("code: %d\n", code);
     SourceCode.dtor();
     TokenArray.dtor();
     return 0;

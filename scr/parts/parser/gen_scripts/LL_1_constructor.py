@@ -17,6 +17,9 @@ with open("../grammar.y", "r") as file:
 terminals = set()
 non_terminals = set()
 
+c_file = ""
+h_file = ""
+
 # Get non terminals set
 for rule in rules.values():
     for left in rule.keys():
@@ -105,8 +108,6 @@ def compute_follows():
             right = list(rule.values())[0][0]
             for b_idx in range(len(right) - 1):
                 b = right[b_idx]
-                # if b == "VAR_LET_TYPE":
-                #     print("HERE")
                 if b in terminals and b != "EPS":
                     continue
                 else:
@@ -178,7 +179,7 @@ def gen_func_case(predict_value: str, rule_num: int, name: str):
         for NT in rule_right:
             if NT in non_terminals:
                 func += F"{NT}() && "
-            elif NT != "EPS":
+            elif NT != "EPS" and NT != "NL":
                 func += F"match({NT}) && "
     elif name == "EXPR":
         func += F"call_expr_parser() && "
@@ -189,6 +190,8 @@ def gen_func_case(predict_value: str, rule_num: int, name: str):
 
 def gen_func_footer(predict_values: list[str] = None, name: str = None):
     func = f"{' ' * 8}default:\n"
+    if "NL" in predict_values:
+        func += f"{' ' * 12}if (nl_flag) return true;\n"
     if predict_values is not None:
         func += f"{' ' * 12}printf(\"Syntax error [{name}]: expected {predict_values}, got %s\\n\", tokens_as_str[lookahead->type]);\n"
     func += f"{' ' * 12}s = false;\n"
@@ -202,13 +205,16 @@ def gen_func(name: str):
     func = gen_func_header(name)
     predict_vals = rule_dict_2[name].keys()
     for predict_value in rule_dict_2[name].keys():
+        if predict_value == "EPS" or predict_value == "NL":
+            continue
         func += gen_func_case(predict_value, rule_dict_2[name][predict_value], name)
     func += gen_func_footer(predict_values=list(predict_vals), name=name)
     return func
 
 
 def gen_c_file():
-    print("""\
+    global c_file
+    c_file += """\
 #include "parts.h"
 #include "utils.h"
 #include "new_symtable.h"
@@ -269,6 +275,7 @@ static char *tokens_as_str[] = {
     
 bool match(token_type_t type) {
     if (lookahead->type == type) {
+        nl_flag = lookahead->has_newline_after;
         lookahead = TokenArray.next();
         return true;
     }
@@ -279,12 +286,13 @@ bool match(token_type_t type) {
 bool call_expr_parser() {
     return true;
 }
-    """)
+    """
     for non_terminal in rule_dict_2.keys():
-        print(gen_func(non_terminal))
+        c_file += gen_func(non_terminal)
 
 def gen_h_file():
-    print("""\
+    global h_file
+    h_file += """\
 #ifndef IFJ_PRJ_PARSER_H
 #define IFJ_PRJ_PARSER_H
 
@@ -296,11 +304,18 @@ bool nl_flag;    // new line
 
 bool match(token_type_t type);
 
-bool call_expr_parser();
-""")
+bool call_expr_parser();\n
+"""
     for non_terminal in rule_dict_2.keys():
-        print(f"bool {non_terminal}();\n")
-    print("#endif //IFJ_PRJ_PARSER_H")
+        h_file += f"bool {non_terminal}();\n"
+    h_file += "#endif //IFJ_PRJ_PARSER_H\n"
 
-# gen_h_file()
+gen_h_file()
 gen_c_file()
+
+
+with open("parser.c", "w") as file:
+    file.write(c_file)
+
+with open("parser.h", "w") as file:
+    file.write(h_file)

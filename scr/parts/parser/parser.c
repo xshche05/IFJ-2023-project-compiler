@@ -58,6 +58,7 @@ static char *tokens_as_str[] = {
     
 bool match(token_type_t type) {
     if (lookahead->type == type) {
+        nl_flag = lookahead->has_newline_after;
         lookahead = TokenArray.next();
         return true;
     }
@@ -73,41 +74,41 @@ bool S() {
     bool s;
     lookahead = TokenArray.next();
     switch (lookahead->type) {
+        case TOKEN_IDENTIFIER:
+            s = CODE() && match(TOKEN_EOF) && true;
+            break;
+        case TOKEN_BREAK:
+            s = CODE() && match(TOKEN_EOF) && true;
+            break;
+        case TOKEN_EOF:
+            s = CODE() && match(TOKEN_EOF) && true;
+            break;
+        case TOKEN_FOR:
+            s = CODE() && match(TOKEN_EOF) && true;
+            break;
+        case TOKEN_WHILE:
+            s = CODE() && match(TOKEN_EOF) && true;
+            break;
+        case TOKEN_LET:
+            s = CODE() && match(TOKEN_EOF) && true;
+            break;
+        case TOKEN_CONTINUE:
+            s = CODE() && match(TOKEN_EOF) && true;
+            break;
+        case TOKEN_RETURN:
+            s = CODE() && match(TOKEN_EOF) && true;
+            break;
+        case TOKEN_FUNC:
+            s = CODE() && match(TOKEN_EOF) && true;
+            break;
         case TOKEN_VAR:
             s = CODE() && match(TOKEN_EOF) && true;
             break;
         case TOKEN_IF:
             s = CODE() && match(TOKEN_EOF) && true;
             break;
-        case TOKEN_FUNC:
-            s = CODE() && match(TOKEN_EOF) && true;
-            break;
-        case TOKEN_LET:
-            s = CODE() && match(TOKEN_EOF) && true;
-            break;
-        case TOKEN_BREAK:
-            s = CODE() && match(TOKEN_EOF) && true;
-            break;
-        case TOKEN_RETURN:
-            s = CODE() && match(TOKEN_EOF) && true;
-            break;
-        case TOKEN_CONTINUE:
-            s = CODE() && match(TOKEN_EOF) && true;
-            break;
-        case TOKEN_EOF:
-            s = CODE() && match(TOKEN_EOF) && true;
-            break;
-        case TOKEN_WHILE:
-            s = CODE() && match(TOKEN_EOF) && true;
-            break;
-        case TOKEN_FOR:
-            s = CODE() && match(TOKEN_EOF) && true;
-            break;
-        case TOKEN_IDENTIFIER:
-            s = CODE() && match(TOKEN_EOF) && true;
-            break;
         default:
-            printf("Syntax error [S]: expected ['TOKEN_VAR', 'TOKEN_IF', 'TOKEN_FUNC', 'TOKEN_LET', 'TOKEN_BREAK', 'TOKEN_RETURN', 'TOKEN_CONTINUE', 'TOKEN_EOF', 'TOKEN_WHILE', 'TOKEN_FOR', 'TOKEN_IDENTIFIER'], got %s\n", tokens_as_str[lookahead->type]);
+            printf("Syntax error [S]: expected ['TOKEN_IDENTIFIER', 'TOKEN_BREAK', 'TOKEN_EOF', 'TOKEN_FOR', 'TOKEN_WHILE', 'TOKEN_LET', 'TOKEN_CONTINUE', 'TOKEN_RETURN', 'TOKEN_FUNC', 'TOKEN_VAR', 'TOKEN_IF'], got %s\n", tokens_as_str[lookahead->type]);
             s = false;
     }
     return s;
@@ -175,83 +176,83 @@ bool RETURN() {
 bool RET_EXPR() {
     bool s;
     switch (lookahead->type) {
-        case TOKEN_LOGICAL_OR:
-            s = EXPR() && true;
-            break;
-        case TOKEN_NOT_EQUAL_TO:
-            s = EXPR() && true;
-            break;
-        case TOKEN_IS_NIL:
-            s = EXPR() && true;
-            break;
-        case TOKEN_INTEGER_LITERAL:
-            s = EXPR() && true;
-            break;
         case TOKEN_GREATER_THAN:
-            s = EXPR() && true;
-            break;
-        case TOKEN_FALSE_LITERAL:
-            s = EXPR() && true;
-            break;
-        case TOKEN_ADDITION:
-            s = EXPR() && true;
-            break;
-        case TOKEN_LESS_THAN:
-            s = EXPR() && true;
-            break;
-        case TOKEN_EQUAL_TO:
-            s = EXPR() && true;
-            break;
-        case TOKEN_STRING_LITERAL:
-            s = EXPR() && true;
-            break;
-        case TOKEN_RIGHT_BRACE:
-            s = true;
-            break;
-        case TOKEN_REAL_LITERAL:
-            s = EXPR() && true;
-            break;
-        case TOKEN_TRUE_LITERAL:
-            s = EXPR() && true;
-            break;
-        case TOKEN_LEFT_BRACE:
-            s = EXPR() && true;
-            break;
-        case TOKEN_LESS_THAN_OR_EQUAL_TO:
-            s = EXPR() && true;
-            break;
-        case TOKEN_DIVISION:
-            s = EXPR() && true;
-            break;
-        case TOKEN_SUBTRACTION:
-            s = EXPR() && true;
-            break;
-        case TOKEN_NIL_LITERAL:
-            s = EXPR() && true;
-            break;
-        case TOKEN_LOGICAL_NOT:
-            s = EXPR() && true;
-            break;
-        case TOKEN_UNWRAP_NILABLE:
-            s = EXPR() && true;
-            break;
-        case TOKEN_GREATER_THAN_OR_EQUAL_TO:
             s = EXPR() && true;
             break;
         case TOKEN_LOGICAL_AND:
             s = EXPR() && true;
             break;
+        case TOKEN_FALSE_LITERAL:
+            s = EXPR() && true;
+            break;
+        case TOKEN_IS_NIL:
+            s = EXPR() && true;
+            break;
+        case TOKEN_LOGICAL_OR:
+            s = EXPR() && true;
+            break;
+        case TOKEN_NIL_LITERAL:
+            s = EXPR() && true;
+            break;
+        case TOKEN_REAL_LITERAL:
+            s = EXPR() && true;
+            break;
+        case TOKEN_UNWRAP_NILABLE:
+            s = EXPR() && true;
+            break;
+        case TOKEN_LESS_THAN:
+            s = EXPR() && true;
+            break;
+        case TOKEN_DIVISION:
+            s = EXPR() && true;
+            break;
+        case TOKEN_LEFT_BRACE:
+            s = EXPR() && true;
+            break;
+        case TOKEN_RIGHT_BRACE:
+            s = true;
+            break;
+        case TOKEN_EQUAL_TO:
+            s = EXPR() && true;
+            break;
         case TOKEN_IDENTIFIER:
             s = EXPR() && true;
             break;
+        case TOKEN_LESS_THAN_OR_EQUAL_TO:
+            s = EXPR() && true;
+            break;
+        case TOKEN_STRING_LITERAL:
+            s = EXPR() && true;
+            break;
+        case TOKEN_ADDITION:
+            s = EXPR() && true;
+            break;
+        case TOKEN_NOT_EQUAL_TO:
+            s = EXPR() && true;
+            break;
+        case TOKEN_SUBTRACTION:
+            s = EXPR() && true;
+            break;
         case TOKEN_MULTIPLICATION:
+            s = EXPR() && true;
+            break;
+        case TOKEN_LOGICAL_NOT:
+            s = EXPR() && true;
+            break;
+        case TOKEN_INTEGER_LITERAL:
+            s = EXPR() && true;
+            break;
+        case TOKEN_GREATER_THAN_OR_EQUAL_TO:
+            s = EXPR() && true;
+            break;
+        case TOKEN_TRUE_LITERAL:
             s = EXPR() && true;
             break;
         case TOKEN_EOF:
             s = true;
             break;
         default:
-            printf("Syntax error [RET_EXPR]: expected ['TOKEN_LOGICAL_OR', 'TOKEN_NOT_EQUAL_TO', 'TOKEN_IS_NIL', 'TOKEN_INTEGER_LITERAL', 'TOKEN_GREATER_THAN', 'TOKEN_FALSE_LITERAL', 'TOKEN_ADDITION', 'TOKEN_LESS_THAN', 'TOKEN_EQUAL_TO', 'TOKEN_STRING_LITERAL', 'TOKEN_RIGHT_BRACE', 'TOKEN_REAL_LITERAL', 'TOKEN_TRUE_LITERAL', 'TOKEN_LEFT_BRACE', 'TOKEN_LESS_THAN_OR_EQUAL_TO', 'TOKEN_DIVISION', 'TOKEN_SUBTRACTION', 'TOKEN_NIL_LITERAL', 'TOKEN_LOGICAL_NOT', 'TOKEN_UNWRAP_NILABLE', 'TOKEN_GREATER_THAN_OR_EQUAL_TO', 'TOKEN_LOGICAL_AND', 'TOKEN_IDENTIFIER', 'TOKEN_MULTIPLICATION', 'TOKEN_EOF'], got %s\n", tokens_as_str[lookahead->type]);
+            printf("Syntax error [RET_EXPR]: expected ['TOKEN_GREATER_THAN', 'TOKEN_LOGICAL_AND', 'TOKEN_FALSE_LITERAL', 'TOKEN_IS_NIL', 'TOKEN_LOGICAL_OR', 'TOKEN_NIL_LITERAL', 'TOKEN_REAL_LITERAL', 'TOKEN_UNWRAP_NILABLE', 'TOKEN_LESS_THAN', 'TOKEN_DIVISION', 'TOKEN_LEFT_BRACE', 'TOKEN_RIGHT_BRACE', 'TOKEN_EQUAL_TO', 'TOKEN_IDENTIFIER', 'TOKEN_LESS_THAN_OR_EQUAL_TO', 'TOKEN_STRING_LITERAL', 'TOKEN_ADDITION', 'TOKEN_NOT_EQUAL_TO', 'TOKEN_SUBTRACTION', 'TOKEN_MULTIPLICATION', 'TOKEN_LOGICAL_NOT', 'TOKEN_INTEGER_LITERAL', 'TOKEN_GREATER_THAN_OR_EQUAL_TO', 'TOKEN_TRUE_LITERAL', 'TOKEN_EOF'], got %s\n", tokens_as_str[lookahead->type]);
             s = false;
     }
     return s;
@@ -276,47 +277,12 @@ bool VAR_LET_TYPE() {
         case TOKEN_COLON:
             s = match(TOKEN_COLON) && TYPE() && true;
             break;
-        case TOKEN_VAR:
-            s = true;
-            break;
-        case TOKEN_IF:
-            s = true;
-            break;
-        case TOKEN_FUNC:
-            s = true;
-            break;
         case TOKEN_ASSIGNMENT:
             s = true;
             break;
-        case TOKEN_BREAK:
-            s = true;
-            break;
-        case TOKEN_LET:
-            s = true;
-            break;
-        case TOKEN_CONTINUE:
-            s = true;
-            break;
-        case TOKEN_RETURN:
-            s = true;
-            break;
-        case TOKEN_EOF:
-            s = true;
-            break;
-        case TOKEN_WHILE:
-            s = true;
-            break;
-        case TOKEN_FOR:
-            s = true;
-            break;
-        case TOKEN_RIGHT_BRACE:
-            s = true;
-            break;
-        case TOKEN_IDENTIFIER:
-            s = true;
-            break;
         default:
-            printf("Syntax error [VAR_LET_TYPE]: expected ['TOKEN_COLON', 'TOKEN_VAR', 'TOKEN_IF', 'TOKEN_FUNC', 'TOKEN_ASSIGNMENT', 'TOKEN_BREAK', 'TOKEN_LET', 'TOKEN_CONTINUE', 'TOKEN_RETURN', 'TOKEN_EOF', 'TOKEN_WHILE', 'TOKEN_FOR', 'TOKEN_RIGHT_BRACE', 'TOKEN_IDENTIFIER'], got %s\n", tokens_as_str[lookahead->type]);
+            if (nl_flag) return true;
+            printf("Syntax error [VAR_LET_TYPE]: expected ['TOKEN_COLON', 'NL', 'TOKEN_ASSIGNMENT'], got %s\n", tokens_as_str[lookahead->type]);
             s = false;
     }
     return s;
@@ -328,44 +294,9 @@ bool VAR_LET_EXP() {
         case TOKEN_ASSIGNMENT:
             s = match(TOKEN_ASSIGNMENT) && EXPR() && true;
             break;
-        case TOKEN_VAR:
-            s = true;
-            break;
-        case TOKEN_IF:
-            s = true;
-            break;
-        case TOKEN_FUNC:
-            s = true;
-            break;
-        case TOKEN_BREAK:
-            s = true;
-            break;
-        case TOKEN_LET:
-            s = true;
-            break;
-        case TOKEN_CONTINUE:
-            s = true;
-            break;
-        case TOKEN_RETURN:
-            s = true;
-            break;
-        case TOKEN_EOF:
-            s = true;
-            break;
-        case TOKEN_WHILE:
-            s = true;
-            break;
-        case TOKEN_FOR:
-            s = true;
-            break;
-        case TOKEN_RIGHT_BRACE:
-            s = true;
-            break;
-        case TOKEN_IDENTIFIER:
-            s = true;
-            break;
         default:
-            printf("Syntax error [VAR_LET_EXP]: expected ['TOKEN_ASSIGNMENT', 'TOKEN_VAR', 'TOKEN_IF', 'TOKEN_FUNC', 'TOKEN_BREAK', 'TOKEN_LET', 'TOKEN_CONTINUE', 'TOKEN_RETURN', 'TOKEN_EOF', 'TOKEN_WHILE', 'TOKEN_FOR', 'TOKEN_RIGHT_BRACE', 'TOKEN_IDENTIFIER'], got %s\n", tokens_as_str[lookahead->type]);
+            if (nl_flag) return true;
+            printf("Syntax error [VAR_LET_EXP]: expected ['TOKEN_ASSIGNMENT', 'NL'], got %s\n", tokens_as_str[lookahead->type]);
             s = false;
     }
     return s;
@@ -416,17 +347,17 @@ bool FUNC_RET_TYPE() {
 bool PARAM_LIST() {
     bool s;
     switch (lookahead->type) {
-        case TOKEN_UNDERSCORE:
+        case TOKEN_IDENTIFIER:
             s = PARAM() && NEXT_PARAM() && true;
             break;
-        case TOKEN_IDENTIFIER:
+        case TOKEN_UNDERSCORE:
             s = PARAM() && NEXT_PARAM() && true;
             break;
         case TOKEN_RIGHT_BRACKET:
             s = true;
             break;
         default:
-            printf("Syntax error [PARAM_LIST]: expected ['TOKEN_UNDERSCORE', 'TOKEN_IDENTIFIER', 'TOKEN_RIGHT_BRACKET'], got %s\n", tokens_as_str[lookahead->type]);
+            printf("Syntax error [PARAM_LIST]: expected ['TOKEN_IDENTIFIER', 'TOKEN_UNDERSCORE', 'TOKEN_RIGHT_BRACKET'], got %s\n", tokens_as_str[lookahead->type]);
             s = false;
     }
     return s;
@@ -435,14 +366,14 @@ bool PARAM_LIST() {
 bool PARAM() {
     bool s;
     switch (lookahead->type) {
-        case TOKEN_UNDERSCORE:
-            s = PARAM_NAME() && match(TOKEN_IDENTIFIER) && match(TOKEN_COLON) && TYPE() && true;
-            break;
         case TOKEN_IDENTIFIER:
             s = PARAM_NAME() && match(TOKEN_IDENTIFIER) && match(TOKEN_COLON) && TYPE() && true;
             break;
+        case TOKEN_UNDERSCORE:
+            s = PARAM_NAME() && match(TOKEN_IDENTIFIER) && match(TOKEN_COLON) && TYPE() && true;
+            break;
         default:
-            printf("Syntax error [PARAM]: expected ['TOKEN_UNDERSCORE', 'TOKEN_IDENTIFIER'], got %s\n", tokens_as_str[lookahead->type]);
+            printf("Syntax error [PARAM]: expected ['TOKEN_IDENTIFIER', 'TOKEN_UNDERSCORE'], got %s\n", tokens_as_str[lookahead->type]);
             s = false;
     }
     return s;
@@ -496,83 +427,83 @@ bool BRANCH() {
 bool BR_EXPR() {
     bool s;
     switch (lookahead->type) {
-        case TOKEN_LOGICAL_OR:
-            s = EXPR() && true;
-            break;
-        case TOKEN_NOT_EQUAL_TO:
-            s = EXPR() && true;
-            break;
-        case TOKEN_IS_NIL:
-            s = EXPR() && true;
-            break;
-        case TOKEN_INTEGER_LITERAL:
-            s = EXPR() && true;
-            break;
         case TOKEN_GREATER_THAN:
-            s = EXPR() && true;
-            break;
-        case TOKEN_FALSE_LITERAL:
-            s = EXPR() && true;
-            break;
-        case TOKEN_ADDITION:
-            s = EXPR() && true;
-            break;
-        case TOKEN_LESS_THAN:
-            s = EXPR() && true;
-            break;
-        case TOKEN_EQUAL_TO:
-            s = EXPR() && true;
-            break;
-        case TOKEN_STRING_LITERAL:
-            s = EXPR() && true;
-            break;
-        case TOKEN_RIGHT_BRACE:
-            s = EXPR() && true;
-            break;
-        case TOKEN_REAL_LITERAL:
-            s = EXPR() && true;
-            break;
-        case TOKEN_TRUE_LITERAL:
-            s = EXPR() && true;
-            break;
-        case TOKEN_LEFT_BRACE:
-            s = EXPR() && true;
-            break;
-        case TOKEN_LESS_THAN_OR_EQUAL_TO:
-            s = EXPR() && true;
-            break;
-        case TOKEN_DIVISION:
-            s = EXPR() && true;
-            break;
-        case TOKEN_SUBTRACTION:
-            s = EXPR() && true;
-            break;
-        case TOKEN_NIL_LITERAL:
-            s = EXPR() && true;
-            break;
-        case TOKEN_LOGICAL_NOT:
-            s = EXPR() && true;
-            break;
-        case TOKEN_UNWRAP_NILABLE:
-            s = EXPR() && true;
-            break;
-        case TOKEN_GREATER_THAN_OR_EQUAL_TO:
             s = EXPR() && true;
             break;
         case TOKEN_LOGICAL_AND:
             s = EXPR() && true;
             break;
+        case TOKEN_FALSE_LITERAL:
+            s = EXPR() && true;
+            break;
+        case TOKEN_IS_NIL:
+            s = EXPR() && true;
+            break;
+        case TOKEN_LOGICAL_OR:
+            s = EXPR() && true;
+            break;
+        case TOKEN_NIL_LITERAL:
+            s = EXPR() && true;
+            break;
+        case TOKEN_REAL_LITERAL:
+            s = EXPR() && true;
+            break;
+        case TOKEN_UNWRAP_NILABLE:
+            s = EXPR() && true;
+            break;
+        case TOKEN_LESS_THAN:
+            s = EXPR() && true;
+            break;
+        case TOKEN_DIVISION:
+            s = EXPR() && true;
+            break;
+        case TOKEN_LEFT_BRACE:
+            s = EXPR() && true;
+            break;
+        case TOKEN_RIGHT_BRACE:
+            s = EXPR() && true;
+            break;
+        case TOKEN_EQUAL_TO:
+            s = EXPR() && true;
+            break;
         case TOKEN_IDENTIFIER:
             s = EXPR() && true;
             break;
+        case TOKEN_LESS_THAN_OR_EQUAL_TO:
+            s = EXPR() && true;
+            break;
+        case TOKEN_STRING_LITERAL:
+            s = EXPR() && true;
+            break;
+        case TOKEN_ADDITION:
+            s = EXPR() && true;
+            break;
+        case TOKEN_NOT_EQUAL_TO:
+            s = EXPR() && true;
+            break;
+        case TOKEN_SUBTRACTION:
+            s = EXPR() && true;
+            break;
         case TOKEN_MULTIPLICATION:
+            s = EXPR() && true;
+            break;
+        case TOKEN_LOGICAL_NOT:
+            s = EXPR() && true;
+            break;
+        case TOKEN_INTEGER_LITERAL:
+            s = EXPR() && true;
+            break;
+        case TOKEN_GREATER_THAN_OR_EQUAL_TO:
+            s = EXPR() && true;
+            break;
+        case TOKEN_TRUE_LITERAL:
             s = EXPR() && true;
             break;
         case TOKEN_LET:
             s = match(TOKEN_LET) && match(TOKEN_IDENTIFIER) && true;
             break;
         default:
-            printf("Syntax error [BR_EXPR]: expected ['TOKEN_LOGICAL_OR', 'TOKEN_NOT_EQUAL_TO', 'TOKEN_IS_NIL', 'TOKEN_INTEGER_LITERAL', 'TOKEN_GREATER_THAN', 'TOKEN_FALSE_LITERAL', 'TOKEN_ADDITION', 'TOKEN_LESS_THAN', 'TOKEN_EQUAL_TO', 'TOKEN_STRING_LITERAL', 'TOKEN_RIGHT_BRACE', 'TOKEN_REAL_LITERAL', 'TOKEN_TRUE_LITERAL', 'TOKEN_LEFT_BRACE', 'TOKEN_LESS_THAN_OR_EQUAL_TO', 'TOKEN_DIVISION', 'TOKEN_SUBTRACTION', 'TOKEN_NIL_LITERAL', 'TOKEN_LOGICAL_NOT', 'TOKEN_UNWRAP_NILABLE', 'TOKEN_GREATER_THAN_OR_EQUAL_TO', 'TOKEN_LOGICAL_AND', 'TOKEN_IDENTIFIER', 'TOKEN_MULTIPLICATION', 'TOKEN_LET'], got %s\n", tokens_as_str[lookahead->type]);
+            printf("Syntax error [BR_EXPR]: expected ['TOKEN_GREATER_THAN', 'TOKEN_LOGICAL_AND', 'TOKEN_FALSE_LITERAL', 'TOKEN_IS_NIL', 'TOKEN_LOGICAL_OR', 'TOKEN_NIL_LITERAL', 'TOKEN_REAL_LITERAL', 'TOKEN_UNWRAP_NILABLE', 'TOKEN_LESS_THAN', 'TOKEN_DIVISION', 'TOKEN_LEFT_BRACE', 'TOKEN_RIGHT_BRACE', 'TOKEN_EQUAL_TO', 'TOKEN_IDENTIFIER', 'TOKEN_LESS_THAN_OR_EQUAL_TO', 'TOKEN_STRING_LITERAL', 'TOKEN_ADDITION', 'TOKEN_NOT_EQUAL_TO', 'TOKEN_SUBTRACTION', 'TOKEN_MULTIPLICATION', 'TOKEN_LOGICAL_NOT', 'TOKEN_INTEGER_LITERAL', 'TOKEN_GREATER_THAN_OR_EQUAL_TO', 'TOKEN_TRUE_LITERAL', 'TOKEN_LET'], got %s\n", tokens_as_str[lookahead->type]);
             s = false;
     }
     return s;
@@ -584,44 +515,9 @@ bool ELSE() {
         case TOKEN_ELSE:
             s = match(TOKEN_ELSE) && ELSE_IF() && true;
             break;
-        case TOKEN_VAR:
-            s = true;
-            break;
-        case TOKEN_IF:
-            s = true;
-            break;
-        case TOKEN_FUNC:
-            s = true;
-            break;
-        case TOKEN_BREAK:
-            s = true;
-            break;
-        case TOKEN_LET:
-            s = true;
-            break;
-        case TOKEN_CONTINUE:
-            s = true;
-            break;
-        case TOKEN_RETURN:
-            s = true;
-            break;
-        case TOKEN_EOF:
-            s = true;
-            break;
-        case TOKEN_WHILE:
-            s = true;
-            break;
-        case TOKEN_FOR:
-            s = true;
-            break;
-        case TOKEN_RIGHT_BRACE:
-            s = true;
-            break;
-        case TOKEN_IDENTIFIER:
-            s = true;
-            break;
         default:
-            printf("Syntax error [ELSE]: expected ['TOKEN_ELSE', 'TOKEN_VAR', 'TOKEN_IF', 'TOKEN_FUNC', 'TOKEN_BREAK', 'TOKEN_LET', 'TOKEN_CONTINUE', 'TOKEN_RETURN', 'TOKEN_EOF', 'TOKEN_WHILE', 'TOKEN_FOR', 'TOKEN_RIGHT_BRACE', 'TOKEN_IDENTIFIER'], got %s\n", tokens_as_str[lookahead->type]);
+            if (nl_flag) return true;
+            printf("Syntax error [ELSE]: expected ['TOKEN_ELSE', 'NL'], got %s\n", tokens_as_str[lookahead->type]);
             s = false;
     }
     return s;
@@ -631,46 +527,14 @@ bool ELSE_IF() {
     bool s;
     switch (lookahead->type) {
         case TOKEN_IF:
-            s = true;
+            s = match(TOKEN_IF) && BR_EXPR() && match(TOKEN_LEFT_BRACE) && CODE() && match(TOKEN_RIGHT_BRACE) && ELSE() && true;
             break;
         case TOKEN_LEFT_BRACE:
             s = match(TOKEN_LEFT_BRACE) && CODE() && match(TOKEN_RIGHT_BRACE) && true;
             break;
-        case TOKEN_VAR:
-            s = true;
-            break;
-        case TOKEN_FUNC:
-            s = true;
-            break;
-        case TOKEN_BREAK:
-            s = true;
-            break;
-        case TOKEN_LET:
-            s = true;
-            break;
-        case TOKEN_CONTINUE:
-            s = true;
-            break;
-        case TOKEN_RETURN:
-            s = true;
-            break;
-        case TOKEN_EOF:
-            s = true;
-            break;
-        case TOKEN_WHILE:
-            s = true;
-            break;
-        case TOKEN_FOR:
-            s = true;
-            break;
-        case TOKEN_RIGHT_BRACE:
-            s = true;
-            break;
-        case TOKEN_IDENTIFIER:
-            s = true;
-            break;
         default:
-            printf("Syntax error [ELSE_IF]: expected ['TOKEN_IF', 'TOKEN_LEFT_BRACE', 'TOKEN_VAR', 'TOKEN_FUNC', 'TOKEN_BREAK', 'TOKEN_LET', 'TOKEN_CONTINUE', 'TOKEN_RETURN', 'TOKEN_EOF', 'TOKEN_WHILE', 'TOKEN_FOR', 'TOKEN_RIGHT_BRACE', 'TOKEN_IDENTIFIER'], got %s\n", tokens_as_str[lookahead->type]);
+            if (nl_flag) return true;
+            printf("Syntax error [ELSE_IF]: expected ['TOKEN_IF', 'TOKEN_LEFT_BRACE', 'NL'], got %s\n", tokens_as_str[lookahead->type]);
             s = false;
     }
     return s;
@@ -737,86 +601,86 @@ bool RANGE() {
 bool CALL_PARAM_LIST() {
     bool s;
     switch (lookahead->type) {
-        case TOKEN_UNDERSCORE:
-            s = CALL_PARAM() && NEXT_CALL_PARAM() && true;
-            break;
-        case TOKEN_LOGICAL_OR:
-            s = CALL_PARAM() && NEXT_CALL_PARAM() && true;
-            break;
-        case TOKEN_NOT_EQUAL_TO:
-            s = CALL_PARAM() && NEXT_CALL_PARAM() && true;
-            break;
-        case TOKEN_IS_NIL:
-            s = CALL_PARAM() && NEXT_CALL_PARAM() && true;
-            break;
-        case TOKEN_INTEGER_LITERAL:
-            s = CALL_PARAM() && NEXT_CALL_PARAM() && true;
-            break;
         case TOKEN_GREATER_THAN:
-            s = CALL_PARAM() && NEXT_CALL_PARAM() && true;
-            break;
-        case TOKEN_FALSE_LITERAL:
-            s = CALL_PARAM() && NEXT_CALL_PARAM() && true;
-            break;
-        case TOKEN_ADDITION:
-            s = CALL_PARAM() && NEXT_CALL_PARAM() && true;
-            break;
-        case TOKEN_LESS_THAN:
-            s = CALL_PARAM() && NEXT_CALL_PARAM() && true;
-            break;
-        case TOKEN_EQUAL_TO:
-            s = CALL_PARAM() && NEXT_CALL_PARAM() && true;
-            break;
-        case TOKEN_STRING_LITERAL:
-            s = CALL_PARAM() && NEXT_CALL_PARAM() && true;
-            break;
-        case TOKEN_RIGHT_BRACE:
-            s = CALL_PARAM() && NEXT_CALL_PARAM() && true;
-            break;
-        case TOKEN_REAL_LITERAL:
-            s = CALL_PARAM() && NEXT_CALL_PARAM() && true;
-            break;
-        case TOKEN_TRUE_LITERAL:
-            s = CALL_PARAM() && NEXT_CALL_PARAM() && true;
-            break;
-        case TOKEN_LEFT_BRACE:
-            s = CALL_PARAM() && NEXT_CALL_PARAM() && true;
-            break;
-        case TOKEN_LESS_THAN_OR_EQUAL_TO:
-            s = CALL_PARAM() && NEXT_CALL_PARAM() && true;
-            break;
-        case TOKEN_DIVISION:
-            s = CALL_PARAM() && NEXT_CALL_PARAM() && true;
-            break;
-        case TOKEN_SUBTRACTION:
-            s = CALL_PARAM() && NEXT_CALL_PARAM() && true;
-            break;
-        case TOKEN_NIL_LITERAL:
-            s = CALL_PARAM() && NEXT_CALL_PARAM() && true;
-            break;
-        case TOKEN_LOGICAL_NOT:
-            s = CALL_PARAM() && NEXT_CALL_PARAM() && true;
-            break;
-        case TOKEN_UNWRAP_NILABLE:
-            s = CALL_PARAM() && NEXT_CALL_PARAM() && true;
-            break;
-        case TOKEN_GREATER_THAN_OR_EQUAL_TO:
             s = CALL_PARAM() && NEXT_CALL_PARAM() && true;
             break;
         case TOKEN_LOGICAL_AND:
             s = CALL_PARAM() && NEXT_CALL_PARAM() && true;
             break;
+        case TOKEN_FALSE_LITERAL:
+            s = CALL_PARAM() && NEXT_CALL_PARAM() && true;
+            break;
+        case TOKEN_IS_NIL:
+            s = CALL_PARAM() && NEXT_CALL_PARAM() && true;
+            break;
+        case TOKEN_LOGICAL_OR:
+            s = CALL_PARAM() && NEXT_CALL_PARAM() && true;
+            break;
+        case TOKEN_NIL_LITERAL:
+            s = CALL_PARAM() && NEXT_CALL_PARAM() && true;
+            break;
+        case TOKEN_REAL_LITERAL:
+            s = CALL_PARAM() && NEXT_CALL_PARAM() && true;
+            break;
+        case TOKEN_UNDERSCORE:
+            s = CALL_PARAM() && NEXT_CALL_PARAM() && true;
+            break;
+        case TOKEN_UNWRAP_NILABLE:
+            s = CALL_PARAM() && NEXT_CALL_PARAM() && true;
+            break;
+        case TOKEN_LESS_THAN:
+            s = CALL_PARAM() && NEXT_CALL_PARAM() && true;
+            break;
+        case TOKEN_DIVISION:
+            s = CALL_PARAM() && NEXT_CALL_PARAM() && true;
+            break;
+        case TOKEN_LEFT_BRACE:
+            s = CALL_PARAM() && NEXT_CALL_PARAM() && true;
+            break;
+        case TOKEN_RIGHT_BRACE:
+            s = CALL_PARAM() && NEXT_CALL_PARAM() && true;
+            break;
+        case TOKEN_EQUAL_TO:
+            s = CALL_PARAM() && NEXT_CALL_PARAM() && true;
+            break;
         case TOKEN_IDENTIFIER:
             s = CALL_PARAM() && NEXT_CALL_PARAM() && true;
             break;
+        case TOKEN_LESS_THAN_OR_EQUAL_TO:
+            s = CALL_PARAM() && NEXT_CALL_PARAM() && true;
+            break;
+        case TOKEN_STRING_LITERAL:
+            s = CALL_PARAM() && NEXT_CALL_PARAM() && true;
+            break;
+        case TOKEN_ADDITION:
+            s = CALL_PARAM() && NEXT_CALL_PARAM() && true;
+            break;
+        case TOKEN_NOT_EQUAL_TO:
+            s = CALL_PARAM() && NEXT_CALL_PARAM() && true;
+            break;
+        case TOKEN_SUBTRACTION:
+            s = CALL_PARAM() && NEXT_CALL_PARAM() && true;
+            break;
         case TOKEN_MULTIPLICATION:
+            s = CALL_PARAM() && NEXT_CALL_PARAM() && true;
+            break;
+        case TOKEN_LOGICAL_NOT:
+            s = CALL_PARAM() && NEXT_CALL_PARAM() && true;
+            break;
+        case TOKEN_INTEGER_LITERAL:
+            s = CALL_PARAM() && NEXT_CALL_PARAM() && true;
+            break;
+        case TOKEN_GREATER_THAN_OR_EQUAL_TO:
+            s = CALL_PARAM() && NEXT_CALL_PARAM() && true;
+            break;
+        case TOKEN_TRUE_LITERAL:
             s = CALL_PARAM() && NEXT_CALL_PARAM() && true;
             break;
         case TOKEN_RIGHT_BRACKET:
             s = true;
             break;
         default:
-            printf("Syntax error [CALL_PARAM_LIST]: expected ['TOKEN_UNDERSCORE', 'TOKEN_LOGICAL_OR', 'TOKEN_NOT_EQUAL_TO', 'TOKEN_IS_NIL', 'TOKEN_INTEGER_LITERAL', 'TOKEN_GREATER_THAN', 'TOKEN_FALSE_LITERAL', 'TOKEN_ADDITION', 'TOKEN_LESS_THAN', 'TOKEN_EQUAL_TO', 'TOKEN_STRING_LITERAL', 'TOKEN_RIGHT_BRACE', 'TOKEN_REAL_LITERAL', 'TOKEN_TRUE_LITERAL', 'TOKEN_LEFT_BRACE', 'TOKEN_LESS_THAN_OR_EQUAL_TO', 'TOKEN_DIVISION', 'TOKEN_SUBTRACTION', 'TOKEN_NIL_LITERAL', 'TOKEN_LOGICAL_NOT', 'TOKEN_UNWRAP_NILABLE', 'TOKEN_GREATER_THAN_OR_EQUAL_TO', 'TOKEN_LOGICAL_AND', 'TOKEN_IDENTIFIER', 'TOKEN_MULTIPLICATION', 'TOKEN_RIGHT_BRACKET'], got %s\n", tokens_as_str[lookahead->type]);
+            printf("Syntax error [CALL_PARAM_LIST]: expected ['TOKEN_GREATER_THAN', 'TOKEN_LOGICAL_AND', 'TOKEN_FALSE_LITERAL', 'TOKEN_IS_NIL', 'TOKEN_LOGICAL_OR', 'TOKEN_NIL_LITERAL', 'TOKEN_REAL_LITERAL', 'TOKEN_UNDERSCORE', 'TOKEN_UNWRAP_NILABLE', 'TOKEN_LESS_THAN', 'TOKEN_DIVISION', 'TOKEN_LEFT_BRACE', 'TOKEN_RIGHT_BRACE', 'TOKEN_EQUAL_TO', 'TOKEN_IDENTIFIER', 'TOKEN_LESS_THAN_OR_EQUAL_TO', 'TOKEN_STRING_LITERAL', 'TOKEN_ADDITION', 'TOKEN_NOT_EQUAL_TO', 'TOKEN_SUBTRACTION', 'TOKEN_MULTIPLICATION', 'TOKEN_LOGICAL_NOT', 'TOKEN_INTEGER_LITERAL', 'TOKEN_GREATER_THAN_OR_EQUAL_TO', 'TOKEN_TRUE_LITERAL', 'TOKEN_RIGHT_BRACKET'], got %s\n", tokens_as_str[lookahead->type]);
             s = false;
     }
     return s;
@@ -825,83 +689,83 @@ bool CALL_PARAM_LIST() {
 bool CALL_PARAM() {
     bool s;
     switch (lookahead->type) {
-        case TOKEN_UNDERSCORE:
-            s = NAMED_CALL_PARAM() && true;
-            break;
         case TOKEN_IDENTIFIER:
             s = POS_CALL_PARAM() && true;
             break;
-        case TOKEN_LOGICAL_OR:
-            s = POS_CALL_PARAM() && true;
-            break;
-        case TOKEN_NOT_EQUAL_TO:
-            s = POS_CALL_PARAM() && true;
-            break;
-        case TOKEN_IS_NIL:
-            s = POS_CALL_PARAM() && true;
-            break;
-        case TOKEN_INTEGER_LITERAL:
-            s = POS_CALL_PARAM() && true;
+        case TOKEN_UNDERSCORE:
+            s = NAMED_CALL_PARAM() && true;
             break;
         case TOKEN_GREATER_THAN:
-            s = POS_CALL_PARAM() && true;
-            break;
-        case TOKEN_FALSE_LITERAL:
-            s = POS_CALL_PARAM() && true;
-            break;
-        case TOKEN_ADDITION:
-            s = POS_CALL_PARAM() && true;
-            break;
-        case TOKEN_LESS_THAN:
-            s = POS_CALL_PARAM() && true;
-            break;
-        case TOKEN_EQUAL_TO:
-            s = POS_CALL_PARAM() && true;
-            break;
-        case TOKEN_STRING_LITERAL:
-            s = POS_CALL_PARAM() && true;
-            break;
-        case TOKEN_RIGHT_BRACE:
-            s = POS_CALL_PARAM() && true;
-            break;
-        case TOKEN_REAL_LITERAL:
-            s = POS_CALL_PARAM() && true;
-            break;
-        case TOKEN_TRUE_LITERAL:
-            s = POS_CALL_PARAM() && true;
-            break;
-        case TOKEN_LEFT_BRACE:
-            s = POS_CALL_PARAM() && true;
-            break;
-        case TOKEN_LESS_THAN_OR_EQUAL_TO:
-            s = POS_CALL_PARAM() && true;
-            break;
-        case TOKEN_DIVISION:
-            s = POS_CALL_PARAM() && true;
-            break;
-        case TOKEN_SUBTRACTION:
-            s = POS_CALL_PARAM() && true;
-            break;
-        case TOKEN_NIL_LITERAL:
-            s = POS_CALL_PARAM() && true;
-            break;
-        case TOKEN_LOGICAL_NOT:
-            s = POS_CALL_PARAM() && true;
-            break;
-        case TOKEN_UNWRAP_NILABLE:
-            s = POS_CALL_PARAM() && true;
-            break;
-        case TOKEN_GREATER_THAN_OR_EQUAL_TO:
             s = POS_CALL_PARAM() && true;
             break;
         case TOKEN_LOGICAL_AND:
             s = POS_CALL_PARAM() && true;
             break;
+        case TOKEN_FALSE_LITERAL:
+            s = POS_CALL_PARAM() && true;
+            break;
+        case TOKEN_IS_NIL:
+            s = POS_CALL_PARAM() && true;
+            break;
+        case TOKEN_LOGICAL_OR:
+            s = POS_CALL_PARAM() && true;
+            break;
+        case TOKEN_NIL_LITERAL:
+            s = POS_CALL_PARAM() && true;
+            break;
+        case TOKEN_REAL_LITERAL:
+            s = POS_CALL_PARAM() && true;
+            break;
+        case TOKEN_UNWRAP_NILABLE:
+            s = POS_CALL_PARAM() && true;
+            break;
+        case TOKEN_LESS_THAN:
+            s = POS_CALL_PARAM() && true;
+            break;
+        case TOKEN_DIVISION:
+            s = POS_CALL_PARAM() && true;
+            break;
+        case TOKEN_LEFT_BRACE:
+            s = POS_CALL_PARAM() && true;
+            break;
+        case TOKEN_RIGHT_BRACE:
+            s = POS_CALL_PARAM() && true;
+            break;
+        case TOKEN_EQUAL_TO:
+            s = POS_CALL_PARAM() && true;
+            break;
+        case TOKEN_LESS_THAN_OR_EQUAL_TO:
+            s = POS_CALL_PARAM() && true;
+            break;
+        case TOKEN_STRING_LITERAL:
+            s = POS_CALL_PARAM() && true;
+            break;
+        case TOKEN_ADDITION:
+            s = POS_CALL_PARAM() && true;
+            break;
+        case TOKEN_NOT_EQUAL_TO:
+            s = POS_CALL_PARAM() && true;
+            break;
+        case TOKEN_SUBTRACTION:
+            s = POS_CALL_PARAM() && true;
+            break;
         case TOKEN_MULTIPLICATION:
             s = POS_CALL_PARAM() && true;
             break;
+        case TOKEN_LOGICAL_NOT:
+            s = POS_CALL_PARAM() && true;
+            break;
+        case TOKEN_INTEGER_LITERAL:
+            s = POS_CALL_PARAM() && true;
+            break;
+        case TOKEN_GREATER_THAN_OR_EQUAL_TO:
+            s = POS_CALL_PARAM() && true;
+            break;
+        case TOKEN_TRUE_LITERAL:
+            s = POS_CALL_PARAM() && true;
+            break;
         default:
-            printf("Syntax error [CALL_PARAM]: expected ['TOKEN_UNDERSCORE', 'TOKEN_IDENTIFIER', 'TOKEN_LOGICAL_OR', 'TOKEN_NOT_EQUAL_TO', 'TOKEN_IS_NIL', 'TOKEN_INTEGER_LITERAL', 'TOKEN_GREATER_THAN', 'TOKEN_FALSE_LITERAL', 'TOKEN_ADDITION', 'TOKEN_LESS_THAN', 'TOKEN_EQUAL_TO', 'TOKEN_STRING_LITERAL', 'TOKEN_RIGHT_BRACE', 'TOKEN_REAL_LITERAL', 'TOKEN_TRUE_LITERAL', 'TOKEN_LEFT_BRACE', 'TOKEN_LESS_THAN_OR_EQUAL_TO', 'TOKEN_DIVISION', 'TOKEN_SUBTRACTION', 'TOKEN_NIL_LITERAL', 'TOKEN_LOGICAL_NOT', 'TOKEN_UNWRAP_NILABLE', 'TOKEN_GREATER_THAN_OR_EQUAL_TO', 'TOKEN_LOGICAL_AND', 'TOKEN_MULTIPLICATION'], got %s\n", tokens_as_str[lookahead->type]);
+            printf("Syntax error [CALL_PARAM]: expected ['TOKEN_IDENTIFIER', 'TOKEN_UNDERSCORE', 'TOKEN_GREATER_THAN', 'TOKEN_LOGICAL_AND', 'TOKEN_FALSE_LITERAL', 'TOKEN_IS_NIL', 'TOKEN_LOGICAL_OR', 'TOKEN_NIL_LITERAL', 'TOKEN_REAL_LITERAL', 'TOKEN_UNWRAP_NILABLE', 'TOKEN_LESS_THAN', 'TOKEN_DIVISION', 'TOKEN_LEFT_BRACE', 'TOKEN_RIGHT_BRACE', 'TOKEN_EQUAL_TO', 'TOKEN_LESS_THAN_OR_EQUAL_TO', 'TOKEN_STRING_LITERAL', 'TOKEN_ADDITION', 'TOKEN_NOT_EQUAL_TO', 'TOKEN_SUBTRACTION', 'TOKEN_MULTIPLICATION', 'TOKEN_LOGICAL_NOT', 'TOKEN_INTEGER_LITERAL', 'TOKEN_GREATER_THAN_OR_EQUAL_TO', 'TOKEN_TRUE_LITERAL'], got %s\n", tokens_as_str[lookahead->type]);
             s = false;
     }
     return s;
@@ -910,14 +774,14 @@ bool CALL_PARAM() {
 bool NAMED_CALL_PARAM() {
     bool s;
     switch (lookahead->type) {
-        case TOKEN_UNDERSCORE:
-            s = CALL_PARAM_NAME() && match(TOKEN_COLON) && EXPR() && true;
-            break;
         case TOKEN_IDENTIFIER:
             s = CALL_PARAM_NAME() && match(TOKEN_COLON) && EXPR() && true;
             break;
+        case TOKEN_UNDERSCORE:
+            s = CALL_PARAM_NAME() && match(TOKEN_COLON) && EXPR() && true;
+            break;
         default:
-            printf("Syntax error [NAMED_CALL_PARAM]: expected ['TOKEN_UNDERSCORE', 'TOKEN_IDENTIFIER'], got %s\n", tokens_as_str[lookahead->type]);
+            printf("Syntax error [NAMED_CALL_PARAM]: expected ['TOKEN_IDENTIFIER', 'TOKEN_UNDERSCORE'], got %s\n", tokens_as_str[lookahead->type]);
             s = false;
     }
     return s;
@@ -942,80 +806,80 @@ bool CALL_PARAM_NAME() {
 bool POS_CALL_PARAM() {
     bool s;
     switch (lookahead->type) {
-        case TOKEN_LOGICAL_OR:
-            s = EXPR() && true;
-            break;
-        case TOKEN_NOT_EQUAL_TO:
-            s = EXPR() && true;
-            break;
-        case TOKEN_IS_NIL:
-            s = EXPR() && true;
-            break;
-        case TOKEN_INTEGER_LITERAL:
-            s = EXPR() && true;
-            break;
         case TOKEN_GREATER_THAN:
-            s = EXPR() && true;
-            break;
-        case TOKEN_FALSE_LITERAL:
-            s = EXPR() && true;
-            break;
-        case TOKEN_ADDITION:
-            s = EXPR() && true;
-            break;
-        case TOKEN_LESS_THAN:
-            s = EXPR() && true;
-            break;
-        case TOKEN_EQUAL_TO:
-            s = EXPR() && true;
-            break;
-        case TOKEN_STRING_LITERAL:
-            s = EXPR() && true;
-            break;
-        case TOKEN_RIGHT_BRACE:
-            s = EXPR() && true;
-            break;
-        case TOKEN_REAL_LITERAL:
-            s = EXPR() && true;
-            break;
-        case TOKEN_TRUE_LITERAL:
-            s = EXPR() && true;
-            break;
-        case TOKEN_LEFT_BRACE:
-            s = EXPR() && true;
-            break;
-        case TOKEN_LESS_THAN_OR_EQUAL_TO:
-            s = EXPR() && true;
-            break;
-        case TOKEN_DIVISION:
-            s = EXPR() && true;
-            break;
-        case TOKEN_SUBTRACTION:
-            s = EXPR() && true;
-            break;
-        case TOKEN_NIL_LITERAL:
-            s = EXPR() && true;
-            break;
-        case TOKEN_LOGICAL_NOT:
-            s = EXPR() && true;
-            break;
-        case TOKEN_UNWRAP_NILABLE:
-            s = EXPR() && true;
-            break;
-        case TOKEN_GREATER_THAN_OR_EQUAL_TO:
             s = EXPR() && true;
             break;
         case TOKEN_LOGICAL_AND:
             s = EXPR() && true;
             break;
+        case TOKEN_FALSE_LITERAL:
+            s = EXPR() && true;
+            break;
+        case TOKEN_IS_NIL:
+            s = EXPR() && true;
+            break;
+        case TOKEN_LOGICAL_OR:
+            s = EXPR() && true;
+            break;
+        case TOKEN_NIL_LITERAL:
+            s = EXPR() && true;
+            break;
+        case TOKEN_REAL_LITERAL:
+            s = EXPR() && true;
+            break;
+        case TOKEN_UNWRAP_NILABLE:
+            s = EXPR() && true;
+            break;
+        case TOKEN_LESS_THAN:
+            s = EXPR() && true;
+            break;
+        case TOKEN_DIVISION:
+            s = EXPR() && true;
+            break;
+        case TOKEN_LEFT_BRACE:
+            s = EXPR() && true;
+            break;
+        case TOKEN_RIGHT_BRACE:
+            s = EXPR() && true;
+            break;
+        case TOKEN_EQUAL_TO:
+            s = EXPR() && true;
+            break;
         case TOKEN_IDENTIFIER:
+            s = EXPR() && true;
+            break;
+        case TOKEN_LESS_THAN_OR_EQUAL_TO:
+            s = EXPR() && true;
+            break;
+        case TOKEN_STRING_LITERAL:
+            s = EXPR() && true;
+            break;
+        case TOKEN_ADDITION:
+            s = EXPR() && true;
+            break;
+        case TOKEN_NOT_EQUAL_TO:
+            s = EXPR() && true;
+            break;
+        case TOKEN_SUBTRACTION:
             s = EXPR() && true;
             break;
         case TOKEN_MULTIPLICATION:
             s = EXPR() && true;
             break;
+        case TOKEN_LOGICAL_NOT:
+            s = EXPR() && true;
+            break;
+        case TOKEN_INTEGER_LITERAL:
+            s = EXPR() && true;
+            break;
+        case TOKEN_GREATER_THAN_OR_EQUAL_TO:
+            s = EXPR() && true;
+            break;
+        case TOKEN_TRUE_LITERAL:
+            s = EXPR() && true;
+            break;
         default:
-            printf("Syntax error [POS_CALL_PARAM]: expected ['TOKEN_LOGICAL_OR', 'TOKEN_NOT_EQUAL_TO', 'TOKEN_IS_NIL', 'TOKEN_INTEGER_LITERAL', 'TOKEN_GREATER_THAN', 'TOKEN_FALSE_LITERAL', 'TOKEN_ADDITION', 'TOKEN_LESS_THAN', 'TOKEN_EQUAL_TO', 'TOKEN_STRING_LITERAL', 'TOKEN_RIGHT_BRACE', 'TOKEN_REAL_LITERAL', 'TOKEN_TRUE_LITERAL', 'TOKEN_LEFT_BRACE', 'TOKEN_LESS_THAN_OR_EQUAL_TO', 'TOKEN_DIVISION', 'TOKEN_SUBTRACTION', 'TOKEN_NIL_LITERAL', 'TOKEN_LOGICAL_NOT', 'TOKEN_UNWRAP_NILABLE', 'TOKEN_GREATER_THAN_OR_EQUAL_TO', 'TOKEN_LOGICAL_AND', 'TOKEN_IDENTIFIER', 'TOKEN_MULTIPLICATION'], got %s\n", tokens_as_str[lookahead->type]);
+            printf("Syntax error [POS_CALL_PARAM]: expected ['TOKEN_GREATER_THAN', 'TOKEN_LOGICAL_AND', 'TOKEN_FALSE_LITERAL', 'TOKEN_IS_NIL', 'TOKEN_LOGICAL_OR', 'TOKEN_NIL_LITERAL', 'TOKEN_REAL_LITERAL', 'TOKEN_UNWRAP_NILABLE', 'TOKEN_LESS_THAN', 'TOKEN_DIVISION', 'TOKEN_LEFT_BRACE', 'TOKEN_RIGHT_BRACE', 'TOKEN_EQUAL_TO', 'TOKEN_IDENTIFIER', 'TOKEN_LESS_THAN_OR_EQUAL_TO', 'TOKEN_STRING_LITERAL', 'TOKEN_ADDITION', 'TOKEN_NOT_EQUAL_TO', 'TOKEN_SUBTRACTION', 'TOKEN_MULTIPLICATION', 'TOKEN_LOGICAL_NOT', 'TOKEN_INTEGER_LITERAL', 'TOKEN_GREATER_THAN_OR_EQUAL_TO', 'TOKEN_TRUE_LITERAL'], got %s\n", tokens_as_str[lookahead->type]);
             s = false;
     }
     return s;

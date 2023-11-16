@@ -1,12 +1,8 @@
-var b : Int? ==
-
-if var let a {
-    call()
-}
-else if let b {
-    call()
+var
+b
+:
+Int?
+if let b {
 }
 else {
-    call()
 }
-
