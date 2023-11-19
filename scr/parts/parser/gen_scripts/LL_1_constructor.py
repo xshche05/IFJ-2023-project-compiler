@@ -2,7 +2,7 @@ rules: dict[int, dict[str, list[str]]] = {}
 
 dol = "TOKEN_EOF"
 
-with open("../grammar.y", "r") as file:
+with open("grammar.y", "r") as file:
     i = 1
     for line in file:
         line = line.split("::=")
@@ -159,7 +159,12 @@ for rule_num in rules.keys():
     for val in predict_values:
         if left not in rule_dict_2.keys():
             rule_dict_2[left] = dict()
-        rule_dict_2[left][val] = rule_num
+        if rule_dict_2[left].get(val) is None:
+            rule_dict_2[left][val] = rule_num
+        else:
+            print(rule_dict_2[left].get(val))
+            print(rule_num)
+            print("LL(1) Conflict!")
 
 
 def gen_func_header(name: str):
@@ -174,6 +179,15 @@ def gen_func_header(name: str):
 def gen_func_case(predict_value: str, rule_num: int, name: str):
     rule_right = list(rules[rule_num].values())[0][0]
     func = f"{' ' * 8}case {predict_value}:\n"
+    func += f"{' ' * 12 + 'inside_func = true;' if name == 'FUNC_DECL' else ''}"
+    func += f"{' ' * 12 + 'inside_loop = true;' if name == 'FOR_LOOP' or name == 'WHILE_LOOP' else ''}"
+    func += f"{' ' * 12 + 'inside_branch = true;' if name == 'BRANCH' else ''}"
+    if name in ["FUNC_DECL", "FOR_LOOP", "WHILE_LOOP", "BRANCH"]:
+        func += f"{' ' * 12}\n"
+    if name in ["FUNC_DECL", "FOR_LOOP", "WHILE_LOOP", "BRANCH"]:
+        func += f"{' ' * 12}increment_scope();\n"
+    if name in ["ELSE_IF"]:
+        func += f"{' ' * 12}scope_new();\n"
     func += f"{' ' * 12}s = "
     if name != "EXPR":
         for NT in rule_right:
@@ -181,9 +195,18 @@ def gen_func_case(predict_value: str, rule_num: int, name: str):
                 func += F"{NT}() && "
             elif NT != "EPS" and NT != "NL":
                 func += F"match({NT}) && "
-    elif name == "EXPR":
-        func += F"call_expr_parser() && "
+    # elif name == "EXPR":
+    #     func += F"call_expr_parser() && "
     func += "true;\n"
+    func += f"{' ' * 12 + 'inside_func = false;' if name == 'FUNC_DECL' else ''}"
+    func += f"{' ' * 12 + 'inside_loop = false;' if name == 'FOR_LOOP' or name == 'WHILE_LOOP' else ''}"
+    func += f"{' ' * 12 + 'inside_branch = false;' if name == 'BRANCH' else ''}"
+    if name in ["FUNC_DECL", "FOR_LOOP", "WHILE_LOOP", "BRANCH"]:
+        func += f"{' ' * 12}\n"
+    if name in ["FUNC_DECL", "FOR_LOOP", "WHILE_LOOP", "BRANCH"]:
+        func += f"{' ' * 12}decrement_scope();\n"
+    if name in ["ELSE_IF"]:
+        func += f"{' ' * 12}scope_leave();\n"
     func += f"{' ' * 12}break;\n"
     return func
 
@@ -193,7 +216,7 @@ def gen_func_footer(predict_values: list[str] = None, name: str = None):
     if "NL" in predict_values:
         func += f"{' ' * 12}if (nl_flag) return true;\n"
     if predict_values is not None:
-        func += f"{' ' * 12}printf(\"Syntax error [{name}]: expected {predict_values}, got %s\\n\", tokens_as_str[lookahead->type]);\n"
+        func += f"{' ' * 12}fprintf(stderr, \"Syntax error [{name}]: expected {predict_values}, got %s\\n\", tokens_as_str[lookahead->type]);\n"
     func += f"{' ' * 12}s = false;\n"
     func += f"{' ' * 4}}}\n"
     func += f"{' ' * 4}return s;\n"
@@ -204,11 +227,24 @@ def gen_func_footer(predict_values: list[str] = None, name: str = None):
 def gen_func(name: str):
     func = gen_func_header(name)
     predict_vals = rule_dict_2[name].keys()
-    for predict_value in rule_dict_2[name].keys():
-        if predict_value == "EPS" or predict_value == "NL":
-            continue
-        func += gen_func_case(predict_value, rule_dict_2[name][predict_value], name)
-    func += gen_func_footer(predict_values=list(predict_vals), name=name)
+    if name == "EXPR":
+        for predict_value in predict_vals:
+            func += f"{' ' * 8}case {predict_value}:\n"
+        func += f"{' ' *12}s = call_expr_parser() && true;\n{' ' *12}break;\n"
+    else:
+        for predict_value in rule_dict_2[name].keys():
+            if predict_value == "EPS" or predict_value == "NL":
+                continue
+            rule_right = list(rules[rule_dict_2[name][predict_value]].values())[0][0]
+            predict_val_next_idx = list(rule_dict_2[name].keys()).index(predict_value) + 1
+            if predict_val_next_idx < len(rule_dict_2[name].keys()):
+                next_predict_val = list(rule_dict_2[name].keys())[predict_val_next_idx]
+                rule_right_next = list(rules[rule_dict_2[name][next_predict_val]].values())[0][0]
+                if rule_right == rule_right_next:
+                    func += f"{' ' * 8}case {predict_value}:\n"
+                    continue
+            func += gen_func_case(predict_value, rule_dict_2[name][predict_value], name)
+    func += gen_func_footer(predict_values=list(predict_vals), name=name) + "\n"
     return func
 
 
@@ -218,6 +254,12 @@ def gen_c_file():
 #include "parts.h"
 #include "utils.h"
 #include "new_symtable.h"
+
+bool inside_func = false;
+bool inside_loop = false;
+bool inside_branch = false;
+int scope = 0;
+int stayed = 0;
 
 static char *tokens_as_str[] = {
         "TOKEN_IDENTIFIER",
@@ -257,7 +299,7 @@ static char *tokens_as_str[] = {
         "TOKEN_EQUAL_TO",
         "TOKEN_NOT_EQUAL_TO",
         "TOKEN_IS_NIL",
-        "TOKEN_UNWRAP_NILABLE",
+        "TOKEN_UNWRAP_NILLABLE",
         "TOKEN_LOGICAL_AND",
         "TOKEN_LOGICAL_OR",
         "TOKEN_LOGICAL_NOT",
@@ -274,21 +316,59 @@ static char *tokens_as_str[] = {
 };
     
 bool match(token_type_t type) {
+    if (type == TOKEN_RETURN) {
+        if (!inside_func) {
+            fprintf(stderr, "Syntax error: TOKEN_RETURN outside of function\\n");
+            return false;
+        }
+    }
+    if (type == TOKEN_BREAK || type == TOKEN_CONTINUE) {
+        if (!inside_loop) {
+            fprintf(stderr, "Syntax error: %s outside of loop\\n", tokens_as_str[type]);
+            return false;
+        }
+    }
+    if (type == TOKEN_FUNC) {
+        if (scope - 1 != 0 || inside_loop || inside_branch) {
+            fprintf(stderr, "Syntax error: function declaration outside of global scope\\n", tokens_as_str[type]);
+            return false;
+        }
+    }
     if (lookahead->type == type) {
         nl_flag = lookahead->has_newline_after;
         lookahead = TokenArray.next();
         return true;
     }
-    printf("Syntax error: expected %s, got %s\\n", "dd", "dd");
+    fprintf(stderr, "Syntax error: expected %s, got %s\\n", tokens_as_str[type], tokens_as_str[lookahead->type]);
     return false;
+}
+
+void increment_scope() {
+    scope++;
+    printf("scope inc: %d\\n", scope);
+}
+
+void decrement_scope() {
+    scope--;
+    printf("scope dec: %d\\n", scope);
+    stayed = 0;
+}
+
+void scope_new() {
+    stayed++;
+    printf("scope stay: %d\\n", scope);
+}
+
+void scope_leave() {
+    printf("scope leave: %d\\n", scope);
 }
 
 bool call_expr_parser() {
     return true;
 }
-    """
+\n"""
     for non_terminal in rule_dict_2.keys():
-        c_file += gen_func(non_terminal)
+        c_file += gen_func(non_terminal) + "\n"
 
 def gen_h_file():
     global h_file
