@@ -55,7 +55,7 @@ static char *tokens_as_str[] = {
         "TOKEN_COLON",
         "TOKEN_SEMICOLON",
         "TOKEN_ARROW",
-        "TOKEN_NEWLINE",
+//        "TOKEN_NEWLINE",
         "TOKEN_EOF"
 };
 
@@ -124,7 +124,7 @@ static void token_print(token_t *token) {
         case TOKEN_DOUBLE_TYPE:
         case TOKEN_INT_TYPE:
         case TOKEN_STRING_TYPE:
-            if (token->attribute.nilable) printf(",   NILABLE");
+            if (token->attribute.nillable) printf(",   NILABLE");
             else printf(",   NON-NILABLE");
             break;
         default:

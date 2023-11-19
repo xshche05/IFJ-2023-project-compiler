@@ -311,7 +311,7 @@ int source_code_to_tokens() {
                     fsm_state = NOT_EQUAL_S;
                 } else {
                     if (isspace(prev_prev) || (isalnum(c) || c == '_')) type = TOKEN_LOGICAL_NOT;
-                    else type = TOKEN_UNWRAP_NILABLE;
+                    else type = TOKEN_UNWRAP_NILLABLE;
                     add_token(type, attribute, false);
                     fsm_state = START_S;
                 }
@@ -474,7 +474,7 @@ int source_code_to_tokens() {
                             add_token(type, attribute, true);
                         } else {
                             type = keyword_code;
-                            attribute.nilable = false;
+                            attribute.nillable = false;
                             add_token(type, attribute, true);
                         }
                         fsm_state = START_S;
@@ -483,7 +483,7 @@ int source_code_to_tokens() {
                 break;
             case TYPE_NIL_S:
                 type = keyword_code;
-                attribute.nilable = true;
+                attribute.nillable = true;
                 add_token(type, attribute, true);
                 fsm_state = START_S;
                 String.clear(lexeme);

@@ -50,7 +50,7 @@ typedef enum {
     TOKEN_NOT_EQUAL_TO,               // !=
     //TOKEN_NILABLE,                    // ?
     TOKEN_IS_NIL,                     // ??
-    TOKEN_UNWRAP_NILABLE,             // ID!
+    TOKEN_UNWRAP_NILLABLE,             // ID!
     TOKEN_LOGICAL_AND,                // &&
     TOKEN_LOGICAL_OR,                 // ||
     TOKEN_LOGICAL_NOT,                // !ID
@@ -63,13 +63,13 @@ typedef enum {
     TOKEN_COLON,
     TOKEN_SEMICOLON,
     TOKEN_ARROW,
-    TOKEN_NEWLINE,
+    // TOKEN_NEWLINE,
     TOKEN_EOF
 } token_type_t;
 
 typedef union {
     string_t *identifier;
-    bool nilable;
+    bool nillable;
     string_t *string;
     int integer;
     double real;
