@@ -1,7 +1,3 @@
-//
-// Created by ASUS on 21.11.2023.
-//
-
 #ifndef IFJ_PRJ_ERROR_H
 #define IFJ_PRJ_ERROR_H
 
@@ -19,6 +15,6 @@ typedef enum
 /*99*/ COMPILER_INTERN_ERR = 99             // intern error inside of compiler itself(memory allocation error and so on)
 }errorType_t;
 
-void errorExit(errorType_t, int);
+void errorExit(errorType_t);
 
 #endif //IFJ_PRJ_ERROR_H

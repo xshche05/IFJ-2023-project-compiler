@@ -37,6 +37,6 @@ bool CALL_PARAM_VALUE();
 bool NEXT_CALL_PARAM();
 bool ID_CALL_OR_ASSIGN();
 bool NEXT_ID_CALL_OR_ASSIGN();
-bool TYPE
+bool TYPE();
 bool EXPR();
 #endif //IFJ_PRJ_PARSER_H
