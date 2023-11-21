@@ -188,16 +188,16 @@ def gen_func_case(predict_value: str, rule_num: int, name: str):
         func += f"{' ' * 12}increment_scope();\n"
     if name in ["ELSE_IF"]:
         func += f"{' ' * 12}scope_new();\n"
-    func += f"{' ' * 12}s = "
+    func += f"{' ' * 12}s = true;\n"
     if name != "EXPR":
         for NT in rule_right:
             if NT in non_terminals:
-                func += F"{NT}() && "
+                func += F"{' ' * 12}s = {NT}() && s; if (!s) break;\n" #TODO OPTIMIZE
             elif NT != "EPS" and NT != "NL":
-                func += F"match({NT}) && "
+                func += F"{' ' * 12}s = match({NT}) && s; if (!s) break;\n" #TODO OPTIMIZE
     # elif name == "EXPR":
     #     func += F"call_expr_parser() && "
-    func += "true;\n"
+    # func += "true;\n"
     func += f"{' ' * 12 + 'inside_func = false;' if name == 'FUNC_DECL' else ''}"
     func += f"{' ' * 12 + 'inside_loop = false;' if name == 'FOR_LOOP' or name == 'WHILE_LOOP' else ''}"
     func += f"{' ' * 12 + 'inside_branch = false;' if name == 'BRANCH' else ''}"
@@ -260,6 +260,8 @@ bool inside_loop = false;
 bool inside_branch = false;
 int scope = 0;
 int stayed = 0;
+token_t *last_token = NULL;
+token_t *last_id = NULL;
 
 static char *tokens_as_str[] = {
         "TOKEN_IDENTIFIER",
@@ -336,6 +338,10 @@ bool match(token_type_t type) {
     }
     if (lookahead->type == type) {
         nl_flag = lookahead->has_newline_after;
+        last_token = lookahead;
+        if (lookahead->type == TOKEN_IDENTIFIER) {
+            last_id = lookahead;
+        }
         lookahead = TokenArray.next();
         return true;
     }
@@ -390,12 +396,26 @@ bool call_expr_parser();\n
         h_file += f"bool {non_terminal}();\n"
     h_file += "#endif //IFJ_PRJ_PARSER_H\n"
 
-gen_h_file()
-gen_c_file()
+# gen_h_file()
+# gen_c_file()
+#
+#
+# with open("__parser.c", "w") as file:
+#     file.write(c_file)
+#
+# with open("__parser.h", "w") as file:
+#     file.write(h_file)
 
-
-with open("parser.c", "w") as file:
-    file.write(c_file)
-
-with open("parser.h", "w") as file:
-    file.write(h_file)
+# print rules
+for rule in rules.values():
+    right = ''
+    for r in list(rule.values())[0][0]:
+        if r == "EPS":
+            continue
+        if r in terminals:
+            right += r.lower() + ' '
+        else:
+            right += r.upper() + ' '
+    print(list(rule.keys())[0], " -> ", right)
+    print()
+    print()

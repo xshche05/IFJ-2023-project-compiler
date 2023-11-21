@@ -11,7 +11,7 @@ void gen_register_def();
 
 char *gen_unique_label(char *prefix);
 
-char *gen_scope_var(char *var_name, int scope, bool with_frame);
+char *gen_scope_var(char *var_name, int scope, int stayed, bool with_frame);
 
 void gen_std_functions();
 

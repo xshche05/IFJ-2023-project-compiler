@@ -766,7 +766,7 @@ int source_code_to_tokens() {
             case DIV_S:
                 switch (c) {
                     case '/':
-                        fsm_state = COM_SINGL_S;
+                        fsm_state = COM_SINGLE_S;
                         break;
                     case '*':
                         fsm_state = COM_MULT_START_S;
@@ -778,9 +778,9 @@ int source_code_to_tokens() {
                         String.clear(lexeme);
                 }
                 break;
-            case COM_SINGL_S:
+            case COM_SINGLE_S:
                 if (c == '\n') {
-                    fsm_state = COM_END_SINGL_S;
+                    fsm_state = COM_END_SINGLE_S;
                 }
                 break;
             case COM_MULT_START_S:
@@ -832,7 +832,7 @@ int source_code_to_tokens() {
                     }
                 }
                 break;
-            case COM_END_SINGL_S:
+            case COM_END_SINGLE_S:
                 if (!isspace(control_char)) SourceCode.back_step();
                 c = '\n';
                 fsm_state = START_S;

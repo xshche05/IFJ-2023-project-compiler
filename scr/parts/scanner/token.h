@@ -48,7 +48,6 @@ typedef enum {
     TOKEN_GREATER_THAN_OR_EQUAL_TO,   // >=
     TOKEN_EQUAL_TO,                   // ==
     TOKEN_NOT_EQUAL_TO,               // !=
-    //TOKEN_NILABLE,                    // ?
     TOKEN_IS_NIL,                     // ??
     TOKEN_UNWRAP_NILLABLE,             // ID!
     TOKEN_LOGICAL_AND,                // &&
@@ -63,7 +62,6 @@ typedef enum {
     TOKEN_COLON,
     TOKEN_SEMICOLON,
     TOKEN_ARROW,
-    // TOKEN_NEWLINE,
     TOKEN_EOF
 } token_type_t;
 
