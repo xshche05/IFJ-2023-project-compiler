@@ -2,6 +2,7 @@
 #include "utils.h"
 #include "new_symtable.h"
 #include "../error.h"
+#include "codegen/codegen.h"
 
 bool inside_func = false;
 int inside_loop = 0;
@@ -99,25 +100,28 @@ bool match(token_type_t type) {
 
 void increment_scope() {
     scope++;
-    printf("scope inc: %d\n", scope);
+    fprintf(stderr, "scope inc: %d\n", scope);
 }
 
 void decrement_scope() {
     scope--;
-    printf("scope dec: %d\n", scope);
+    fprintf(stderr, "scope dec: %d\n", scope);
     stayed = 0;
 }
 
 void scope_new() {
     stayed++;
-    printf("scope stay: %d\n", scope);
+    fprintf(stderr, "scope stay: %d\n", scope);
 }
 
 void scope_leave() {
-    printf("scope leave: %d\n", scope);
+    fprintf(stderr, "scope leave: %d\n", scope);
 }
 
 bool call_expr_parser(token_t *token) {
+    if (token->type == TOKEN_INTEGER_LITERAL) {
+        printf("PUSHS int@%d\n", token->attribute.integer);
+    }
     return match(token->type);
 }
 
@@ -131,6 +135,9 @@ bool nl_check() {
 
 int S() {
     bool s;
+    init_codegen();
+//    gen_register_def();
+//    gen_std_functions();
     lookahead = TokenArray.next();
     switch (lookahead->type) {
         case TOKEN_FUNC:
@@ -199,9 +206,11 @@ bool CODE() {
             break;
         case TOKEN_BREAK:
             s = match(TOKEN_BREAK);
+            gen_break();
             break;
         case TOKEN_CONTINUE:
             s = match(TOKEN_CONTINUE);
+            gen_continue();
             break;
         case TOKEN_RIGHT_BRACE:
         case TOKEN_EOF:
@@ -236,9 +245,13 @@ bool RET_EXPR() {
         case TOKEN_RIGHT_BRACE:
         case TOKEN_EOF:
             s = true;
+            gen_return(true);
             break;
         default:
-            if (call_expr_parser(lookahead)) return true;
+            if (call_expr_parser(lookahead)) {
+                gen_return(false);
+                return true;
+            }
             sprintf(error_msg, "Syntax error [RET_EXPR]: expected ['TOKEN_FALSE_LITERAL', 'TOKEN_LESS_THAN', 'TOKEN_LOGICAL_AND', 'TOKEN_LEFT_BRACKET', 'TOKEN_NIL_LITERAL', 'TOKEN_REAL_LITERAL', 'TOKEN_STRING_LITERAL', 'TOKEN_ADDITION', 'TOKEN_SUBTRACTION', 'TOKEN_LOGICAL_OR', 'TOKEN_IDENTIFIER', 'TOKEN_EQUAL_TO', 'TOKEN_LESS_THAN_OR_EQUAL_TO', 'TOKEN_GREATER_THAN', 'TOKEN_NOT_EQUAL_TO', 'TOKEN_GREATER_THAN_OR_EQUAL_TO', 'TOKEN_TRUE_LITERAL', 'TOKEN_IS_NIL', 'TOKEN_DIVISION', 'TOKEN_MULTIPLICATION', 'TOKEN_LOGICAL_NOT', 'TOKEN_UNWRAP_NILLABLE', 'TOKEN_INTEGER_LITERAL', 'TOKEN_RIGHT_BRACE', 'TOKEN_EOF'], got %s\n", tokens_as_str[lookahead->type]);
             s = false;
     }
@@ -252,6 +265,8 @@ bool VAR_DECL() {
         case TOKEN_VAR:
             s = match(TOKEN_VAR);
             s = s && match(TOKEN_IDENTIFIER);
+            // if exist in current scope - error
+            gen_var_decl(last_id->attribute.identifier->str, scope, stayed);
             s = s && VAR_LET_TYPE();
             s = s && VAR_LET_EXP();
             break;
@@ -286,6 +301,7 @@ bool VAR_LET_EXP() {
         case TOKEN_ASSIGNMENT:
             s = match(TOKEN_ASSIGNMENT);
             s = s && call_expr_parser(lookahead);
+            gen_var_assign(last_id->attribute.identifier->str, scope, stayed);
             break;
         default:
             if (nl_flag) return true;
@@ -302,6 +318,8 @@ bool LET_DECL() {
         case TOKEN_LET:
             s = match(TOKEN_LET);
             s = s && match(TOKEN_IDENTIFIER);
+            // if exist in current scope - error
+            gen_var_decl(last_id->attribute.identifier->str, scope, stayed);
             s = s && VAR_LET_TYPE();
             s = s && VAR_LET_EXP();
             break;
@@ -436,12 +454,15 @@ bool BRANCH() {
         case TOKEN_IF:
             inside_branch++;
             increment_scope();
+            gen_branch_labels(true);
             s = match(TOKEN_IF);
             s = s && BR_EXPR();
             s = s && match(TOKEN_LEFT_BRACE);
             s = s && CODE();
             s = s && match(TOKEN_RIGHT_BRACE);
+            gen_branch_if_end();
             s = s && ELSE();
+            gen_branch_end();
             inside_branch--;
             decrement_scope();
             break;
@@ -459,9 +480,14 @@ bool BR_EXPR() {
         case TOKEN_LET:
             s = match(TOKEN_LET);
             s = s && match(TOKEN_IDENTIFIER);
+            gen_branch_if_start(true);
             break;
         default:
-            if (call_expr_parser(lookahead)) return true;
+            if (call_expr_parser(lookahead))
+            {
+                gen_branch_if_start(false);
+                return true;
+            }
             sprintf(error_msg, "Syntax error [BR_EXPR]: expected ['TOKEN_FALSE_LITERAL', 'TOKEN_LESS_THAN', 'TOKEN_LOGICAL_AND', 'TOKEN_LEFT_BRACKET', 'TOKEN_NIL_LITERAL', 'TOKEN_REAL_LITERAL', 'TOKEN_STRING_LITERAL', 'TOKEN_ADDITION', 'TOKEN_SUBTRACTION', 'TOKEN_LOGICAL_OR', 'TOKEN_IDENTIFIER', 'TOKEN_EQUAL_TO', 'TOKEN_LESS_THAN_OR_EQUAL_TO', 'TOKEN_GREATER_THAN', 'TOKEN_NOT_EQUAL_TO', 'TOKEN_GREATER_THAN_OR_EQUAL_TO', 'TOKEN_TRUE_LITERAL', 'TOKEN_IS_NIL', 'TOKEN_DIVISION', 'TOKEN_MULTIPLICATION', 'TOKEN_LOGICAL_NOT', 'TOKEN_UNWRAP_NILLABLE', 'TOKEN_INTEGER_LITERAL', 'TOKEN_LET'], got %s\n", tokens_as_str[lookahead->type]);
             s = false;
     }
@@ -490,11 +516,13 @@ bool ELSE_IF() {
     switch (lookahead->type) {
         case TOKEN_IF:
             scope_new();
+            gen_branch_labels(false);
             s = match(TOKEN_IF);
             s = s && BR_EXPR();
             s = s && match(TOKEN_LEFT_BRACE);
             s = s && CODE();
             s = s && match(TOKEN_RIGHT_BRACE);
+            gen_branch_if_end();
             s = s && ELSE();
             scope_leave();
             break;
@@ -521,10 +549,13 @@ bool WHILE_LOOP() {
             inside_loop++;
             increment_scope();
             s = match(TOKEN_WHILE);
+            gen_while_start();
             s = s && call_expr_parser(lookahead);
+            gen_while_cond();
             s = s && match(TOKEN_LEFT_BRACE);
             s = s && CODE();
             s = s && match(TOKEN_RIGHT_BRACE);
+            gen_while_end();
             inside_loop--;
             decrement_scope();
             break;
@@ -542,14 +573,19 @@ bool FOR_LOOP() {
         case TOKEN_FOR:
             inside_loop++;
             increment_scope();
+            gen_for_range_save();
             s = match(TOKEN_FOR);
-            s = s && FOR_ID();
+            s = s && FOR_ID(); // TODO: allias for id is GF@$FOR_START
             s = s && match(TOKEN_IN);
             s = s && call_expr_parser(lookahead);
             s = s && RANGE();
+            gen_for_start();
+            gen_for_cond();
             s = s && match(TOKEN_LEFT_BRACE);
             s = s && CODE();
             s = s && match(TOKEN_RIGHT_BRACE);
+            gen_for_end();
+            gen_for_range_restore();
             inside_loop--;
             decrement_scope();
             break;
@@ -584,10 +620,12 @@ bool RANGE() {
         case TOKEN_CLOSED_RANGE:
             s = match(TOKEN_CLOSED_RANGE);
             s = s && call_expr_parser(lookahead);
+            gen_for_range(false);
             break;
         case TOKEN_HALF_OPEN_RANGE:
             s = match(TOKEN_HALF_OPEN_RANGE);
             s = s && call_expr_parser(lookahead);
+            gen_for_range(true);
             break;
         default:
             sprintf(error_msg, "Syntax error [RANGE]: expected ['TOKEN_CLOSED_RANGE', 'TOKEN_HALF_OPEN_RANGE'], got %s\n", tokens_as_str[lookahead->type]);
@@ -680,6 +718,7 @@ bool NEXT_ID_CALL_OR_ASSIGN() {
         case TOKEN_ASSIGNMENT:
             s = match(TOKEN_ASSIGNMENT);
             s = s && call_expr_parser(lookahead);
+            gen_var_assign(last_id->attribute.identifier->str, scope, stayed);
             break;
         default:
             sprintf(error_msg, "Syntax error [NEXT_ID_CALL_OR_ASSIGN]: expected ['TOKEN_LEFT_BRACKET', 'TOKEN_ASSIGNMENT'], got %s\n", tokens_as_str[lookahead->type]);

@@ -3,6 +3,7 @@
 //
 
 #include "codegen.h"
+#include "stack.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -14,12 +15,35 @@ static char* registers[] = {
         "GF@$C",
         "GF@$D",
         "GF@$RET",
+        "GF@$COND",
+        "GF@$FOR_START",
+        "GF@$FOR_END",
 };
 
+stack_t *func_label_stack;
+stack_t *branch_label_stack;
+stack_t *while_label_stack;
+stack_t *for_label_stack;
+
+char* current_loop_start_label = NULL;
+char* current_loop_end_label = NULL;
+
+char* current_branch_end_label;
+
+bool current_loop_is_for = false;
+
+
+void init_codegen() {
+    func_label_stack = Stack.init();
+    branch_label_stack = Stack.init();
+    while_label_stack = Stack.init();
+    for_label_stack = Stack.init();
+}
+
 void gen_register_def() {
-    for (int i = 0; i < 5; i++) {
+    for (int i = 0; i < 6; i++) {
         char reg[10];
-        strncpy(reg, registers[i]+3, 10);
+        strncpy(reg, registers[i], 10);
         printf("DEFVAR %s\n", reg);
     }
 }
@@ -43,10 +67,6 @@ char *gen_scope_var(char *var_name, int scope, int stayed, bool with_frame) {
         }
         str += 3;
     }
-//    if (scope != 0) {
-//        sprintf(str, "_");
-//        str += 1;
-//    }
     for (int i = 0; i < scope; i++) {
         sprintf(str, "%c", '%');
         str += 1;
@@ -83,6 +103,8 @@ void gen_std_functions() {
      */
 
     // readString
+    printf(".IFJcode23\n");
+    printf("JUMP $$main\n");
     printf("LABEL $readString_std\n");
     printf("READ GF@$RET string\n");
     printf("RETURN\n");
@@ -178,8 +200,143 @@ void gen_std_functions() {
     printf("POPS GF@$A\n");
     printf("INT2CHAR GF@$RET GF@$A\n");
     printf("RETURN\n");
+    printf("LABEL $$main\n");
 }
 
 void gen_line(char *line) {
     printf("%s\n", line);
+}
+
+void gen_break() {
+    printf("JUMP %s\n", current_loop_end_label);
+}
+
+void gen_continue() {
+    if (current_loop_is_for) {
+        printf("ADD GF$@FOR_START GF$@FOR_START int@1\n");
+    }
+    printf("JUMP %s\n", current_loop_start_label);
+}
+
+void gen_return(bool void_return) {
+    if (!void_return) {
+        printf("POPS GF@$RET\n");
+    }
+    printf("POPFRAME\n");
+    printf("RETURN\n");
+}
+
+void gen_var_decl(char *var_name, int scope, int stayed) {
+    char *var = gen_scope_var(var_name, scope, stayed, true);
+    printf("DEFVAR %s\n", var);
+}
+
+void gen_var_assign(char *var_name, int scope, int stayed) {
+    char *var = gen_scope_var(var_name, scope, stayed, true);
+    printf("POPS %s\n", var);
+}
+
+void gen_branch_labels(bool gen_end) {
+    if (gen_end) {
+        char *label_end = gen_unique_label("branch_end");
+        Stack.push(branch_label_stack, label_end);
+    }
+    char *label_skip = gen_unique_label("branch_skip");
+    Stack.push(branch_label_stack, label_skip);
+}
+
+void gen_branch_if_start(bool let) {
+    char *label_skip = (char*)Stack.top(branch_label_stack);
+    if (let) {
+        printf("POPS GF@$COND\n");
+        printf("TYPE GF@$COND GF@$COND\n");
+        printf("JUMPIFEQ %s GF@$COND string@nil\n", label_skip);
+    } else {
+        printf("PUSHS bool@true\n");
+        printf("JUMPIFNEQ %s\n", label_skip);
+    }
+}
+
+void gen_branch_if_end() {
+    char *label_skip = (char*)Stack.top(branch_label_stack);
+    Stack.pop(branch_label_stack);
+    char *label_end = (char*)Stack.top(branch_label_stack);
+    printf("JUMP %s\n", label_end);
+    printf("LABEL %s\n", label_skip);
+}
+
+void gen_branch_end() {
+    char *label_end = (char*)Stack.top(branch_label_stack);
+    Stack.pop(branch_label_stack);
+    printf("LABEL %s\n", label_end);
+}
+
+void gen_while_start() {
+    char *label_start = gen_unique_label("while_start");
+    current_loop_start_label = label_start;
+    char *label_end = gen_unique_label("while_end");
+    current_loop_end_label = label_end;
+    Stack.push(while_label_stack, label_end);
+    Stack.push(while_label_stack, label_start);
+    printf("LABEL %s\n", label_start);
+}
+
+void gen_while_cond() {
+    printf("PUSHS bool@true\n");
+    printf("JUMPIFNEQ %s\n", current_loop_end_label);
+}
+
+void gen_while_end() {
+    char *label_start = (char*)Stack.top(while_label_stack);
+    Stack.pop(while_label_stack);
+    char *label_end = (char*)Stack.top(while_label_stack);
+    Stack.pop(while_label_stack);
+    printf("JUMP %s\n", label_start);
+    printf("LABEL %s\n", label_end);
+}
+
+void gen_for_start() {
+    // todo
+    current_loop_is_for = true;
+    char *label_start = gen_unique_label("for_start");
+    current_loop_start_label = label_start;
+    char *label_end = gen_unique_label("for_end");
+    current_loop_end_label = label_end;
+    Stack.push(for_label_stack, label_end);
+    Stack.push(for_label_stack, label_start);
+    printf("LABEL %s\n", label_start);
+}
+
+void gen_for_range_save() {
+    printf("PUSHS GF@$FOR_START\n");
+    printf("PUSHS GF@$FOR_END\n");
+}
+
+void gen_for_range_restore() {
+    printf("POPS GF@$FOR_END\n");
+    printf("POPS GF@$FOR_START\n");
+}
+
+
+void gen_for_range(bool open) {
+    if (!open) {
+        printf("PUSHS int@1\n");
+        printf("ADDS\n");
+    }
+    printf("POPS GF@$FOR_END\n");
+    printf("POPS GF@$FOR_START\n");
+}
+
+void gen_for_cond() {
+    printf("JUMPIFEQ %s GF@$FOR_START GF@$FOR_END\n", current_loop_end_label);
+}
+
+void gen_for_end() {
+    char *label_start = (char*)Stack.top(for_label_stack);
+    Stack.pop(for_label_stack);
+    char *label_end = (char*)Stack.top(for_label_stack);
+    Stack.pop(for_label_stack);
+    printf("ADD GF@$FOR_START GF@$FOR_START int@1\n");
+    printf("JUMP %s\n", label_start);
+    printf("LABEL %s\n", label_end);
 }
