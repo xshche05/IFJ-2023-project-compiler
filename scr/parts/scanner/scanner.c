@@ -6,6 +6,8 @@
 #include "lists.h"
 #include "token.h"
 
+#include "../error.h"
+
 // TODO: fix range operator form '..' to '...'
 
 char control_char = ' ';
@@ -65,9 +67,10 @@ static string_t *verify_str(string_t *lexeme, bool multiline) {
         }
         if (number_of_spaces_in_first_line < spaces_before_closing_quotes) {
             fprintf(stderr, "Error: Invalid multiline string. Before closing quotes too many whitespaces\n");
+            exit(BAD_LEXEM_STRUCT_ERR);
             String.dtor(tmp_lex);
             String.dtor(new_lex);
-            return NULL;
+             return NULL;
         } else if (number_of_spaces_in_first_line)
         {
             char *new_first = (char*) DynamicArray.get(lines, 1) + number_of_spaces_in_first_line;
@@ -82,6 +85,7 @@ static string_t *verify_str(string_t *lexeme, bool multiline) {
                 char *cur_line = DynamicArray.get(lines, i) + spaces_to_remove;
                 if (!isspace(*(cur_line-1))) {
                     fprintf(stderr, "Error: Invalid multiline string. Before closing quotes too many whitespaces\n");
+                    exit(BAD_LEXEM_STRUCT_ERR);
                     String.dtor(tmp_lex);
                     String.dtor(new_lex);
                     return NULL;
@@ -112,6 +116,7 @@ static string_t *verify_str(string_t *lexeme, bool multiline) {
                 char *c;
                 if (i + 1 >= new_lex->length) {
                     fprintf(stderr, "Error: Invalid string literal. Backslash at the end of string\n");
+                    exit(BAD_LEXEM_STRUCT_ERR);
                     String.dtor(tmp_lex);
                     String.dtor(new_lex);
                     return NULL;
@@ -134,6 +139,7 @@ static string_t *verify_str(string_t *lexeme, bool multiline) {
                         break;
                     default:
                         fprintf(stderr, "Error: Invalid string literal. Unknown escape sequence '\\%c'\n", tmp[i + 1]);
+                        exit(BAD_LEXEM_STRUCT_ERR);
                         String.dtor(tmp_lex);
                         String.dtor(new_lex);
                         return NULL;
@@ -150,6 +156,7 @@ static string_t *verify_str(string_t *lexeme, bool multiline) {
                 while (tmp[i] != '}') {
                     if (j > 7) {
                         fprintf(stderr, "Error: Invalid string literal. Unicode escape sequence too long\n");
+                        exit(BAD_LEXEM_STRUCT_ERR);
                         String.dtor(tmp_lex);
                         String.dtor(new_lex);
                         return NULL;
@@ -293,6 +300,7 @@ int source_code_to_tokens() {
                     default:
                         //fprintf(stderr, "Error: Unknown character '%c' (0x%02x).\n", c, c);
                         ERROR(stderr, "Unknown character '%c' (0x%02x)", c, c)
+                        exit(BAD_LEXEM_STRUCT_ERR);
                         return LEXICAL_ERROR;
                 }
                 break;
@@ -327,6 +335,7 @@ int source_code_to_tokens() {
                 } else {
                     //fprintf(stderr, "Error: Unknown character '%c' (0x%02x). Expected '%c' (0x%02x)\n", c, c, '?', '?');
                     ERROR(stderr, "Unknown character '%c' (0x%02x). Expected '%c' (0x%02x)", c, c, '?', '?')
+                    exit(BAD_LEXEM_STRUCT_ERR);
                     return LEXICAL_ERROR;
                 }
                 break;
@@ -462,6 +471,7 @@ int source_code_to_tokens() {
                         keyword_code = is_keyword(lexeme);
                         if (keyword_code == -1) {
                             ERROR(stderr, "Unknown type '%s', expected 'Int', 'Double', 'Bool' or 'String' types before", lexeme->str)
+                            exit(BAD_LEXEM_STRUCT_ERR);
                             return LEXICAL_ERROR;
                         }
                         String.add_char(lexeme, c);
@@ -495,6 +505,7 @@ int source_code_to_tokens() {
                 } else {
                     //fprintf(stderr, "Error: Unknown character '%c' (0x%02x). Expected decimal digit\n", c, c);
                     ERROR(stderr, "Unknown character '%c' (0x%02x). Expected decimal digit", c, c)
+                    exit(BAD_LEXEM_STRUCT_ERR);
                     return LEXICAL_ERROR;
                 }
                 break;
@@ -530,6 +541,7 @@ int source_code_to_tokens() {
                     default:
                         //fprintf(stderr, "Error: Unknown character '%c' (0x%02x). Expected decimal digit or '+' or '-'\n", c, c);
                         ERROR(stderr, "Unknown character '%c' (0x%02x). Expected decimal digit or '+' or '-'", c, c)
+                        exit(BAD_LEXEM_STRUCT_ERR);
                         return LEXICAL_ERROR;
                 }
                 break;
@@ -540,6 +552,7 @@ int source_code_to_tokens() {
                 } else {
                     //fprintf(stderr, "Error: Unknown character '%c' (0x%02x). Expected decimal digit\n", c, c);
                     ERROR(stderr, "Unknown character '%c' (0x%02x). Expected decimal digit", c, c)
+                    exit(BAD_LEXEM_STRUCT_ERR);
                     return LEXICAL_ERROR;
                 }
                 break;
@@ -573,6 +586,7 @@ int source_code_to_tokens() {
                     default:
                         //fprintf(stderr, "Error: Unknown character '%c' (0x%02x). Expected printable character\n", c, c);
                         ERROR(stderr, "Unknown character '%c' (0x%02x). Expected printable character", c, c)
+                        exit(BAD_LEXEM_STRUCT_ERR);
                         return LEXICAL_ERROR;
                 }
                 break;
@@ -585,6 +599,7 @@ int source_code_to_tokens() {
                     attribute.string = verify_str(lexeme, false);
                     if (attribute.string == NULL) {
                         fprintf(stderr, "Error: Invalid string literal\n");
+                        exit(BAD_LEXEM_STRUCT_ERR);
                         return LEXICAL_ERROR;
                     }
                     add_token(type, attribute, true);
@@ -600,6 +615,7 @@ int source_code_to_tokens() {
                 } else {
                     //fprintf(stderr, "Error: Unknown character '%c' (0x%02x). Expected newline\n", c, c);
                     ERROR(stderr, "Unknown character '%c' (0x%02x). Expected newline", c, c)
+                    exit(BAD_LEXEM_STRUCT_ERR);
                     return LEXICAL_ERROR;
                 }
                 break;
@@ -622,6 +638,7 @@ int source_code_to_tokens() {
                     default:
                         //fprintf(stderr, "Error: Unknown character '%c' (0x%02x). Expected printable character\n", c, c);
                         ERROR(stderr, "Unknown character '%c' (0x%02x). Expected printable character", c, c)
+                        exit(BAD_LEXEM_STRUCT_ERR);
                         return LEXICAL_ERROR;
                 }
                 break;
@@ -644,6 +661,7 @@ int source_code_to_tokens() {
                     default:
                         //fprintf(stderr, "Error: Unknown character '%c' (0x%02x). Expected printable character\n", c, c);
                         ERROR(stderr, "Unknown character '%c' (0x%02x). Expected printable character", c, c)
+                        exit(BAD_LEXEM_STRUCT_ERR);
                         return LEXICAL_ERROR;
                 }
                 break;
@@ -661,6 +679,7 @@ int source_code_to_tokens() {
                     default:
                         //fprintf(stderr, "Error: Unknown character '%c' (0x%02x). Expected printable character\n", c, c);
                         ERROR(stderr, "Unknown character '%c' (0x%02x). Expected printable character", c, c)
+                        exit(BAD_LEXEM_STRUCT_ERR);
                         return LEXICAL_ERROR;
                 }
                 break;
@@ -678,6 +697,7 @@ int source_code_to_tokens() {
                     default:
                         //fprintf(stderr, "Error: Unknown character '%c' (0x%02x). Expected printable character\n", c, c);
                         ERROR(stderr, "Unknown character '%c' (0x%02x). Expected printable character", c, c)
+                        exit(BAD_LEXEM_STRUCT_ERR);
                         return LEXICAL_ERROR;
                 }
                 break;
@@ -686,6 +706,7 @@ int source_code_to_tokens() {
                 attribute.string = verify_str(lexeme, true);
                 if (attribute.string == NULL) {
                     fprintf(stderr, "Error: Invalid string literal\n");
+                    exit(BAD_LEXEM_STRUCT_ERR);
                     return LEXICAL_ERROR;
                 }
                 add_token(type, attribute, true);
@@ -710,6 +731,7 @@ int source_code_to_tokens() {
                     default:
                         //fprintf(stderr, "Error: Unknown character '%c' (0x%02x). Unknown escape sequence. Expected '\"', 'n', 'r', 't', '\\', 'u'\n", c, c);
                         ERROR(stderr, "Unknown character '%c' (0x%02x). Unknown escape sequence. Expected '\"', 'n', 'r', 't', '\\', 'u'", c, c)
+                        exit(BAD_LEXEM_STRUCT_ERR);
                         return LEXICAL_ERROR;
                 }
                 break;
@@ -720,6 +742,7 @@ int source_code_to_tokens() {
                 } else {
                     //fprintf(stderr, "Error: Unknown character '%c' (0x%02x). Expected '{'\n", c, c);
                     ERROR(stderr, "Unknown character '%c' (0x%02x). Expected '{'", c, c)
+                    exit(BAD_LEXEM_STRUCT_ERR);
                     return LEXICAL_ERROR;
                 }
                 break;
@@ -735,6 +758,7 @@ int source_code_to_tokens() {
                     default:
                         //fprintf(stderr, "Error: Unknown character '%c' (0x%02x). Expected hexadecimal digit\n", c, c);
                         ERROR(stderr, "Unknown character '%c' (0x%02x). Expected hexadecimal digit", c, c)
+                        exit(BAD_LEXEM_STRUCT_ERR);
                         return LEXICAL_ERROR;
                 }
                 break;
@@ -742,6 +766,7 @@ int source_code_to_tokens() {
                 if (count >= 8) {
                     //fprintf(stderr, "Too many hex digits in string escape sequence, maximum allowed is 8 digits\n");
                     ERROR(stderr, "Too many hex digits in string escape sequence, maximum allowed is 8 digits")
+                    exit(BAD_LEXEM_STRUCT_ERR);
                     return LEXICAL_ERROR;
                 }
                 switch (c) {
@@ -759,6 +784,7 @@ int source_code_to_tokens() {
                     default:
                         //fprintf(stderr, "Error: Unknown character '%c' (0x%02x). Expected hexadecimal digit or '}'\n", c, c);
                         ERROR(stderr, "Unknown character '%c' (0x%02x). Expected hexadecimal digit or '}'", c, c)
+                        exit(BAD_LEXEM_STRUCT_ERR);
                         return LEXICAL_ERROR;
                 }
                 break;
@@ -843,6 +869,7 @@ int source_code_to_tokens() {
                 } else {
                     //fprintf(stderr, "Error: Unknown character '%c' (0x%02x). Expected '&'\n", c, c);
                     ERROR(stderr, "Unknown character '%c' (0x%02x). Expected '&'", c, c)
+                    exit(BAD_LEXEM_STRUCT_ERR);
                     return LEXICAL_ERROR;
                 }
                 break;
@@ -858,6 +885,7 @@ int source_code_to_tokens() {
                 else {
                     //fprintf(stderr, "Error: Unknown character '%c' (0x%02x). Expected '|'\n", c, c);
                     ERROR(stderr, "Unknown character '%c' (0x%02x). Expected '|'", c, c)
+                    exit(BAD_LEXEM_STRUCT_ERR);
                     return LEXICAL_ERROR;
                 }
                 break;
@@ -873,6 +901,7 @@ int source_code_to_tokens() {
                 else {
                     //fprintf(stderr, "Error: Unknown character '%c' (0x%02x). Expected '.'\n", c, c);
                     ERROR(stderr, "Unknown character '%c' (0x%02x). Expected '.'", c, c)
+                    exit(BAD_LEXEM_STRUCT_ERR);
                     return LEXICAL_ERROR;
                 }
                 break;
@@ -897,6 +926,7 @@ int source_code_to_tokens() {
     String.dtor(lexeme);
     if (comment_cnt > 0) {
         fprintf(stderr, "Error: Unclosed multiline comment\nNumber of unclosed blocks: %d\n", comment_cnt);
+        exit(BAD_LEXEM_STRUCT_ERR);
         return LEXICAL_ERROR;
     }
     TokenArray.set_nl_after();

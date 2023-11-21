@@ -1,6 +1,3 @@
-////
-//// Created by Spagetik on 22.10.2023.
-////
 //
 //// valid tokens for expression parser id-non-nil, int_literal, double_literal, str_literal, nil_literal, true_literal, false_literal
 //// (, ), +, -, *, /, <, <=, >, >=, ==, !=, &&, ||, !_, _!

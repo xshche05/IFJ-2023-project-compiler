@@ -1,7 +1,3 @@
-//
-// Created by Spagetik on 14.10.2023.
-//
-
 #ifndef IFJ_PRJ_TOKEN_H
 #define IFJ_PRJ_TOKEN_H
 #include "utils.h"
