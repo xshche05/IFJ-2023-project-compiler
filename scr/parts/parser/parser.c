@@ -1,7 +1,6 @@
 #include "parts.h"
 #include "utils.h"
 #include "new_symtable.h"
-#include "../error.h"
 
 token_t *lookahead;
 bool nl_flag;    // new line
@@ -69,23 +68,20 @@ static char *tokens_as_str[] = {
 bool match(token_type_t type) {
     if (type == TOKEN_RETURN) {
         if (!inside_func) {
-            //fprintf(stderr, "Syntax error: TOKEN_RETURN outside of function\n");
-            errorExit(SEMANTIC_ANOTHER_ERR);
-            return false;
+            fprintf(stderr, "Syntax error: TOKEN_RETURN outside of function\n");
+            return false;   //TODO SEMANTIC ERROR
         }
     }
     if (type == TOKEN_BREAK || type == TOKEN_CONTINUE) {
         if (!inside_loop) {
-            //fprintf(stderr, "Syntax error: %s outside of loop\n", tokens_as_str[type]);
-            errorExit(SEMANTIC_ANOTHER_ERR);
-            return false;
+            fprintf(stderr, "Syntax error: %s outside of loop\n", tokens_as_str[type]);
+            return false;   //TODO SEMANTIC ERROR
         }
     }
     if (type == TOKEN_FUNC) {
         if (scope - 1 != 0 || inside_loop || inside_branch) { //TODO FIX
-            //fprintf(stderr, "Syntax error: function declaration outside of global scope\n", tokens_as_str[type]);
-            errorExit(SEMANTIC_UNDEF_REDEF_FUNC_ERR);
-            return false;
+            fprintf(stderr, "Syntax error: function declaration outside of global scope\n", tokens_as_str[type]);
+            return false; //TODO SEMANTIC ERROR
         }
     }
     if (lookahead->type == type) {
@@ -93,8 +89,7 @@ bool match(token_type_t type) {
         lookahead = TokenArray.next();
         return true;
     }
-    //fprintf(stderr, "Syntax error: expected %s, got %s\n", tokens_as_str[type], tokens_as_str[lookahead->type]);
-    errorExit(BAD_SYNTAX_ERR);
+    fprintf(stderr, "Syntax error: expected %s, got %s\n", tokens_as_str[type], tokens_as_str[lookahead->type]);
     return false;
 }
 
@@ -140,8 +135,7 @@ bool S() {
             s = CODE() && match(TOKEN_EOF) && true;
             break;
         default:
-            //fprintf(stderr, "Syntax error [S]: expected ['TOKEN_EOF', 'TOKEN_IF', 'TOKEN_IDENTIFIER', 'TOKEN_WHILE', 'TOKEN_FOR', 'TOKEN_VAR', 'TOKEN_LET', 'TOKEN_RETURN', 'TOKEN_FUNC', 'TOKEN_BREAK', 'TOKEN_CONTINUE'], got %s\n", tokens_as_str[lookahead->type]);
-            errorExit(BAD_SYNTAX_ERR);
+            fprintf(stderr, "Syntax error [S]: expected ['TOKEN_EOF', 'TOKEN_IF', 'TOKEN_IDENTIFIER', 'TOKEN_WHILE', 'TOKEN_FOR', 'TOKEN_VAR', 'TOKEN_LET', 'TOKEN_RETURN', 'TOKEN_FUNC', 'TOKEN_BREAK', 'TOKEN_CONTINUE'], got %s\n", tokens_as_str[lookahead->type]);
             s = false;
     }
     return s;
@@ -186,8 +180,7 @@ bool CODE() {
             s = true;
             break;
         default:
-            //fprintf(stderr, "Syntax error [CODE]: expected ['TOKEN_VAR', 'TOKEN_LET', 'TOKEN_FUNC', 'TOKEN_WHILE', 'TOKEN_FOR', 'TOKEN_IF', 'TOKEN_IDENTIFIER', 'TOKEN_RETURN', 'TOKEN_BREAK', 'TOKEN_CONTINUE', 'TOKEN_RIGHT_BRACE', 'TOKEN_EOF'], got %s\n", tokens_as_str[lookahead->type]);
-            errorExit(BAD_SYNTAX_ERR);
+            fprintf(stderr, "Syntax error [CODE]: expected ['TOKEN_VAR', 'TOKEN_LET', 'TOKEN_FUNC', 'TOKEN_WHILE', 'TOKEN_FOR', 'TOKEN_IF', 'TOKEN_IDENTIFIER', 'TOKEN_RETURN', 'TOKEN_BREAK', 'TOKEN_CONTINUE', 'TOKEN_RIGHT_BRACE', 'TOKEN_EOF'], got %s\n", tokens_as_str[lookahead->type]);
             s = false;
     }
     return s;
@@ -201,8 +194,7 @@ bool RETURN() {
             s = match(TOKEN_RETURN) && RET_EXPR() && true;
             break;
         default:
-            //fprintf(stderr, "Syntax error [RETURN]: expected ['TOKEN_RETURN'], got %s\n", tokens_as_str[lookahead->type]);
-            errorExit(BAD_SYNTAX_ERR);
+            fprintf(stderr, "Syntax error [RETURN]: expected ['TOKEN_RETURN'], got %s\n", tokens_as_str[lookahead->type]);
             s = false;
     }
     return s;
@@ -242,8 +234,7 @@ bool RET_EXPR() {
             s = true;
             break;
         default:
-            //fprintf(stderr, "Syntax error [RET_EXPR]: expected ['TOKEN_FALSE_LITERAL', 'TOKEN_LESS_THAN', 'TOKEN_LOGICAL_AND', 'TOKEN_LEFT_BRACKET', 'TOKEN_NIL_LITERAL', 'TOKEN_REAL_LITERAL', 'TOKEN_STRING_LITERAL', 'TOKEN_ADDITION', 'TOKEN_SUBTRACTION', 'TOKEN_LOGICAL_OR', 'TOKEN_IDENTIFIER', 'TOKEN_EQUAL_TO', 'TOKEN_LESS_THAN_OR_EQUAL_TO', 'TOKEN_GREATER_THAN', 'TOKEN_NOT_EQUAL_TO', 'TOKEN_GREATER_THAN_OR_EQUAL_TO', 'TOKEN_TRUE_LITERAL', 'TOKEN_IS_NIL', 'TOKEN_DIVISION', 'TOKEN_MULTIPLICATION', 'TOKEN_LOGICAL_NOT', 'TOKEN_UNWRAP_NILLABLE', 'TOKEN_INTEGER_LITERAL', 'TOKEN_RIGHT_BRACE', 'TOKEN_EOF'], got %s\n", tokens_as_str[lookahead->type]);
-            errorExit(BAD_SYNTAX_ERR);
+            fprintf(stderr, "Syntax error [RET_EXPR]: expected ['TOKEN_FALSE_LITERAL', 'TOKEN_LESS_THAN', 'TOKEN_LOGICAL_AND', 'TOKEN_LEFT_BRACKET', 'TOKEN_NIL_LITERAL', 'TOKEN_REAL_LITERAL', 'TOKEN_STRING_LITERAL', 'TOKEN_ADDITION', 'TOKEN_SUBTRACTION', 'TOKEN_LOGICAL_OR', 'TOKEN_IDENTIFIER', 'TOKEN_EQUAL_TO', 'TOKEN_LESS_THAN_OR_EQUAL_TO', 'TOKEN_GREATER_THAN', 'TOKEN_NOT_EQUAL_TO', 'TOKEN_GREATER_THAN_OR_EQUAL_TO', 'TOKEN_TRUE_LITERAL', 'TOKEN_IS_NIL', 'TOKEN_DIVISION', 'TOKEN_MULTIPLICATION', 'TOKEN_LOGICAL_NOT', 'TOKEN_UNWRAP_NILLABLE', 'TOKEN_INTEGER_LITERAL', 'TOKEN_RIGHT_BRACE', 'TOKEN_EOF'], got %s\n", tokens_as_str[lookahead->type]);
             s = false;
     }
     return s;
@@ -257,8 +248,7 @@ bool VAR_DECL() {
             s = match(TOKEN_VAR) && match(TOKEN_IDENTIFIER) && VAR_LET_TYPE() && VAR_LET_EXP() && true;
             break;
         default:
-            //fprintf(stderr, "Syntax error [VAR_DECL]: expected ['TOKEN_VAR'], got %s\n", tokens_as_str[lookahead->type]);
-            errorExit(BAD_SYNTAX_ERR);
+            fprintf(stderr, "Syntax error [VAR_DECL]: expected ['TOKEN_VAR'], got %s\n", tokens_as_str[lookahead->type]);
             s = false;
     }
     return s;
@@ -274,8 +264,7 @@ bool VAR_LET_TYPE() {
         case TOKEN_ASSIGNMENT:
         default:
             if (nl_flag) return true;
-            //fprintf(stderr, "Syntax error [VAR_LET_TYPE]: expected ['TOKEN_COLON', 'TOKEN_ASSIGNMENT', 'NL'], got %s\n", tokens_as_str[lookahead->type]);
-            errorExit(BAD_SYNTAX_ERR);
+            fprintf(stderr, "Syntax error [VAR_LET_TYPE]: expected ['TOKEN_COLON', 'TOKEN_ASSIGNMENT', 'NL'], got %s\n", tokens_as_str[lookahead->type]);
             s = false;
     }
     return s;
@@ -290,8 +279,7 @@ bool VAR_LET_EXP() {
             break;
         default:
             if (nl_flag) return true;
-            //fprintf(stderr, "Syntax error [VAR_LET_EXP]: expected ['TOKEN_ASSIGNMENT', 'NL'], got %s\n", tokens_as_str[lookahead->type]);
-            errorExit(BAD_SYNTAX_ERR);
+            fprintf(stderr, "Syntax error [VAR_LET_EXP]: expected ['TOKEN_ASSIGNMENT', 'NL'], got %s\n", tokens_as_str[lookahead->type]);
             s = false;
     }
     return s;
@@ -305,8 +293,7 @@ bool LET_DECL() {
             s = match(TOKEN_LET) && match(TOKEN_IDENTIFIER) && VAR_LET_TYPE() && VAR_LET_EXP() && true;
             break;
         default:
-            //fprintf(stderr, "Syntax error [LET_DECL]: expected ['TOKEN_LET'], got %s\n", tokens_as_str[lookahead->type]);
-            errorExit(BAD_SYNTAX_ERR);
+            fprintf(stderr, "Syntax error [LET_DECL]: expected ['TOKEN_LET'], got %s\n", tokens_as_str[lookahead->type]);
             s = false;
     }
     return s;
@@ -324,8 +311,7 @@ bool FUNC_DECL() {
             decrement_scope();
             break;
         default:
-            //fprintf(stderr, "Syntax error [FUNC_DECL]: expected ['TOKEN_FUNC'], got %s\n", tokens_as_str[lookahead->type]);
-            errorExit(BAD_SYNTAX_ERR);
+            fprintf(stderr, "Syntax error [FUNC_DECL]: expected ['TOKEN_FUNC'], got %s\n", tokens_as_str[lookahead->type]);
             s = false;
     }
     return s;
@@ -342,8 +328,7 @@ bool FUNC_RET_TYPE() {
             s = true;
             break;
         default:
-            //fprintf(stderr, "Syntax error [FUNC_RET_TYPE]: expected ['TOKEN_ARROW', 'TOKEN_LEFT_BRACE'], got %s\n", tokens_as_str[lookahead->type]);
-            errorExit(BAD_SYNTAX_ERR);
+            fprintf(stderr, "Syntax error [FUNC_RET_TYPE]: expected ['TOKEN_ARROW', 'TOKEN_LEFT_BRACE'], got %s\n", tokens_as_str[lookahead->type]);
             s = false;
     }
     return s;
@@ -361,8 +346,7 @@ bool PARAM_LIST() {
             s = true;
             break;
         default:
-            //fprintf(stderr, "Syntax error [PARAM_LIST]: expected ['TOKEN_UNDERSCORE', 'TOKEN_IDENTIFIER', 'TOKEN_RIGHT_BRACKET'], got %s\n", tokens_as_str[lookahead->type]);
-            errorExit(BAD_SYNTAX_ERR);
+            fprintf(stderr, "Syntax error [PARAM_LIST]: expected ['TOKEN_UNDERSCORE', 'TOKEN_IDENTIFIER', 'TOKEN_RIGHT_BRACKET'], got %s\n", tokens_as_str[lookahead->type]);
             s = false;
     }
     return s;
@@ -377,8 +361,7 @@ bool PARAM() {
             s = PARAM_NAME() && match(TOKEN_IDENTIFIER) && match(TOKEN_COLON) && TYPE() && true;
             break;
         default:
-            //fprintf(stderr, "Syntax error [PARAM]: expected ['TOKEN_UNDERSCORE', 'TOKEN_IDENTIFIER'], got %s\n", tokens_as_str[lookahead->type]);
-            errorExit(BAD_SYNTAX_ERR);
+            fprintf(stderr, "Syntax error [PARAM]: expected ['TOKEN_UNDERSCORE', 'TOKEN_IDENTIFIER'], got %s\n", tokens_as_str[lookahead->type]);
             s = false;
     }
     return s;
@@ -395,8 +378,7 @@ bool PARAM_NAME() {
             s = match(TOKEN_UNDERSCORE) && true;
             break;
         default:
-            //fprintf(stderr, "Syntax error [PARAM_NAME]: expected ['TOKEN_IDENTIFIER', 'TOKEN_UNDERSCORE'], got %s\n", tokens_as_str[lookahead->type]);
-            errorExit(BAD_SYNTAX_ERR);
+            fprintf(stderr, "Syntax error [PARAM_NAME]: expected ['TOKEN_IDENTIFIER', 'TOKEN_UNDERSCORE'], got %s\n", tokens_as_str[lookahead->type]);
             s = false;
     }
     return s;
@@ -413,8 +395,7 @@ bool NEXT_PARAM() {
             s = true;
             break;
         default:
-            //fprintf(stderr, "Syntax error [NEXT_PARAM]: expected ['TOKEN_COMMA', 'TOKEN_RIGHT_BRACKET'], got %s\n", tokens_as_str[lookahead->type]);
-            errorExit(BAD_SYNTAX_ERR);
+            fprintf(stderr, "Syntax error [NEXT_PARAM]: expected ['TOKEN_COMMA', 'TOKEN_RIGHT_BRACKET'], got %s\n", tokens_as_str[lookahead->type]);
             s = false;
     }
     return s;

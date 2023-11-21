@@ -2,8 +2,8 @@ var
 b
 :
 Int?
-var a : Int
 
+if let a {
     func d(_ a: Int) {
         if let a {
             return

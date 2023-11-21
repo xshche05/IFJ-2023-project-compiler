@@ -32,7 +32,7 @@ char *gen_unique_label(char *prefix) {
     return str;
 }
 
-char *gen_scope_var(char *var_name, int scope, bool with_frame) {
+char *gen_scope_var(char *var_name, int scope, int stayed, bool with_frame) {
     char *str = malloc(sizeof(char) * (strlen(var_name) + 10 + scope));
     char *ret = str;
     if (with_frame) {
@@ -43,16 +43,21 @@ char *gen_scope_var(char *var_name, int scope, bool with_frame) {
         }
         str += 3;
     }
-    sprintf(str, "%s", var_name);
-    str += strlen(var_name);
-    if (scope != 0) {
-        sprintf(str, "_");
-        str += 1;
-    }
+//    if (scope != 0) {
+//        sprintf(str, "_");
+//        str += 1;
+//    }
     for (int i = 0; i < scope; i++) {
         sprintf(str, "%c", '%');
         str += 1;
     }
+    sprintf(str, "%s", var_name);
+    str += strlen(var_name);
+    if (stayed) {
+        sprintf(str, "%c%d", '%', stayed);
+        str += strlen(str);
+    }
+
     return ret;
 }
 
