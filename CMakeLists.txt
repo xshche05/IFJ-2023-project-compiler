@@ -7,7 +7,7 @@ set(CMAKE_C_STANDARD 11)
 
 include_directories(scr/utils scr/parts src scr/parts/scanner scr/parts/parser)
 
-add_compile_options(-Wall -Wextra -std=c99 -g)
+add_compile_options(-Wall -Wextra -std=c11 -g -DDEBUG)
 
 add_executable(IFJ_PRJ
         scr/main.c

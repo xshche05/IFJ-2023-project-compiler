@@ -14,6 +14,14 @@
 #define SEMANTIC_ERROR_7 9
 #define INTERNAL_ERROR 99
 
+#ifdef DEBUG
+#define DEBUG_PRINT(...) fprintf(stderr, __VA_ARGS__)
+#else
+#define DEBUG_PRINT(...)
+#endif
+
+char error_msg[1000];
+
 //Macro for error handling
 #define EXIT_ERROR(error_code) \
     do { \

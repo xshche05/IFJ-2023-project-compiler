@@ -188,13 +188,30 @@ def gen_func_case(predict_value: str, rule_num: int, name: str):
         func += f"{' ' * 12}increment_scope();\n"
     if name in ["ELSE_IF"]:
         func += f"{' ' * 12}scope_new();\n"
-    func += f"{' ' * 12}s = true;\n"
+    # func += f"{' ' * 12}s = true;\n"
     if name != "EXPR":
         for NT in rule_right:
+            if len(rule_right) == 1:
+                if NT == "EPS":
+                    func += F"{' ' * 12}s = true;\n"
+            if rule_right.index(NT) == 0:
+                if NT in non_terminals:
+                    func += F"{' ' * 12}s = {NT}();\n" # Optimized
+                elif NT != "EPS" and NT != "NL" and NT != "EXPR":
+                    func += F"{' ' * 12}s = match({NT});\n" # Optimized
+                elif NT == "NL":
+                    func += F"{' ' * 12}s = s && nl_check();\n"
+                elif NT == "EXPR":
+                    func += F"{' ' * 12}s = call_expr_parser(lookahead);\n"
+                continue
             if NT in non_terminals:
-                func += F"{' ' * 12}s = {NT}() && s; if (!s) break;\n" #TODO OPTIMIZE
-            elif NT != "EPS" and NT != "NL":
-                func += F"{' ' * 12}s = match({NT}) && s; if (!s) break;\n" #TODO OPTIMIZE
+                func += F"{' ' * 12}s = s && {NT}();\n" # Optimized
+            elif NT != "EPS" and NT != "NL" and NT != "EXPR":
+                func += F"{' ' * 12}s = s && match({NT});\n" # Optimized
+            elif NT == "NL":
+                func += F"{' ' * 12}s = s && nl_check();\n"
+            elif NT == "EXPR":
+                func += F"{' ' * 12}s = s && call_expr_parser(lookahead);\n"
     # elif name == "EXPR":
     #     func += F"call_expr_parser() && "
     # func += "true;\n"
@@ -213,6 +230,8 @@ def gen_func_case(predict_value: str, rule_num: int, name: str):
 
 def gen_func_footer(predict_values: list[str] = None, name: str = None):
     func = f"{' ' * 8}default:\n"
+    if "EXPR" in predict_values:
+        func += f"{' ' * 12}if (call_expr_parser(lookahead)) return true;\n"
     if "NL" in predict_values:
         func += f"{' ' * 12}if (nl_flag) return true;\n"
     if predict_values is not None:
@@ -227,23 +246,25 @@ def gen_func_footer(predict_values: list[str] = None, name: str = None):
 def gen_func(name: str):
     func = gen_func_header(name)
     predict_vals = rule_dict_2[name].keys()
-    if name == "EXPR":
-        for predict_value in predict_vals:
-            func += f"{' ' * 8}case {predict_value}:\n"
-        func += f"{' ' *12}s = call_expr_parser() && true;\n{' ' *12}break;\n"
-    else:
-        for predict_value in rule_dict_2[name].keys():
-            if predict_value == "EPS" or predict_value == "NL":
+    # if name == "EXPR":
+    #     for predict_value in predict_vals:
+    #         func += f"{' ' * 8}case {predict_value}:\n"
+    #     func += f"{' ' *12}s = call_expr_parser(lookahead) && true;\n{' ' *12}break;\n"
+    # else:
+    for predict_value in rule_dict_2[name].keys():
+        if predict_value == "EPS" or predict_value == "NL":
+            continue
+        rule_right = list(rules[rule_dict_2[name][predict_value]].values())[0][0]
+        predict_val_next_idx = list(rule_dict_2[name].keys()).index(predict_value) + 1
+        if predict_val_next_idx < len(rule_dict_2[name].keys()):
+            next_predict_val = list(rule_dict_2[name].keys())[predict_val_next_idx]
+            rule_right_next = list(rules[rule_dict_2[name][next_predict_val]].values())[0][0]
+            if rule_right == rule_right_next:
+                func += f"{' ' * 8}case {predict_value}:\n"
                 continue
-            rule_right = list(rules[rule_dict_2[name][predict_value]].values())[0][0]
-            predict_val_next_idx = list(rule_dict_2[name].keys()).index(predict_value) + 1
-            if predict_val_next_idx < len(rule_dict_2[name].keys()):
-                next_predict_val = list(rule_dict_2[name].keys())[predict_val_next_idx]
-                rule_right_next = list(rules[rule_dict_2[name][next_predict_val]].values())[0][0]
-                if rule_right == rule_right_next:
-                    func += f"{' ' * 8}case {predict_value}:\n"
-                    continue
-            func += gen_func_case(predict_value, rule_dict_2[name][predict_value], name)
+        if predict_value == "EXPR":
+            continue
+        func += gen_func_case(predict_value, rule_dict_2[name][predict_value], name)
     func += gen_func_footer(predict_values=list(predict_vals), name=name) + "\n"
     return func
 
@@ -369,8 +390,16 @@ void scope_leave() {
     printf("scope leave: %d\\n", scope);
 }
 
-bool call_expr_parser() {
-    return true;
+bool call_expr_parser(token_t *token) {
+    return match(token->type);
+}
+
+bool nl_check() {
+    if (nl_flag) {
+        return true;
+    }
+    fprintf(stderr, "Syntax error: New line expected\\n");
+    return false;
 }
 \n"""
     for non_terminal in rule_dict_2.keys():
@@ -396,26 +425,26 @@ bool call_expr_parser();\n
         h_file += f"bool {non_terminal}();\n"
     h_file += "#endif //IFJ_PRJ_PARSER_H\n"
 
-# gen_h_file()
-# gen_c_file()
-#
-#
-# with open("__parser.c", "w") as file:
-#     file.write(c_file)
-#
-# with open("__parser.h", "w") as file:
-#     file.write(h_file)
+gen_h_file()
+gen_c_file()
+
+
+with open("__parser.c", "w") as file:
+    file.write(c_file)
+
+with open("__parser.h", "w") as file:
+    file.write(h_file)
 
 # print rules
-for rule in rules.values():
-    right = ''
-    for r in list(rule.values())[0][0]:
-        if r == "EPS":
-            continue
-        if r in terminals:
-            right += r.lower() + ' '
-        else:
-            right += r.upper() + ' '
-    print(list(rule.keys())[0], " -> ", right)
-    print()
-    print()
+# for rule in rules.values():
+#     right = ''
+#     for r in list(rule.values())[0][0]:
+#         if r == "EPS":
+#             continue
+#         if r in terminals:
+#             right += r.lower() + ' '
+#         else:
+#             right += r.upper() + ' '
+#     print(list(rule.keys())[0], " -> ", right)
+#     print()
+#     print()

@@ -899,6 +899,7 @@ int source_code_to_tokens() {
         fprintf(stderr, "Error: Unclosed multiline comment\nNumber of unclosed blocks: %d\n", comment_cnt);
         return LEXICAL_ERROR;
     }
+    TokenArray.set_nl_after();
     add_token(TOKEN_EOF, attribute, false);
     return SUCCESS;
 }

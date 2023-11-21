@@ -21,6 +21,9 @@ int main(int argc, char **argv) {
         return code;
     }
     code = S();
+    if (code == 0) {
+        printf("%s\n", error_msg);
+    }
     printf("code: %d\n", code);
     SourceCode.dtor();
     TokenArray.dtor();
