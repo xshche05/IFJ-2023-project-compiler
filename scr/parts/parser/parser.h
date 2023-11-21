@@ -11,7 +11,7 @@ bool match(token_type_t type);
 
 bool call_expr_parser();
 
-bool S();
+int S();
 bool CODE();
 bool RETURN();
 bool RET_EXPR();

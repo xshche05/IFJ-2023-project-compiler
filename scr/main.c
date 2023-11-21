@@ -8,24 +8,18 @@ int main(int argc, char **argv) {
     char* file_name = "../test.swift";
     SourceCode.ctor();
     SourceCode.from_file(file_name);
-    //SourceCode.print();
     TokenArray.ctor();
 
     int code = source_code_to_tokens();
-
-//    for (int i = 0; i < TokenArray.total(); i++) {
-//        Token.print(TokenArray.next());
-//    }
-
-    if (code != 0) {
-        return code;
+    if (code != SUCCESS) {
+        fprintf(stderr, "Error: source code to tokens failed.\n");
+        return LEXICAL_ERROR;
     }
     code = S();
-    if (code == 0) {
-        printf("%s\n", error_msg);
+    if (code != SUCCESS) {
+        fprintf(stderr, "Error: Parsing failed.\n");
+        fprintf(stderr, "Error: %s\n", error_msg);
+        return SYNTAX_ERROR;
     }
-    printf("code: %d\n", code);
-    SourceCode.dtor();
-    TokenArray.dtor();
-    return 0;
+    return SUCCESS;
 }
