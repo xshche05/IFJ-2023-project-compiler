@@ -2,6 +2,9 @@
 #include "utils.h"
 #include "new_symtable.h"
 
+token_t *lookahead;
+bool nl_flag;    // new line
+
 bool inside_func = false;
 bool inside_loop = false;
 bool inside_branch = false;
@@ -66,19 +69,19 @@ bool match(token_type_t type) {
     if (type == TOKEN_RETURN) {
         if (!inside_func) {
             fprintf(stderr, "Syntax error: TOKEN_RETURN outside of function\n");
-            return false;
+            return false;   //TODO SEMANTIC ERROR
         }
     }
     if (type == TOKEN_BREAK || type == TOKEN_CONTINUE) {
         if (!inside_loop) {
             fprintf(stderr, "Syntax error: %s outside of loop\n", tokens_as_str[type]);
-            return false;
+            return false;   //TODO SEMANTIC ERROR
         }
     }
     if (type == TOKEN_FUNC) {
-        if (scope - 1 != 0 || inside_loop || inside_branch) {
+        if (scope - 1 != 0 || inside_loop || inside_branch) { //TODO FIX
             fprintf(stderr, "Syntax error: function declaration outside of global scope\n", tokens_as_str[type]);
-            return false;
+            return false; //TODO SEMANTIC ERROR
         }
     }
     if (lookahead->type == type) {
