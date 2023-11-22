@@ -183,23 +183,39 @@
 
 #include "scanner/token.h"
 #include "stack.c"
-stack_t *stack = stack_init();
+//stack_t *stack = stack_init();
+
+#define T_SIZE 12
 
 typedef enum
 {
     UNWRAP,            //0
     NOT,               //1
-    ADD_MINUS,         //2
+    ADD_SUB,           //2
     MUL_DIV,           //3
-    NIL_COL,           //6
-    EQ,                //7
-    AND,               //8
-    OR,                //9
-    LEFT_BRACKET,      //10
-    IDENTIFIER,        //11
-    RIGHT_BRACKET,     //12
-    DOLLAR             //13
+    NIL_COL,           //4
+    REL_OP,            //5
+    AND,               //6
+    OR,                //7
+    LEFT_BRACKET,      //8
+    IDENTIFIER,        //9
+    RIGHT_BRACKET,     //10
+    DOLLAR             //11
 } table_index;
+
+int table[T_SIZE][T_SIZE] ={
+                {1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 }, // UNWRAP
+                {1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 }, // NOT
+                {1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 }, // ADD_SUB
+                {1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 }, // MUL_DIV
+                {1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 }, // NIL_COL
+                {1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 }, // REL_OP
+                {1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 }, // AND
+                {1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 }, // OR
+                {1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 }, // LEFT_BRACKET
+                {1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 }, // IDENTIFIER
+                {1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 }, // RIGHT_BRACKET
+                {1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 }}; // DOLLAR
 
 int scope(bool* stop_found)
 {
@@ -237,7 +253,7 @@ table_index get_prec_table_index(token_t* token)
 
         case TOKEN_ADDITION:
         case TOKEN_SUBTRACTION:
-            return ADD_MINUS;
+            return ADD_SUB;
 
         case TOKEN_MULTIPLICATION:
         case TOKEN_DIVISION:
@@ -252,7 +268,7 @@ table_index get_prec_table_index(token_t* token)
         case TOKEN_GREATER_THAN_OR_EQUAL_TO:
         case TOKEN_EQUAL_TO:
         case TOKEN_NOT_EQUAL_TO:
-            return EQ;
+            return REL_OP;
 
         case TOKEN_LOGICAL_AND:
             return AND;
