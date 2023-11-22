@@ -189,18 +189,43 @@
 
 typedef enum
 {
-    UNWRAP,            //0
-    NOT,               //1
-    ADD_SUB,           //2
-    MUL_DIV,           //3
-    NIL_COL,           //4
-    REL_OP,            //5
-    AND,               //6
-    OR,                //7
-    LEFT_BRACKET,      //8
-    IDENTIFIER,        //9
-    RIGHT_BRACKET,     //10
-    DOLLAR             //11
+    ADD,			            // +
+    SUB,			            // -
+    MUL,			            // *
+    DIV,			            // /
+    EQUAL_TO,				    // ==
+    NOT_EQUAL_TO,               // !=
+    IS_NIL,                     // ??
+    LESS_THAN,			        // <
+    LESS_THAN_OR_EQUAL_TO,	    // <=
+    GREATER_THAN_OR_EQUAL_TO,   // >=
+    GREATER_THAN,			    // >
+    LEFT_BRACKET,               // (
+    RIGHT_BRACKET,	            // )
+    IDENTIFIER,		            // ID
+    INTEGER_LITERAL,		    // int
+    REAL_LITERAL,	            // double
+    STRING_LITERAL,             // string
+    TRUE_LITERAL,               // TRUE
+    FALSE_LITERAL,              // FALSE
+    DOLLAR,			            // $
+    NON_TERM		            // non-terminal
+} Prec_table;
+
+typedef enum
+{
+    INDEX_UNWRAP,            //0
+    INDEX_NOT,               //1
+    INDEX_ADD_SUB,           //2
+    INDEX_MUL_DIV,           //3
+    INDEX_NIL_COL,           //4
+    INDEX_REL_OP,            //5
+    INDEX_AND,               //6
+    INDEX_OR,                //7
+    INDEX_LEFT_BRACKET,      //8
+    INDEX_IDENTIFIER,        //9
+    INDEX_RIGHT_BRACKET,     //10
+    INDEX_DOLLAR             //11
 } table_index;
 
 int table[T_SIZE][T_SIZE] ={
@@ -246,21 +271,21 @@ table_index get_table_index(token_t* token)
     switch (token->type)
     {
         case TOKEN_UNWRAP_NILLABLE:
-            return UNWRAP;
+            return INDEX_UNWRAP;
 
         case TOKEN_LOGICAL_NOT:
-            return NOT;
+            return INDEX_NOT;
 
         case TOKEN_ADDITION:
         case TOKEN_SUBTRACTION:
-            return ADD_SUB;
+            return INDEX_ADD_SUB;
 
         case TOKEN_MULTIPLICATION:
         case TOKEN_DIVISION:
-            return MUL_DIV;
+            return INDEX_MUL_DIV;
 
         case TOKEN_IS_NIL:
-            return NIL_COL;
+            return INDEX_NIL_COL;
 
         case TOKEN_LESS_THAN:
         case TOKEN_GREATER_THAN:
@@ -268,19 +293,19 @@ table_index get_table_index(token_t* token)
         case TOKEN_GREATER_THAN_OR_EQUAL_TO:
         case TOKEN_EQUAL_TO:
         case TOKEN_NOT_EQUAL_TO:
-            return REL_OP;
+            return INDEX_REL_OP;
 
         case TOKEN_LOGICAL_AND:
-            return AND;
+            return INDEX_AND;
 
         case TOKEN_LOGICAL_OR:
-            return OR;
+            return INDEX_OR;
 
         case TOKEN_LEFT_BRACKET:
-            return LEFT_BRACKET;
+            return INDEX_LEFT_BRACKET;
 
         case TOKEN_RIGHT_BRACKET:
-            return RIGHT_BRACKET;
+            return INDEX_RIGHT_BRACKET;
 
         case TOKEN_IDENTIFIER:
         case TOKEN_REAL_LITERAL:
@@ -289,14 +314,9 @@ table_index get_table_index(token_t* token)
         case TOKEN_NIL_LITERAL:
         case TOKEN_TRUE_LITERAL:
         case TOKEN_FALSE_LITERAL:
-            return IDENTIFIER;
+            return INDEX_IDENTIFIER;
 
         default:
-            return DOLLAR;
+            return INDEX_DOLLAR;
     }
 }
-
-
-
-
-
