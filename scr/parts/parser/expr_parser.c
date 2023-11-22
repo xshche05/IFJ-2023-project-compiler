@@ -217,12 +217,12 @@ int table[T_SIZE][T_SIZE] ={
                 {1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 }, // RIGHT_BRACKET
                 {1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 }}; // DOLLAR
 
-int scope(bool* stop_found)
+/*int scope(bool* stop_found)
 {
     struct stack_item* tmp = stack_top(&stack);
     int count = 0;
 
-    while (tmp != NULL)
+   while (tmp != NULL)
     {
         if (tmp->data != (void*)'$')
         {
@@ -239,9 +239,9 @@ int scope(bool* stop_found)
     }
 
     return count;
-}
+}*/
 
-table_index get_prec_table_index(token_t* token)
+table_index get_table_index(token_t* token)
 {
     switch (token->type)
     {
@@ -295,6 +295,8 @@ table_index get_prec_table_index(token_t* token)
             return DOLLAR;
     }
 }
+
+
 
 
 
