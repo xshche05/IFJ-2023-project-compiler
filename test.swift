@@ -23,7 +23,14 @@
 // }
 for i in 1 ..< 10 {
     a = 10
-    if 1 {
-        continue
+    for j in 1 ..< 10 {
+        b = 20
+        if true {
+            continue
+        }
     }
+    if let a {
+            continue
+    }
+    a = 1
 }
