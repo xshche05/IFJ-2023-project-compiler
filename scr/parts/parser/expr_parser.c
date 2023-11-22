@@ -52,7 +52,7 @@
 //        token = TokenArray.next();
 //        if (token == NULL) {
 //            break;
-//        }
+//       \ }
 //        switch (token->type) {
 //            case TOKEN_IDENTIFIER:
 //            case TOKEN_INTEGER_LITERAL:
@@ -183,27 +183,102 @@
 
 #include "scanner/token.h"
 #include "stack.c"
-//stack_t *stack = stack_init();
+stack_t *stack = stack_init();
 
 typedef enum
 {
     UNWRAP,            //0
     NOT,               //1
-    MUL,               //2
-    DIV,               //3
-    ADD,               //4
-    MINUS,             //5
+    ADD_MINUS,         //2
+    MUL_DIV,           //3
     NIL_COL,           //6
     EQ,                //7
-    LESS_OR_EQUAL,     //8
-    LESS,              //9
-    GREATER,           //10
-    GREATER_OR_EQUAL,  //11
-    NOT_EQUAL,         //12
-    AND,               //13
-    OR,                //14
-    LEFT_BRACKET,      //15
-    IDENTIFIER,        //16
-    RIGHT_BRACKET,     //17
-    DOLLAR             //18
+    AND,               //8
+    OR,                //9
+    LEFT_BRACKET,      //10
+    IDENTIFIER,        //11
+    RIGHT_BRACKET,     //12
+    DOLLAR             //13
 } table_index;
+
+int scope(bool* stop_found)
+{
+    struct stack_item* tmp = stack_top(&stack);
+    int count = 0;
+
+    while (tmp != NULL)
+    {
+        if (tmp->data != (void*)'$')
+        {
+            *stop_found = false;
+            count++;
+        }
+        else
+        {
+            *stop_found = true;
+            break;
+        }
+
+        tmp = tmp->down;
+    }
+
+    return count;
+}
+
+table_index get_prec_table_index(token_t* token)
+{
+    switch (token->type)
+    {
+        case TOKEN_UNWRAP_NILLABLE:
+            return UNWRAP;
+
+        case TOKEN_LOGICAL_NOT:
+            return NOT;
+
+        case TOKEN_ADDITION:
+        case TOKEN_SUBTRACTION:
+            return ADD_MINUS;
+
+        case TOKEN_MULTIPLICATION:
+        case TOKEN_DIVISION:
+            return MUL_DIV;
+
+        case TOKEN_IS_NIL:
+            return NIL_COL;
+
+        case TOKEN_LESS_THAN:
+        case TOKEN_GREATER_THAN:
+        case TOKEN_LESS_THAN_OR_EQUAL_TO:
+        case TOKEN_GREATER_THAN_OR_EQUAL_TO:
+        case TOKEN_EQUAL_TO:
+        case TOKEN_NOT_EQUAL_TO:
+            return EQ;
+
+        case TOKEN_LOGICAL_AND:
+            return AND;
+
+        case TOKEN_LOGICAL_OR:
+            return OR;
+
+        case TOKEN_LEFT_BRACKET:
+            return LEFT_BRACKET;
+
+        case TOKEN_RIGHT_BRACKET:
+            return RIGHT_BRACKET;
+
+        case TOKEN_IDENTIFIER:
+        case TOKEN_REAL_LITERAL:
+        case TOKEN_STRING_LITERAL:
+        case TOKEN_INTEGER_LITERAL:
+        case TOKEN_NIL_LITERAL:
+        case TOKEN_TRUE_LITERAL:
+        case TOKEN_FALSE_LITERAL:
+            return IDENTIFIER;
+
+        default:
+            return DOLLAR;
+    }
+}
+
+
+
