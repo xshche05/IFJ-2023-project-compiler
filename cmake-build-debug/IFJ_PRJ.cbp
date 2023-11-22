@@ -200,9 +200,6 @@
 			<Option target="IFJ_PRJ"/>
 			<Option target="sym_test"/>
 		</Unit>
-		<Unit filename="/mnt/d/VUT/3_sem/IFJ/IFJ_PRJ/scr/parts/error.h">
-			<Option target="IFJ_PRJ"/>
-		</Unit>
 		<Unit filename="/mnt/d/VUT/3_sem/IFJ/IFJ_PRJ/scr/parts/parser/expr_parser.c">
 			<Option target="IFJ_PRJ"/>
 		</Unit>

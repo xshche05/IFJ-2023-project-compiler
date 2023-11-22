@@ -122,18 +122,6 @@ bool call_expr_parser(token_t *token) {
     if (token->type == TOKEN_INTEGER_LITERAL) {
         printf("PUSHS int@%d\n", token->attribute.integer);
     }
-    if (token->type == TOKEN_REAL_LITERAL) {
-        printf("PUSHS float@%a\n", token->attribute.real);
-    }
-    if (token->type == TOKEN_STRING_LITERAL) {
-        printf("PUSHS string@%s\n", token->attribute.string->str);
-    }
-    if (token->type == TOKEN_TRUE_LITERAL) {
-        printf("PUSHS bool@true\n");
-    }
-    if (token->type == TOKEN_FALSE_LITERAL) {
-        printf("PUSHS bool@false\n");
-    }
     return match(token->type);
 }
 

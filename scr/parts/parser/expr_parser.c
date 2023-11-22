@@ -247,6 +247,39 @@ int table[T_SIZE][T_SIZE] ={
                 {1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 }, // RIGHT_BRACKET
                 {1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 }}; // DOLLAR
 
+// rules for bottom-up analysis
+typedef enum ptRulese
+{
+    ID,             // E --> id
+    LB_E_RB,        // E --> ( E )
+    E_PLUS_E,       // E --> E + E
+    E_MINUS_E,      // E --> E - E
+    E_MULT_E,       // E --> E * E
+    E_DIV_E,        // E --> E / E
+    E_ASSIGN_E,     // E --> E = E
+    E_GREATER_E,    // E --> E > E
+    E_LESS_E,       // E --> E < E
+    E_LEQ_E,        // E --> E <= E
+    E_GEQ_E,        // E --> E >= E
+    E_NOTEQ_E,      // E --> E != E
+    E_EQ_E,         // E --> E == E
+    E_AND_E,        // E --> E && E
+    E_OR_E,         // E --> E || E
+    E_UNWRAP,       // E --> E !
+    E_NOT,          // E --> ! E
+    IF_E_NILL,      // E -> E?
+
+    // E -> E ?? E //nil – coalescing
+
+
+    ERROR        // don't know this rule :(
+} ptRule;
+
+/*
+
+
+*/
+
 /*int scope(bool* stop_found)
 {
     struct stack_item* tmp = stack_top(&stack);
