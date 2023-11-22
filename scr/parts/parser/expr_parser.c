@@ -180,3 +180,30 @@
 //    // LAST TOKEN CHECK IN PARSER!!!!
 //}
 //
+
+#include "scanner/token.h"
+#include "stack.c"
+//stack_t *stack = stack_init();
+
+typedef enum
+{
+    UNWRAP,            //0
+    NOT,               //1
+    MUL,               //2
+    DIV,               //3
+    ADD,               //4
+    MINUS,             //5
+    NIL_COL,           //6
+    EQ,                //7
+    LESS_OR_EQUAL,     //8
+    LESS,              //9
+    GREATER,           //10
+    GREATER_OR_EQUAL,  //11
+    NOT_EQUAL,         //12
+    AND,               //13
+    OR,                //14
+    LEFT_BRACKET,      //15
+    IDENTIFIER,        //16
+    RIGHT_BRACKET,     //17
+    DOLLAR             //18
+} table_index;
