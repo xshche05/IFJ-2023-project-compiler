@@ -52,7 +52,7 @@
 //        token = TokenArray.next();
 //        if (token == NULL) {
 //            break;
-//        }
+//       \ }
 //        switch (token->type) {
 //            case TOKEN_IDENTIFIER:
 //            case TOKEN_INTEGER_LITERAL:
@@ -180,3 +180,227 @@
 //    // LAST TOKEN CHECK IN PARSER!!!!
 //}
 //
+
+#include "scanner/token.h"
+#include "stack.c"
+//stack_t *stack = stack_init();
+
+#define T_SIZE 12
+
+typedef enum
+{
+    UNWRAP,                     // ID!
+    NOT,                        // !ID
+    ADD,			            // +
+    SUB,			            // -
+    MUL,			            // *
+    DIV,			            // /
+    EQUAL_TO,				    // ==
+    NOT_EQUAL_TO,               // !=
+    IS_NIL,                     // ??
+    LESS_THAN,			        // <
+    LESS_THAN_OR_EQUAL_TO,	    // <=
+    GREATER_THAN_OR_EQUAL_TO,   // >=
+    GREATER_THAN,			    // >
+    AND,                        // &&
+    OR,                         // ||
+    LEFT_BRACKET,               // (
+    RIGHT_BRACKET,	            // )
+    IDENTIFIER,		            // ID
+    INTEGER_LITERAL,		    // int
+    REAL_LITERAL,	            // double
+    STRING_LITERAL,             // string
+    NIL_LITERAL,
+    TRUE_LITERAL,               // TRUE
+    FALSE_LITERAL,              // FALSE
+    DOLLAR,			            // $
+    NON_TERM		            // non-terminal
+} Prec_table;
+
+typedef enum
+{
+    INDEX_UNWRAP,            //0
+    INDEX_NOT,               //1
+    INDEX_ADD_SUB,           //2
+    INDEX_MUL_DIV,           //3
+    INDEX_NIL_COL,           //4
+    INDEX_REL_OP,            //5
+    INDEX_AND,               //6
+    INDEX_OR,                //7
+    INDEX_LEFT_BRACKET,      //8
+    INDEX_IDENTIFIER,        //9
+    INDEX_RIGHT_BRACKET,     //10
+    INDEX_DOLLAR             //11
+} table_index;
+
+int table[T_SIZE][T_SIZE] ={
+                {1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 }, // UNWRAP
+                {1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 }, // NOT
+                {1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 }, // ADD_SUB
+                {1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 }, // MUL_DIV
+                {1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 }, // NIL_COL
+                {1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 }, // REL_OP
+                {1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 }, // AND
+                {1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 }, // OR
+                {1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 }, // LEFT_BRACKET
+                {1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 }, // IDENTIFIER
+                {1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 }, // RIGHT_BRACKET
+                {1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 }}; // DOLLAR
+
+/*int scope(bool* stop_found)
+{
+    struct stack_item* tmp = stack_top(&stack);
+    int count = 0;
+
+   while (tmp != NULL)
+    {
+        if (tmp->data != (void*)'$')
+        {
+            *stop_found = false;
+            count++;
+        }
+        else
+        {
+            *stop_found = true;
+            break;
+        }
+
+        tmp = tmp->down;
+    }
+
+    return count;
+}*/
+
+table_index get_table_index(token_t* token)
+{
+    switch (token->type)
+    {
+        case TOKEN_UNWRAP_NILLABLE:
+            return INDEX_UNWRAP;
+
+        case TOKEN_LOGICAL_NOT:
+            return INDEX_NOT;
+
+        case TOKEN_ADDITION:
+        case TOKEN_SUBTRACTION:
+            return INDEX_ADD_SUB;
+
+        case TOKEN_MULTIPLICATION:
+        case TOKEN_DIVISION:
+            return INDEX_MUL_DIV;
+
+        case TOKEN_IS_NIL:
+            return INDEX_NIL_COL;
+
+        case TOKEN_LESS_THAN:
+        case TOKEN_GREATER_THAN:
+        case TOKEN_LESS_THAN_OR_EQUAL_TO:
+        case TOKEN_GREATER_THAN_OR_EQUAL_TO:
+        case TOKEN_EQUAL_TO:
+        case TOKEN_NOT_EQUAL_TO:
+            return INDEX_REL_OP;
+
+        case TOKEN_LOGICAL_AND:
+            return INDEX_AND;
+
+        case TOKEN_LOGICAL_OR:
+            return INDEX_OR;
+
+        case TOKEN_LEFT_BRACKET:
+            return INDEX_LEFT_BRACKET;
+
+        case TOKEN_RIGHT_BRACKET:
+            return INDEX_RIGHT_BRACKET;
+
+        case TOKEN_IDENTIFIER:
+        case TOKEN_REAL_LITERAL:
+        case TOKEN_STRING_LITERAL:
+        case TOKEN_INTEGER_LITERAL:
+        case TOKEN_NIL_LITERAL:
+        case TOKEN_TRUE_LITERAL:
+        case TOKEN_FALSE_LITERAL:
+            return INDEX_IDENTIFIER;
+
+        default:
+            return INDEX_DOLLAR;
+    }
+}
+
+/*Prec_table get_symbol_from_token(token_t* token)
+{
+    switch (token->type)
+    {
+        case TOKEN_UNWRAP_NILLABLE:
+            return UNWRAP;
+
+        case TOKEN_LOGICAL_NOT:
+            return NOT;
+
+        case TOKEN_ADDITION:
+            return ADD;
+        case TOKEN_SUBTRACTION:
+            return SUB;
+
+        case TOKEN_MULTIPLICATION:
+            return MUL;
+        case TOKEN_DIVISION:
+            return DIV;
+
+        case TOKEN_IS_NIL:
+            return IS_NIL;
+
+        case TOKEN_LESS_THAN:
+            return LESS_THAN;
+        case TOKEN_GREATER_THAN:
+            return GREATER_THAN;
+        case TOKEN_LESS_THAN_OR_EQUAL_TO:
+            return LESS_THAN_OR_EQUAL_TO;
+        case TOKEN_GREATER_THAN_OR_EQUAL_TO:
+            return GREATER_THAN_OR_EQUAL_TO;
+        case TOKEN_EQUAL_TO:
+            return EQUAL_TO;
+        case TOKEN_NOT_EQUAL_TO:
+            return NOT_EQUAL_TO;
+
+        case TOKEN_LOGICAL_AND:
+            return AND;
+
+        case TOKEN_LOGICAL_OR:
+            return OR;
+
+        case TOKEN_LEFT_BRACKET:
+            return LEFT_BRACKET;
+
+        case TOKEN_RIGHT_BRACKET:
+            return RIGHT_BRACKET;
+
+        case TOKEN_IDENTIFIER:
+            return IDENTIFIER;
+        case TOKEN_REAL_LITERAL:
+            return REAL_LITERAL;
+        case TOKEN_STRING_LITERAL:
+            return STRING_LITERAL;
+        case TOKEN_INTEGER_LITERAL:
+            return INTEGER_LITERAL;
+        case TOKEN_NIL_LITERAL:
+            return NIL_LITERAL;
+        case TOKEN_TRUE_LITERAL:
+            return TRUE_LITERAL;
+        case TOKEN_FALSE_LITERAL:
+            return FALSE_LITERAL;
+
+        default:
+            return DOLLAR;
+    }
+}*/
+
+int expression(token_t* token) {
+    stack_t *stack = stack_init();
+
+    stack_push(stack, (void *) DOLLAR);
+    void *top_stack_terminal;
+    Prec_table actual_symbol;
+
+    bool success = false;
+
+}
