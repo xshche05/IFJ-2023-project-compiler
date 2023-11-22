@@ -174,6 +174,7 @@ void gen_std_functions() {
     printf("JUMPIFEQ $substring_std_exit_nil LF@exit bool@true\n");
     printf("GT LF@exit GF@$B GF@$C\n"); // exit = i > j
     printf("JUMPIFEQ $substring_std_exit_nil LF@exit bool@true\n");
+    printf("PUSHS GF@$A\n");
     printf("CALL $length_std\n"); // $RET = length(s)
     printf("LT LF@exit GF@$B GF@$RET\n"); // exit = !(i >= length(s))
     printf("JUMPIFEQ $substring_std_exit_nil LF@exit bool@false\n"); 

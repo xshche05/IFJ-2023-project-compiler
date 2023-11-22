@@ -182,7 +182,7 @@
 //
 
 #include "scanner/token.h"
-#include "stack.c"
+#include "stack.h"
 //stack_t *stack = stack_init();
 
 #define T_SIZE 12
@@ -395,9 +395,9 @@ table_index get_table_index(token_t* token)
 }*/
 
 int expression(token_t* token) {
-    stack_t *stack = stack_init();
+    stack_t *stack = Stack.init();
 
-    stack_push(stack, (void *) DOLLAR);
+    Stack.push(stack, (void *) DOLLAR);
     void *top_stack_terminal;
     Prec_table actual_symbol;
 

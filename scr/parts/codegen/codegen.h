@@ -55,4 +55,6 @@ void gen_for_end();
 
 void init_codegen();
 
+void gen_header();
+
 #endif //IFJ_PRJ_CODEGEN_H

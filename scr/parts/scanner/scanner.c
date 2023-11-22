@@ -67,7 +67,6 @@ static string_t *verify_str(string_t *lexeme, bool multiline) {
         }
         if (number_of_spaces_in_first_line < spaces_before_closing_quotes) {
             fprintf(stderr, "Error: Invalid multiline string. Before closing quotes too many whitespaces\n");
-            exit(BAD_LEXEM_STRUCT_ERR);
             String.dtor(tmp_lex);
             String.dtor(new_lex);
             return NULL;
@@ -921,7 +920,7 @@ int source_code_to_tokens() {
         fprintf(stderr, "Error: Unclosed multiline comment\nNumber of unclosed blocks: %d\n", comment_cnt);
         return LEXICAL_ERROR;
     }
-    TokenArray.set_nl_after();
+    if (TokenArray.total() != 0) TokenArray.set_nl_after();
     add_token(TOKEN_EOF, attribute, false);
     return SUCCESS;
 }
