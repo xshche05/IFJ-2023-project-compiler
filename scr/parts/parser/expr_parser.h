@@ -9,7 +9,7 @@
 
 
 #define T_SIZE
-
+/*
 typedef enum
 {
     UNWRAP,                     // ID!
@@ -38,7 +38,7 @@ typedef enum
     FALSE_LITERAL,              // FALSE
     DOLLAR,			            // $
     NON_TERM		            // non-terminal
-} Prec_table;
+} Prec_table;*/
 
 typedef enum
 {
