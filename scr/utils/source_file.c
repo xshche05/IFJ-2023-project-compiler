@@ -63,17 +63,17 @@ static int file_load_from_file(char *file_name) {
     if (sourceFile == NULL) {
         return -1;
     }
-    FILE *f = fopen(file_name, "r");
-    if (f == NULL) {
-        fprintf(stderr, "Error: sourceFile %s not found.\n", file_name);
-        return -1;
-    }
+    //FILE *f = fopen(file_name, "r");
+    //if (f == NULL) {
+      //  fprintf(stderr, "Error: sourceFile %s not found.\n", file_name);
+        //return -1;
+    //}
     string_t *line = String.ctor();
     if (line == NULL) {
         return -1;
     }
     int c;
-    while ((c = fgetc(f)) != EOF) {
+    while ((c = getc(stdin)) != EOF) {
         if (c == '\n') {
             file_add_line(line);
             line = String.ctor();
@@ -85,9 +85,9 @@ static int file_load_from_file(char *file_name) {
         String.add_char(line, (char) c);
     }
     SourceCode.add_line(line);
-    fclose(f);
-    sourceFile->file_name = malloc(sizeof(char) * (strlen(file_name) + 1));
-    strcpy(sourceFile->file_name, file_name);
+    //fclose(f);
+   // sourceFile->file_name = malloc(sizeof(char) * (strlen(file_name) + 1));
+    //strcpy(sourceFile->file_name, file_name);
     return 0;
 }
 
