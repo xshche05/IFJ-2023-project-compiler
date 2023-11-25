@@ -1,1 +1,0 @@
-/usr/bin/cc -g CMakeFiles/sym_test.dir/tests/sym_test.c.o CMakeFiles/sym_test.dir/archive/symtable.c.o CMakeFiles/sym_test.dir/scr/utils/stack.c.o CMakeFiles/sym_test.dir/scr/utils/string_util.c.o CMakeFiles/sym_test.dir/scr/parts/parser/new_symtable.c.o CMakeFiles/sym_test.dir/scr/parts/codegen/codegen.c.o -o sym_test 

@@ -1,5 +1,0 @@
-/mnt/d/VUT/3_sem/IFJ/IFJ_PRJ/cmake-build-debug/CMakeFiles/IFJ_PRJ.dir
-/mnt/d/VUT/3_sem/IFJ/IFJ_PRJ/cmake-build-debug/CMakeFiles/tests.dir
-/mnt/d/VUT/3_sem/IFJ/IFJ_PRJ/cmake-build-debug/CMakeFiles/sym_test.dir
-/mnt/d/VUT/3_sem/IFJ/IFJ_PRJ/cmake-build-debug/CMakeFiles/edit_cache.dir
-/mnt/d/VUT/3_sem/IFJ/IFJ_PRJ/cmake-build-debug/CMakeFiles/rebuild_cache.dir

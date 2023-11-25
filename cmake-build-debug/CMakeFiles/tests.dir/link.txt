@@ -1,1 +1,0 @@
-/usr/bin/cc -g CMakeFiles/tests.dir/scr/parts/scanner/scanner.c.o CMakeFiles/tests.dir/scr/utils/source_file.c.o CMakeFiles/tests.dir/scr/utils/string_util.c.o CMakeFiles/tests.dir/scr/parts/parser/parser.c.o CMakeFiles/tests.dir/scr/utils/lists.c.o CMakeFiles/tests.dir/scr/parts/scanner/token.c.o -o tests 
