@@ -3,6 +3,7 @@
 #include "new_symtable.h"
 #include "../error.h"
 #include "codegen/codegen.h"
+#include "expr_parser.h"
 
 bool inside_func = false;
 int inside_loop = 0;
@@ -118,11 +119,16 @@ void scope_leave() {
     fprintf(stderr, "scope leave: %d\n", scope);
 }
 
-bool call_expr_parser(token_t *token) {
-    if (token->type == TOKEN_INTEGER_LITERAL) {
-        printf("PUSHS int@%d\n", token->attribute.integer);
+bool call_expr_parser() {
+    if (parse_expr() == SUCCESS) {
+        lookahead = TokenArray.prev();
+        nl_flag = lookahead->has_newline_after;
+        lookahead = TokenArray.next();
+        return true;
     }
-    return match(token->type);
+    else {
+        return false;
+    }
 }
 
 bool nl_check() {
@@ -160,7 +166,7 @@ int S() {
             s = false;
     }
     if (s) return SUCCESS;
-    else return BAD_SYNTAX_ERR;
+    else return SYNTAX_ERROR;
 }
 
 
@@ -287,6 +293,8 @@ bool VAR_LET_TYPE() {
             s = s && TYPE();
             break;
         case TOKEN_ASSIGNMENT:
+            s = true;
+            break;
         default:
             if (nl_flag) return true;
             sprintf(error_msg, "Syntax error [VAR_LET_TYPE]: expected ['TOKEN_COLON', 'TOKEN_ASSIGNMENT', 'NL'], got %s\n", tokens_as_str[lookahead->type]);
@@ -301,7 +309,7 @@ bool VAR_LET_EXP() {
     switch (lookahead->type) {
         case TOKEN_ASSIGNMENT:
             s = match(TOKEN_ASSIGNMENT);
-            s = s && call_expr_parser(lookahead);
+            s = s && call_expr_parser();
             gen_var_assign(last_id->attribute.identifier->str, scope, stayed);
             break;
         default:
@@ -640,6 +648,14 @@ bool CALL_PARAM_LIST() {
     bool s;
     switch (lookahead->type) {
         case TOKEN_IDENTIFIER:
+        case TOKEN_FALSE_LITERAL:
+        case TOKEN_TRUE_LITERAL:
+        case TOKEN_NIL_LITERAL:
+        case TOKEN_INTEGER_LITERAL:
+        case TOKEN_REAL_LITERAL:
+        case TOKEN_STRING_LITERAL:
+        case TOKEN_LEFT_BRACKET:
+        case TOKEN_LOGICAL_NOT:
             s = CALL_PARAM();
             s = s && NEXT_CALL_PARAM();
             break;
@@ -663,10 +679,10 @@ bool CALL_PARAM() {
             if (!match(TOKEN_COLON)) {
                 lookahead = TokenArray.prev();
             }
-            s = s && call_expr_parser(lookahead);
+            s = s && call_expr_parser();
             break;
         default:
-            if (call_expr_parser(lookahead)) return true;
+            if (call_expr_parser()) return true;
             sprintf(error_msg, "Syntax error [CALL_PARAM_VALUE]: expected ['TOKEN_FALSE_LITERAL', 'TOKEN_LESS_THAN', 'TOKEN_LOGICAL_AND', 'TOKEN_LEFT_BRACKET', 'TOKEN_NIL_LITERAL', 'TOKEN_REAL_LITERAL', 'TOKEN_STRING_LITERAL', 'TOKEN_ADDITION', 'TOKEN_SUBTRACTION', 'TOKEN_LOGICAL_OR', 'TOKEN_IDENTIFIER', 'TOKEN_EQUAL_TO', 'TOKEN_LESS_THAN_OR_EQUAL_TO', 'TOKEN_GREATER_THAN', 'TOKEN_NOT_EQUAL_TO', 'TOKEN_GREATER_THAN_OR_EQUAL_TO', 'TOKEN_TRUE_LITERAL', 'TOKEN_IS_NIL', 'TOKEN_DIVISION', 'TOKEN_MULTIPLICATION', 'TOKEN_LOGICAL_NOT', 'TOKEN_UNWRAP_NILLABLE', 'TOKEN_INTEGER_LITERAL'], got %s\n", tokens_as_str[lookahead->type]);
             s = false;
     }
@@ -713,8 +729,10 @@ bool NEXT_ID_CALL_OR_ASSIGN() {
     switch (lookahead->type) {
         case TOKEN_LEFT_BRACKET:
             s = match(TOKEN_LEFT_BRACKET);
+            ignore_right_bracket = true;
             s = s && CALL_PARAM_LIST();
             s = s && match(TOKEN_RIGHT_BRACKET);
+            ignore_right_bracket = false;
             break;
         case TOKEN_ASSIGNMENT:
             s = match(TOKEN_ASSIGNMENT);

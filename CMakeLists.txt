@@ -22,8 +22,7 @@ add_executable(IFJ_PRJ
         scr/parts/parser/expr_parser.h
         scr/utils/stack.c
         scr/utils/stack.h archive/symtable.c archive/symtable.h
-        scr/parts/codegen/codegen.c
-        scr/parts/error.h)
+        scr/parts/codegen/codegen.c)
 
 add_executable(tests
         scr/parts/scanner/scanner.c

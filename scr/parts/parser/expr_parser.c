@@ -1,485 +1,641 @@
+#include "token.h"
+#include "parser.h"
+#include "expr_parser.h"
+
+int table[12][12] = {
+        {4,2,2,2,2,2,2,2,4,4,2,2},
+        {1,1,2,2,2,2,2,2,1,1,2,2},
+        {1,1,2,2,2,2,2,2,1,1,2,2},
+        {1,1,1,2,2,2,2,2,1,1,2,2},
+        {1,1,1,1,1,2,2,2,1,1,2,2},
+        {1,1,1,1,1,4,2,2,1,1,2,2},
+        {1,1,1,1,1,1,2,2,1,1,2,2},
+        {1,1,1,1,1,1,1,2,1,1,2,2},
+        {1,1,1,1,1,1,1,1,1,1,3,4},
+        {2,4,2,2,2,2,2,2,4,4,2,2},
+        {4,4,2,2,2,2,2,2,4,4,2,2},
+        {1,1,1,1,1,1,1,1,1,1,4,4}
+}; // 1 is <, 2 is >, 3 is =, 4 is ERROR
+
+int bracket_count = 0;
+
+token_t *local_lookahead;
+token_t *after_local_lookahead;
+
+//bool next_nl = false;
 //
-//// valid tokens for expression parser id-non-nil, int_literal, double_literal, str_literal, nil_literal, true_literal, false_literal
-//// (, ), +, -, *, /, <, <=, >, >=, ==, !=, &&, ||, !_, _!
+//static char *tokens_as_str[] = {
+//        "TOKEN_IDENTIFIER",
+//        "TOKEN_DOUBLE_TYPE",
+//        "TOKEN_ELSE",
+//        "TOKEN_FUNC",
+//        "TOKEN_IF",
+//        "TOKEN_INT_TYPE",
+//        "TOKEN_LET",
+//        "TOKEN_RETURN",
+//        "TOKEN_STRING_TYPE",
+//        "TOKEN_VAR",
+//        "TOKEN_WHILE",
+//        "TOKEN_BOOL_TYPE",
+//        "TOKEN_FOR",
+//        "TOKEN_IN",
+//        "TOKEN_BREAK",
+//        "TOKEN_CONTINUE",
+//        "TOKEN_UNDERSCORE",
+//        "TOKEN_ASSIGNMENT",
+//        "TOKEN_CLOSED_RANGE",
+//        "TOKEN_HALF_OPEN_RANGE",
+//        "TOKEN_REAL_LITERAL",
+//        "TOKEN_STRING_LITERAL",
+//        "TOKEN_NIL_LITERAL",
+//        "TOKEN_TRUE_LITERAL",
+//        "TOKEN_FALSE_LITERAL",
+//        "TOKEN_INTEGER_LITERAL",
+//        "TOKEN_ADDITION",
+//        "TOKEN_SUBTRACTION",
+//        "TOKEN_MULTIPLICATION",
+//        "TOKEN_DIVISION",
+//        "TOKEN_LESS_THAN",
+//        "TOKEN_LESS_THAN_OR_EQUAL_TO",
+//        "TOKEN_GREATER_THAN",
+//        "TOKEN_GREATER_THAN_OR_EQUAL_TO",
+//        "TOKEN_EQUAL_TO",
+//        "TOKEN_NOT_EQUAL_TO",
+//        "TOKEN_IS_NIL",
+//        "TOKEN_UNWRAP_NILLABLE",
+//        "TOKEN_LOGICAL_AND",
+//        "TOKEN_LOGICAL_OR",
+//        "TOKEN_LOGICAL_NOT",
+//        "TOKEN_LEFT_BRACKET",
+//        "TOKEN_RIGHT_BRACKET",
+//        "TOKEN_LEFT_BRACE",
+//        "TOKEN_RIGHT_BRACE",
+//        "TOKEN_COMMA",
+//        "TOKEN_COLON",
+//        "TOKEN_SEMICOLON",
+//        "TOKEN_ARROW",
+//        "TOKEN_NEWLINE",
+//        "TOKEN_EOF"
+//};
 //
-//#include "expr_parser.h"
-//#include "token/token.h"
-//#include "stack.h"
 //
+//typedef enum {
+//    INDEX_UNWRAP = 0,            //0
+//    INDEX_NOT,               //1
+//    INDEX_ADD_SUB,           //2
+//    INDEX_MUL_DIV,           //3
+//    INDEX_NIL_COL,           //4
+//    INDEX_REL_OP,            //5
+//    INDEX_AND,               //6
+//    INDEX_OR,                //7
+//    INDEX_LEFT_BRACKET,      //8
+//    INDEX_IDENTIFIER,        //9
+//    INDEX_RIGHT_BRACKET,     //10
+//    INDEX_DOLLAR,             //11
+//    LESS,
+//    NON_TERM
+//} table_index;
 //
-//// expression to reverse polish notation
-//// returns 0 if success, 1 if error
+//int unwrap = 0;
+//int not = 1;
+//int add_sub = 2;
+//int mul_div = 3;
+//int nil_col = 4;
+//int rel_op = 5;
+//int and = 6;
+//int or = 7;
+//int left_bracket = 8;
+//int identifier = 9;
+//int right_bracket = 10;
+//int dollar = 11;
+//int less = 12;
+//int non_term = 13;
 //
-//// operator priority_table
-//static int get_op_priority(token_t *token) {
+//stack_t *pushdown_stack = NULL;
+//stack_t *tmp_stack = NULL;
+//stack_t *token_stack = NULL;
+//
+//static int map_token(token_t *token) {
 //    switch (token->type) {
+//        case TOKEN_UNWRAP_NILLABLE:
+//            return INDEX_UNWRAP;
 //        case TOKEN_LOGICAL_NOT:
-//            return 0;
-//        case TOKEN_MULTIPLICATION:
-//        case TOKEN_DIVISION:
-//            return 1;
+//            return INDEX_NOT;
 //        case TOKEN_ADDITION:
 //        case TOKEN_SUBTRACTION:
-//            return 2;
-//        case TOKEN_EQUAL_TO:
-//        case TOKEN_NOT_EQUAL_TO:
+//            return INDEX_ADD_SUB;
+//        case TOKEN_MULTIPLICATION:
+//        case TOKEN_DIVISION:
+//            return INDEX_MUL_DIV;
+//        case TOKEN_IS_NIL:
+//            return INDEX_NIL_COL;
 //        case TOKEN_LESS_THAN:
 //        case TOKEN_LESS_THAN_OR_EQUAL_TO:
-//        case TOKEN_GREATER_THAN:
 //        case TOKEN_GREATER_THAN_OR_EQUAL_TO:
-//            return 3;
+//        case TOKEN_GREATER_THAN:
+//        case TOKEN_EQUAL_TO:
+//        case TOKEN_NOT_EQUAL_TO:
+//            return INDEX_REL_OP;
 //        case TOKEN_LOGICAL_AND:
-//            return 4;
+//            return INDEX_AND;
 //        case TOKEN_LOGICAL_OR:
-//            return 5;
-//        case TOKEN_UNWRAP_NILABLE:
-//            return 100;
+//            return INDEX_OR;
+//        case TOKEN_LEFT_BRACKET:
+//            if (ignore_right_bracket) {
+//                bracket_count++;
+//            }
+//            return INDEX_LEFT_BRACKET;
+//        case TOKEN_IDENTIFIER:
+//        case TOKEN_INTEGER_LITERAL:
+//        case TOKEN_REAL_LITERAL:
+//        case TOKEN_STRING_LITERAL:
+//        case TOKEN_NIL_LITERAL:
+//        case TOKEN_TRUE_LITERAL:
+//        case TOKEN_FALSE_LITERAL:
+//            return INDEX_IDENTIFIER;
+//        case TOKEN_RIGHT_BRACKET:
+//            if (!ignore_right_bracket) {
+//                return INDEX_RIGHT_BRACKET;
+//            }
+//            else {
+//                if (bracket_count > 0) {
+//                    bracket_count--;
+//                    return INDEX_RIGHT_BRACKET;
+//                }
+//                else {
+//                    return INDEX_DOLLAR;
+//                }
+//            }
 //        default:
-//            return -1;
+//            return INDEX_DOLLAR;
 //    }
 //}
 //
-//
-//bool parse_expr() {
-//    TokenArray.prev();
-//    token_t *token;
-//    token_t *last_expr_token = NULL;
-//    bool cont = true;
-//    stack_t *op_stack = Stack.init();
-//    stack_t *out_stack = Stack.init();
-//    token_t *tmp;
-//    while (cont) {
-//        token = TokenArray.next();
-//        if (token == NULL) {
-//            break;
-//       \ }
-//        switch (token->type) {
-//            case TOKEN_IDENTIFIER:
-//            case TOKEN_INTEGER_LITERAL:
-//            case TOKEN_REAL_LITERAL:
-//            case TOKEN_STRING_LITERAL:
-//            case TOKEN_NIL_LITERAL:
-//            case TOKEN_TRUE_LITERAL:
-//            case TOKEN_FALSE_LITERAL:
-//                Stack.push(out_stack, token);
-//                last_expr_token = token;
-//                break;
-//            case TOKEN_LEFT_BRACKET:
-//                // tmp = Stack.top(out_stack);
-//                if (last_expr_token != NULL && last_expr_token->type == TOKEN_IDENTIFIER) {
-//                    // function call
-//                    Stack.push(out_stack, token);
-//                    while (last_expr_token->type != TOKEN_RIGHT_BRACKET) {
-//                        last_expr_token = TokenArray.next();
-//                        Stack.push(out_stack, last_expr_token);
-//                    }
-//                } else {
-//                    // expression
-//                    Stack.push(op_stack, token);
-//                    last_expr_token = token;
-//                }
-//                break;
-//            case TOKEN_RIGHT_BRACKET: // pop operators from op_stack to out_stack until left bracket
-//                while (true) {
-//                    token_t *op = Stack.top(op_stack);
-//                    Stack.pop(op_stack);
-//                    if (op == NULL) {
-//                        fprintf(stderr, "Error: Missing left bracket.\n");
-//                        return false;
-//                    }
-//                    if (op->type == TOKEN_LEFT_BRACKET) {
-//                        break;
-//                    }
-//                    Stack.push(out_stack, op);
-//                }
-//                last_expr_token = token;
-//                break;
-//            case TOKEN_UNWRAP_NILABLE:
-//                // switch id flag to unnillable
-//                tmp = Stack.top(out_stack);
-//                if (tmp->type != TOKEN_IDENTIFIER && tmp->type != TOKEN_RIGHT_BRACKET) {
-//                    fprintf(stderr, "Error: Unwrap nilable operator must be after ID or func call.\n");
-//                    return false;
-//                }
-//                Stack.push(out_stack, token);
-//                break;
-//            case TOKEN_LOGICAL_NOT:
-////                Stack.push(out_stack, token);
-////                break;
-//            case TOKEN_MULTIPLICATION:
-//            case TOKEN_DIVISION:
-//            case TOKEN_ADDITION:
-//            case TOKEN_SUBTRACTION:
-//            case TOKEN_EQUAL_TO:
-//            case TOKEN_NOT_EQUAL_TO:
-//            case TOKEN_LESS_THAN:
-//            case TOKEN_LESS_THAN_OR_EQUAL_TO:
-//            case TOKEN_GREATER_THAN:
-//            case TOKEN_GREATER_THAN_OR_EQUAL_TO:
-//            case TOKEN_LOGICAL_AND:
-//            case TOKEN_LOGICAL_OR:
-//                // pop operators from op_stack to out_stack until operator with lower priority
-//                while (true) {
-//                    token_t *op = Stack.top(op_stack);
-//                    if (op == NULL || op->type == TOKEN_LEFT_BRACKET) {
-//                        break;
-//                    }
-//                    if (get_op_priority(op) >= get_op_priority(token)) {
-//                        break;
-//                    }
-//                    Stack.pop(op_stack);
-//                    Stack.push(out_stack, op);
-//                }
-//                Stack.push(op_stack, token);
-//                last_expr_token = token;
-//                break;
-//            case TOKEN_NEWLINE:
-//                continue;
-//            default:
-//                cont = false;
-//                TokenArray.prev();
-//                break;
-//        }
+//table_index get_top_terminal() {
+//    int *top = Stack.top(pushdown_stack);
+//    while (*top == non_term || *top == less) {
+//        Stack.push(tmp_stack, top);
+//        Stack.pop(pushdown_stack);
+//        top = Stack.top(pushdown_stack);
 //    }
-//    if (get_op_priority(last_expr_token) != -1) {
-//        fprintf(stderr, "Error: Unexpected operator at the end of expression.\n");
-//        return false;
-//    }
-//    // pop operators from op_stack to out_stack
-//    while (true) {
-//        token_t *op = Stack.top(op_stack);
-//        if (op == NULL) {
-//            break;
-//        }
-//        Stack.pop(op_stack);
-//        Stack.push(out_stack, op);
-//    }
-//    // reverse out_stack
-//    stack_t *tmp_stack = Stack.init();
-//    while (true) {
-//        token_t *op = Stack.top(out_stack);
-//        if (op == NULL) {
-//            break;
-//        }
-//        Stack.pop(out_stack);
-//        Stack.push(tmp_stack, op);
-//    }
-//    // print out_stack
-//    while (true) {
-//        token_t *op = Stack.top(tmp_stack);
-//        if (op == NULL) {
-//            break;
-//        }
+//    while (Stack.top(tmp_stack) != NULL) {
+//        Stack.push(pushdown_stack, Stack.top(tmp_stack));
 //        Stack.pop(tmp_stack);
-//        Token.print(op);
 //    }
-//    TokenArray.prev();
-//    lookahead = TokenArray.next()->type;
-//    printf("\n\n\n");
-//    return true;
-//    // LAST TOKEN CHECK IN PARSER!!!!
+//    return *top;
 //}
 //
+//void clear_until_top_terminal() {
+//    int *top = Stack.top(pushdown_stack);
+//    while (*top == non_term || *top == less) {
+//        Stack.push(tmp_stack, top);
+//        Stack.pop(pushdown_stack);
+//        top = Stack.top(pushdown_stack);
+//    }
+//}
+//
+//void clear_until_less() {
+//    int *top = Stack.top(pushdown_stack);
+//    while (*top != less) {
+//        Stack.push(tmp_stack, top);
+//        Stack.pop(pushdown_stack);
+//        top = Stack.top(pushdown_stack);
+//    }
+//    Stack.pop(pushdown_stack);
+//}
+//
+//void clear_tmp_stack() {
+//    while (Stack.top(tmp_stack) != NULL) {
+//        Stack.pop(tmp_stack);
+//    }
+//}
+//
+//void transfer_tmp_stack() {
+//    while (Stack.top(tmp_stack) != NULL) {
+//        Stack.push(pushdown_stack, Stack.top(tmp_stack));
+//        Stack.pop(tmp_stack);
+//    }
+//}
+//
+//int parse_expr() {
+//    pushdown_stack = Stack.init();
+//    tmp_stack = Stack.init();
+//    token_stack = Stack.init();
+//    Stack.push(pushdown_stack, &dollar);
+//
+//    bracket_count = 0;
+//
+//    int *a = malloc(sizeof(int));
+//    int *b = malloc(sizeof(int));
+//    *a = map_token(lookahead);
+//    *b = get_top_terminal();
+//
+//    while(*a != dollar || *b != dollar) {
+//        b = malloc(sizeof(int));
+//        if (update_flag) {
+//            a = malloc(sizeof(int));
+//            *a = map_token(lookahead);
+//        }
+//        *b = get_top_terminal();
+//        update_flag = false;
+//        if (*a == INDEX_DOLLAR && *b == INDEX_DOLLAR) {
+//            break;
+//        }
+//
+//        int action = table[*b][*a];
+//
+//        switch (action) {
+//            case 1:
+//                clear_until_top_terminal();
+//                Stack.push(pushdown_stack, &less);
+//                transfer_tmp_stack();
+//                Stack.push(pushdown_stack, a);
+//                Stack.push(token_stack, lookahead);
+//                lookahead = TokenArray.next();
+//                update_flag = true;
+//                break;
+//            case 2:
+//                clear_until_less();
+//                clear_tmp_stack();
+//                Stack.push(pushdown_stack, &non_term);
+//                break;
+//            case 3:
+//                Stack.push(pushdown_stack, a);
+//                Stack.push(token_stack, lookahead);
+//                lookahead = TokenArray.next();
+//                update_flag = true;
+//                break;
+//            default:
+//                return SYNTAX_ERROR;
+//        }
+//    }
+//    return SUCCESS;
+//}
 
-#include "scanner/token.h"
-#include "stack.h"
-//stack_t *stack = stack_init();
+typedef enum {
+    UNWRAP = 0,        //0
+    NOT,               //1
+    MUL_DIV,           //2
+    ADD_SUB,           //3
+    NIL_COL,           //4
+    REL_OP,            //5
+    AND,               //6
+    OR,                //7
+    LEFT_BRACKET,      //8
+    IDENTIFIER,        //9
+    RIGHT_BRACKET,     //10
+    DOLLAR,            //11
+    LESS,              //12
+    NON_TERM           //13
+} expr_elem_enum;
 
+typedef enum {
+    int_type = 0,
+    double_type,
+    string_type,
+    bool_type,
+    nil_int_type,
+    nil_double_type,
+    nil_string_type,
+    nil_bool_type
+} ret_type_enum;
 
-/*
+typedef struct {
+    expr_elem_enum type;
+    token_t *token;
+    ret_type_enum ret_type;
+} expr_elem_t;
 
+stack_t *pushdown_stack = NULL;
+stack_t *tmp_stack = NULL;
 
-*/
-
-/*int scope(bool* stop_found)
-{
-    struct stack_item* tmp = stack_top(&stack);
-    int count = 0;
-
-   while (tmp != NULL)
-    {
-        if (tmp->data != (void*)'$')
-        {
-            *stop_found = false;
-            count++;
-        }
-        else
-        {
-            *stop_found = true;
-            break;
-        }
-
-        tmp = tmp->down;
-    }
-
-    return count;
-}*/
-
-/*table_index get_table_index(token_t* token)
-{
-    switch (token->type)
-    {
-        case TOKEN_UNWRAP_NILLABLE:
-            return INDEX_UNWRAP;
-
-        case TOKEN_LOGICAL_NOT:
-            return INDEX_NOT;
-
-        case TOKEN_ADDITION:
-        case TOKEN_SUBTRACTION:
-            return INDEX_ADD_SUB;
-
-        case TOKEN_MULTIPLICATION:
-        case TOKEN_DIVISION:
-            return INDEX_MUL_DIV;
-
-        case TOKEN_IS_NIL:
-            return INDEX_NIL_COL;
-
-        case TOKEN_LESS_THAN:
-        case TOKEN_GREATER_THAN:
-        case TOKEN_LESS_THAN_OR_EQUAL_TO:
-        case TOKEN_GREATER_THAN_OR_EQUAL_TO:
-        case TOKEN_EQUAL_TO:
-        case TOKEN_NOT_EQUAL_TO:
-            return INDEX_REL_OP;
-
-        case TOKEN_LOGICAL_AND:
-            return INDEX_AND;
-
-        case TOKEN_LOGICAL_OR:
-            return INDEX_OR;
-
-        case TOKEN_LEFT_BRACKET:
-            return INDEX_LEFT_BRACKET;
-
-        case TOKEN_RIGHT_BRACKET:
-            return INDEX_RIGHT_BRACKET;
-
-        case TOKEN_IDENTIFIER:
-        case TOKEN_REAL_LITERAL:
-        case TOKEN_STRING_LITERAL:
-        case TOKEN_INTEGER_LITERAL:
-        case TOKEN_NIL_LITERAL:
-        case TOKEN_TRUE_LITERAL:
-        case TOKEN_FALSE_LITERAL:
-            return INDEX_IDENTIFIER;
-
-        default:
-            return INDEX_DOLLAR;
-    }
-}*/
-
-/*Prec_table get_symbol_from_token(token_t* token)
-{
-    switch (token->type)
-    {
-        case TOKEN_UNWRAP_NILLABLE:
-            return UNWRAP;
-
-        case TOKEN_LOGICAL_NOT:
-            return NOT;
-
-        case TOKEN_ADDITION:
-            return ADD;
-        case TOKEN_SUBTRACTION:
-            return SUB;
-
-        case TOKEN_MULTIPLICATION:
-            return MUL;
-        case TOKEN_DIVISION:
-            return DIV;
-
-        case TOKEN_IS_NIL:
-            return IS_NIL;
-
-        case TOKEN_LESS_THAN:
-            return LESS_THAN;
-        case TOKEN_GREATER_THAN:
-            return GREATER_THAN;
-        case TOKEN_LESS_THAN_OR_EQUAL_TO:
-            return LESS_THAN_OR_EQUAL_TO;
-        case TOKEN_GREATER_THAN_OR_EQUAL_TO:
-            return GREATER_THAN_OR_EQUAL_TO;
-        case TOKEN_EQUAL_TO:
-            return EQUAL_TO;
-        case TOKEN_NOT_EQUAL_TO:
-            return NOT_EQUAL_TO;
-
-        case TOKEN_LOGICAL_AND:
-            return AND;
-
-        case TOKEN_LOGICAL_OR:
-            return OR;
-
-        case TOKEN_LEFT_BRACKET:
-            return LEFT_BRACKET;
-
-        case TOKEN_RIGHT_BRACKET:
-            return RIGHT_BRACKET;
-
-        case TOKEN_IDENTIFIER:
-            return IDENTIFIER;
-        case TOKEN_REAL_LITERAL:
-            return REAL_LITERAL;
-        case TOKEN_STRING_LITERAL:
-            return STRING_LITERAL;
-        case TOKEN_INTEGER_LITERAL:
-            return INTEGER_LITERAL;
-        case TOKEN_NIL_LITERAL:
-            return NIL_LITERAL;
-        case TOKEN_TRUE_LITERAL:
-            return TRUE_LITERAL;
-        case TOKEN_FALSE_LITERAL:
-            return FALSE_LITERAL;
-
-        default:
-            return DOLLAR;
-    }
-}*/
-
-typedef enum
-{
-    UNWRAP,                     // ID!
-    NOT,                        // !ID
-    ADD,			            // +
-    SUB,			            // -
-    MUL,			            // *
-    DIV,			            // /
-    EQUAL_TO,				    // ==
-    NOT_EQUAL_TO,               // !=
-    IS_NIL,                     // ??
-    LESS_THAN,			        // <
-    LESS_THAN_OR_EQUAL_TO,	    // <=
-    GREATER_THAN_OR_EQUAL_TO,   // >=
-    GREATER_THAN,			    // >
-    AND,                        // &&
-    OR,                         // ||
-    LEFT_BRACKET,               // (
-    RIGHT_BRACKET,	            // )
-    IDENTIFIER,		            // ID
-    INTEGER_LITERAL,		    // int
-    REAL_LITERAL,	            // double
-    STRING_LITERAL,             // string
-    NIL_LITERAL,
-    TRUE_LITERAL,               // TRUE
-    FALSE_LITERAL,              // FALSE
-    DOLLAR,			            // $
-    NON_TERM		            // non-terminal
-} Prec_table;
-
-Prec_table get_table_index(token_t* token) {
+static int map_token(token_t *token) {
     switch (token->type) {
         case TOKEN_UNWRAP_NILLABLE:
             return UNWRAP;
-
         case TOKEN_LOGICAL_NOT:
             return NOT;
-
         case TOKEN_ADDITION:
-            return ADD;
         case TOKEN_SUBTRACTION:
-            return SUB;
-
+            return ADD_SUB;
         case TOKEN_MULTIPLICATION:
-            return MUL;
         case TOKEN_DIVISION:
-            return DIV;
-
-        case TOKEN_EQUAL_TO:
-            return EQUAL_TO;
-
-        case TOKEN_NOT_EQUAL_TO:
-            return NOT_EQUAL_TO;
-
+            return MUL_DIV;
         case TOKEN_IS_NIL:
-            return IS_NIL;
-
+            return NIL_COL;
         case TOKEN_LESS_THAN:
-            return LESS_THAN;
-
         case TOKEN_LESS_THAN_OR_EQUAL_TO:
-            return LESS_THAN_OR_EQUAL_TO;
-
         case TOKEN_GREATER_THAN_OR_EQUAL_TO:
-            return GREATER_THAN_OR_EQUAL_TO;
-
         case TOKEN_GREATER_THAN:
-            return GREATER_THAN;
-
+        case TOKEN_EQUAL_TO:
+        case TOKEN_NOT_EQUAL_TO:
+            return REL_OP;
         case TOKEN_LOGICAL_AND:
             return AND;
-
         case TOKEN_LOGICAL_OR:
             return OR;
-
         case TOKEN_LEFT_BRACKET:
+            if (ignore_right_bracket) {
+                bracket_count++;
+            }
             return LEFT_BRACKET;
-
-        case TOKEN_RIGHT_BRACKET:
-            return RIGHT_BRACKET;
-
         case TOKEN_IDENTIFIER:
-            return IDENTIFIER;
-
         case TOKEN_INTEGER_LITERAL:
-            return INTEGER_LITERAL;
-
         case TOKEN_REAL_LITERAL:
-            return REAL_LITERAL;
-
         case TOKEN_STRING_LITERAL:
-            return STRING_LITERAL;
-
         case TOKEN_NIL_LITERAL:
-            return NIL_LITERAL;
-
         case TOKEN_TRUE_LITERAL:
-            return TRUE_LITERAL;
-
         case TOKEN_FALSE_LITERAL:
-            return FALSE_LITERAL;
-
+            return IDENTIFIER;
+        case TOKEN_RIGHT_BRACKET:
+            if (!ignore_right_bracket) {
+                return RIGHT_BRACKET;
+            } else {
+                if (bracket_count > 0) {
+                    bracket_count--;
+                    return RIGHT_BRACKET;
+                } else {
+                    return DOLLAR;
+                }
+            }
         default:
             return DOLLAR;
     }
 }
 
-int expression(token_array_t token_Array) {
-    stack_t *stack = Stack.init();
+void init_stacks() {
+    pushdown_stack = Stack.init();
+    tmp_stack = Stack.init();
+}
 
-    Stack.push(stack, DOLLAR); //как это пущить?
-    token_t* top_stack_terminal;
-    token_t* actual_symbol;
+void destroy_stacks() {
+    Stack.destroy(pushdown_stack);
+    Stack.destroy(tmp_stack);
+}
 
-    bool success = false;
+void clear_tmp_stack() {
+    while (Stack.top(tmp_stack) != NULL) {
+        Stack.pop(tmp_stack);
+    }
+}
+
+void clear_until_top_terminal() {
+    expr_elem_t *top = Stack.top(pushdown_stack);
+    while (top->type == NON_TERM || top->type == LESS) {
+        Stack.push(tmp_stack, top);
+        Stack.pop(pushdown_stack);
+        top = Stack.top(pushdown_stack);
+    }
+}
+
+void transfer_tmp_stack() {
+    while (Stack.top(tmp_stack) != NULL) {
+        Stack.push(pushdown_stack, Stack.top(tmp_stack));
+        Stack.pop(tmp_stack);
+    }
+}
+
+void reduce() {
+    expr_elem_t *elem = Stack.top(pushdown_stack);
+    expr_elem_t **elems = malloc(sizeof(expr_elem_t *) * 3);
     int i = 0;
-
-    do
+    while (elem->type != LESS) {
+        elems[i] = elem;
+        Stack.pop(pushdown_stack);
+        elem = Stack.top(pushdown_stack);
+        i++;
+    }
+    Stack.pop(pushdown_stack);
+    expr_elem_t *new_elem = malloc(sizeof(expr_elem_t));
+    if (i == 1) // reduce E -> i
     {
-        actual_symbol = token_Array.array[i]; //возможно тут затуп
-        top_stack_terminal = Stack.top(stack);
-
-        if (top_stack_terminal == NULL)
-
-
-        switch (table[get_table_index(top_stack_terminal)][get_table_index(actual_symbol)])
-        {
-            case 0:
-
-
-
-            case 1:
-                Stack.push(stack, actual_symbol);
-
-                i++;
-
-            case 2:
-
-
-            case 3:
-
+        if (elems[0]->token->type == TOKEN_INTEGER_LITERAL) {
+            new_elem->type = NON_TERM;
+            new_elem->ret_type = int_type;
+            new_elem->token = NULL;
+            printf("PUSHS int@%d\n", elems[0]->token->attribute.integer);
         }
-    } while (!success);
+        if (elems[0]->token->type == TOKEN_REAL_LITERAL) {
+            new_elem->type = NON_TERM;
+            new_elem->ret_type = double_type;
+            new_elem->token = NULL;
+            printf("PUSHS float@%a\n", elems[0]->token->attribute.real);
+        }
+        if (elems[0]->token->type == TOKEN_STRING_LITERAL) {
+            new_elem->type = NON_TERM;
+            new_elem->ret_type = string_type;
+            new_elem->token = NULL;
+            printf("PUSHS string@%s\n", elems[0]->token->attribute.string->str);
+        }
+        if (elems[0]->token->type == TOKEN_TRUE_LITERAL) {
+            new_elem->type = NON_TERM;
+            new_elem->ret_type = bool_type;
+            new_elem->token = NULL;
+            printf("PUSHS bool@true\n");
+        }
+        if (elems[0]->token->type == TOKEN_FALSE_LITERAL) {
+            new_elem->type = NON_TERM;
+            new_elem->ret_type = bool_type;
+            new_elem->token = NULL;
+            printf("PUSHS bool@false\n");
+        }
+        if (elems[0]->token->type == TOKEN_NIL_LITERAL) {
+            new_elem->type = NON_TERM;
+            new_elem->ret_type = nil_int_type;
+            new_elem->token = NULL;
+            printf("PUSHS nil@nil\n");
+        }
+        if (elems[0]->token->type == TOKEN_IDENTIFIER) { // TODO
+            new_elem->type = NON_TERM;
+            new_elem->ret_type = elems[0]->ret_type;
+            new_elem->token = NULL;
+            printf("PUSHS %s\n", elems[0]->token->attribute.identifier->str);
+        }
+    }
+    if (i == 2) // E -> !E ; E ->E!
+    {
+        if (elems[1]->type == NOT) {
+            new_elem->type = NON_TERM;
+            new_elem->ret_type = bool_type;
+            new_elem->token = NULL;
+            printf("NOTS\n");
+        } else {
+            new_elem->type = NON_TERM;
+            new_elem->ret_type = elems[0]->ret_type;
+            new_elem->token = NULL;
+        }
+    }
+    if (i == 3) // E -> E op E
+    {
+        token_t *op = elems[1]->token;
+        if (op == NULL) {
+            new_elem->type = NON_TERM;
+            new_elem->ret_type = elems[1]->ret_type;
+            new_elem->token = NULL;
+        }
+        else {
+            switch (op->type) {
+                case TOKEN_ADDITION:
+                    new_elem->type = NON_TERM;
+                    new_elem->ret_type = elems[0]->ret_type;
+                    new_elem->token = NULL;
+                    printf("ADDS\n");
+                    break;
+                case TOKEN_SUBTRACTION:
+                    new_elem->type = NON_TERM;
+                    new_elem->ret_type = elems[0]->ret_type;
+                    new_elem->token = NULL;
+                    printf("SUBS\n");
+                    break;
+                case TOKEN_MULTIPLICATION:
+                    new_elem->type = NON_TERM;
+                    new_elem->ret_type = elems[0]->ret_type;
+                    new_elem->token = NULL;
+                    printf("MULS\n");
+                    break;
+                case TOKEN_DIVISION:
+                    new_elem->type = NON_TERM;
+                    new_elem->ret_type = elems[0]->ret_type;
+                    new_elem->token = NULL;
+                    printf("DIVS\n");
+                    break;
+                case TOKEN_LOGICAL_AND:
+                    new_elem->type = NON_TERM;
+                    new_elem->ret_type = bool_type;
+                    new_elem->token = NULL;
+                    printf("ANDS\n");
+                    break;
+                case TOKEN_LOGICAL_OR:
+                    new_elem->type = NON_TERM;
+                    new_elem->ret_type = bool_type;
+                    new_elem->token = NULL;
+                    printf("ORS\n");
+                    break;
+                case TOKEN_LESS_THAN:
+                    new_elem->type = NON_TERM;
+                    new_elem->ret_type = bool_type;
+                    new_elem->token = NULL;
+                    printf("LTS\n");
+                    break;
+                case TOKEN_LESS_THAN_OR_EQUAL_TO:
+                    new_elem->type = NON_TERM;
+                    new_elem->ret_type = bool_type;
+                    new_elem->token = NULL;
+                    printf("GTS\n");
+                    printf("NOTS\n");
+                    break;
+                case TOKEN_GREATER_THAN:
+                    new_elem->type = NON_TERM;
+                    new_elem->ret_type = bool_type;
+                    new_elem->token = NULL;
+                    printf("GTS\n");
+                    break;
+                case TOKEN_GREATER_THAN_OR_EQUAL_TO:
+                    new_elem->type = NON_TERM;
+                    new_elem->ret_type = bool_type;
+                    new_elem->token = NULL;
+                    printf("LTS\n");
+                    printf("NOTS\n");
+                    break;
+                case TOKEN_EQUAL_TO:
+                    new_elem->type = NON_TERM;
+                    new_elem->ret_type = bool_type;
+                    new_elem->token = NULL;
+                    printf("EQS\n");
+                    break;
+                case TOKEN_NOT_EQUAL_TO:
+                    new_elem->type = NON_TERM;
+                    new_elem->ret_type = bool_type;
+                    new_elem->token = NULL;
+                    printf("EQS\n");
+                    printf("NOTS\n");
+                    break;
+                case TOKEN_IS_NIL:
+                    new_elem->type = NON_TERM;
+                    new_elem->ret_type = bool_type;
+                    new_elem->token = NULL;
+                    printf("PUSHS nil@nil\n");
+                    printf("EQS\n");
+                    break;
+                default:
+                    break;
+            }
+        }
+    }
+    Stack.push(pushdown_stack, new_elem);
+}
 
+expr_elem_t *get_top_terminal() {
+    expr_elem_t *top = Stack.top(pushdown_stack);
+    while (top->type == NON_TERM || top->type == LESS) {
+        Stack.push(tmp_stack, top);
+        Stack.pop(pushdown_stack);
+        top = Stack.top(pushdown_stack);
+    }
+    while (Stack.top(tmp_stack) != NULL) {
+        Stack.push(pushdown_stack, Stack.top(tmp_stack));
+        Stack.pop(tmp_stack);
+    }
+    return top;
+}
+
+expr_elem_t *next_token() {
+    expr_elem_t *elem = malloc(sizeof(expr_elem_t));
+    elem->type = map_token(local_lookahead);
+    elem->token = local_lookahead;
+    elem->ret_type = 0;
+    return elem;
+}
+
+int parse_expr() {
+    init_stacks();
+    expr_elem_t *dollar = malloc(sizeof(expr_elem_t));
+    dollar->type = DOLLAR;
+    dollar->token = NULL;
+    dollar->ret_type = 0;
+    Stack.push(pushdown_stack, dollar);
+
+    expr_elem_t *a = malloc(sizeof(expr_elem_t));
+    expr_elem_t *b;
+
+    a->type = map_token(lookahead);
+    a->token = lookahead;
+    a->ret_type = 0;
+
+    expr_elem_t *less = malloc(sizeof(expr_elem_t));
+    less->type = LESS;
+    less->token = NULL;
+    less->ret_type = 0;
+
+    while (true) {
+        b = get_top_terminal();
+
+        if (a->type == DOLLAR && b->type == DOLLAR) {
+            break;
+        }
+
+        int action = table[b->type][a->type];
+
+        switch (action) {
+            case 1:
+                clear_until_top_terminal();
+                Stack.push(pushdown_stack, less);
+                transfer_tmp_stack();
+                Stack.push(pushdown_stack, a);
+                local_lookahead = TokenArray.next();
+                a = next_token();
+                break;
+            case 2:
+                reduce();
+                break;
+            case 3:
+                Stack.push(pushdown_stack, a);
+                local_lookahead = TokenArray.next();
+                a = next_token();
+                break;
+            default:
+                return SYNTAX_ERROR;
+        }
+    }
+    return SUCCESS;
 }

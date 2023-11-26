@@ -45,6 +45,11 @@ d = {
 # TOKEN_LEFT_BRACE
 # TOKEN_RIGHT_BRACE
 
+less = '1'
+greater = '2'
+equal = '3'
+non = '4'
+
 operators = ['unwrap',
              'not',
              'mul',
@@ -71,43 +76,43 @@ for yellow_x in d.keys():
         # id
         if red_y == 'i':
             if yellow_x in ['not', 'mul', 'add', 'nil_col', 'eq', 'and', 'or', '(', '$']:
-                print('<', end=',')
+                print(less, end=',')
             else:
-                print(' ', end=',')
+                print(non, end=',')
         elif yellow_x == 'i':
             if red_y in ['unwrap', 'mul', 'add', 'nil_col', 'eq', 'and', 'or', ')', '$']:
-                print('>', end=',')
+                print(greater, end=',')
             else:
-                print(' ', end=',')
+                print(non, end=',')
         elif red_y == ')' and yellow_x == '(':
-            print('=', end=',')
+            print(equal, end=',')
         elif yellow_x == '(' and red_y not in [')', '$']:
-            print('<', end=',')
+            print(less, end=',')
         elif red_y == ')' and yellow_x not in ['(', '$']:
-            print('>', end=',')
+            print(greater, end=',')
         elif red_y == '(' and yellow_x in ['mul', 'not', 'add', 'nil_col', 'eq', 'and', 'or', '$']:
-            print('<', end=',')
+            print(less, end=',')
         elif yellow_x == ')' and red_y in ['mul', 'add', 'nil_col', 'eq', 'and', 'or', '$']:
-            print('>', end=',')
+            print(greater, end=',')
         elif yellow_x == '$' and red_y in ['mul', 'add', 'nil_col', 'eq', 'and', 'or', 'not', 'unwrap']:
-            print('<', end=',')
+            print(less, end=',')
         elif red_y == '$' and yellow_x in ['mul', 'add', 'nil_col', 'eq', 'and', 'or', 'not', 'unwrap']:
-            print('>', end=',')
+            print(greater, end=',')
         # ops
         elif yellow_x in operators and red_y in operators:
             if d[red_y][0] < d[yellow_x][0]:
-                print('<', end=',')
+                print(less, end=',')
 
             if d[red_y][0] > d[yellow_x][0]:
-                print('>', end=',')
+                print(greater, end=',')
 
             if d[yellow_x][0] == d[red_y][0]:
                 if d[yellow_x][1] == 'left' and d[red_y][1] == 'left':
-                    print('>', end=',')
+                    print(greater, end=',')
                 elif d[yellow_x][1] == 'right' and d[red_y][1] == 'right':
-                    print('<', end=',')
+                    print(less, end=',')
                 else:
-                    print(' ', end=',')
+                    print(non, end=',')
         else:
-            print(' ', end=',')
+            print(non, end=',')
     print()

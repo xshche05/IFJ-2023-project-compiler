@@ -311,7 +311,7 @@ int source_code_to_tokens() {
                 if (c == '=') {
                     fsm_state = NOT_EQUAL_S;
                 } else {
-                    if (isspace(prev_prev) || (isalnum(c) || c == '_')) type = TOKEN_LOGICAL_NOT;
+                    if (isspace(prev_prev) || (isalnum(c) || c == '_' || c == '(')) type = TOKEN_LOGICAL_NOT;
                     else type = TOKEN_UNWRAP_NILLABLE;
                     add_token(type, attribute, false);
                     fsm_state = START_S;

@@ -28,6 +28,9 @@ void stack_pop(stack_t *stack) {
 }
 
 void *stack_top(stack_t *stack) {
+    if (stack == NULL) {
+        return NULL;
+    }
     if (stack->top == NULL) {
         return NULL;
     }
