@@ -20,6 +20,7 @@ int table[12][12] = {
 #define TYPE_ERROR 7
 
 int bracket_count = 0;
+
 bool ignore_right_bracket = false;
 
 token_t *local_lookahead;
@@ -198,7 +199,7 @@ void reduce() {
     {
         if (elems[0]->token == NULL){
             new_elem->type = NON_TERM;
-            new_elem->ret_type = 0; // TODO get ret func type from symtable
+            new_elem->ret_type = elems[0]->ret_type;
             new_elem->token = NULL;
             printf("PUSHS GF@$RET\n");
         }
@@ -429,6 +430,10 @@ expr_elem_t *get_top_terminal() {
 bool first_flag = false;
 
 expr_elem_t *next_token() {
+    if (!first_flag) {
+        local_lookahead = after_local_lookahead;
+        after_local_lookahead = TokenArray.next();
+    }
     token_t *current = local_lookahead;
     token_t *next = after_local_lookahead;
     bool is_last_on_line = current->has_newline_after;
@@ -467,13 +472,9 @@ expr_elem_t *next_token() {
             expr_elem_t *elem = malloc(sizeof(expr_elem_t));
             elem->type = IDENTIFIER;
             elem->token = NULL;
-            elem->ret_type = 0;
+            elem->ret_type = 0; // TODO get ret func type from symtable
             return elem;
         }
-    }
-    if (!first_flag) {
-        local_lookahead = after_local_lookahead;
-        after_local_lookahead = TokenArray.next();
     }
     expr_elem_t *elem = malloc(sizeof(expr_elem_t));
     elem->type = map_token(local_lookahead);
@@ -560,7 +561,7 @@ int parse_expr(char *type) {
             fprintf(stderr, "Error: EXPR internal.\n");
             exit(99);
     }
-    DEBUG_PRINT("EXPR: %c\n", *type);
+//    DEBUG_PRINT("EXPR: %c\n", *type);
     destroy_stacks();
     return SUCCESS;
 }
