@@ -3,6 +3,7 @@
 #include "parts/parts.h"
 #include "parser/expr_parser.h"
 
+char error_msg[1000];
 
 int main(int argc, char **argv) {
     char* file_name = "../test.swift";

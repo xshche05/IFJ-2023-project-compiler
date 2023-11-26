@@ -261,7 +261,7 @@ void gen_branch_if_start(bool let) {
         printf("JUMPIFEQ %s %s string@nil\n", label_skip, cond_reg);
     } else {
         printf("PUSHS bool@true\n");
-        printf("JUMPIFNEQ %s\n", label_skip);
+        printf("JUMPIFNEQS %s\n", label_skip);
     }
 }
 
@@ -302,7 +302,7 @@ void gen_while_start() {
 
 void gen_while_cond() {
     printf("PUSHS bool@true\n");
-    printf("JUMPIFNEQ %s\n", current_loop_end_label);
+    printf("JUMPIFNEQS %s\n", current_loop_end_label);
 }
 
 void gen_while_end() {

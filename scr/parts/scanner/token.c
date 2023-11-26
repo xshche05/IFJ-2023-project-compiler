@@ -5,7 +5,7 @@
 #include "token.h"
 #include <stdlib.h>
 
-static char *tokens_as_str[] = {
+char *tokens_as_str[] = {
         "TOKEN_IDENTIFIER",
         "TOKEN_DOUBLE_TYPE",
         "TOKEN_ELSE",
@@ -43,7 +43,7 @@ static char *tokens_as_str[] = {
         "TOKEN_EQUAL_TO",
         "TOKEN_NOT_EQUAL_TO",
         "TOKEN_IS_NIL",
-        "TOKEN_UNWRAP_NILABLE",
+        "TOKEN_UNWRAP_NILLABLE",
         "TOKEN_LOGICAL_AND",
         "TOKEN_LOGICAL_OR",
         "TOKEN_LOGICAL_NOT",
@@ -55,7 +55,7 @@ static char *tokens_as_str[] = {
         "TOKEN_COLON",
         "TOKEN_SEMICOLON",
         "TOKEN_ARROW",
-//        "TOKEN_NEWLINE",
+        "TOKEN_NEWLINE",
         "TOKEN_EOF"
 };
 
@@ -224,11 +224,11 @@ static token_t *token_array_current() {
 
 static token_t *token_array_next() {
     if (tokens == NULL) {
-        //fprintf(stderr, "Error: token array not initialized.\n");
+        fprintf(stderr, "Error: token array not initialized.\n");
         return NULL;
     }
     if (tokens->current >= tokens->length) {
-        //fprintf(stderr, "Error: token array out of bounds.\n");
+        fprintf(stderr, "Error: token array out of bounds.\n");
         return NULL;
     }
     tokens->current++;
@@ -240,7 +240,7 @@ static token_t *token_array_prev() {
         fprintf(stderr, "Error: token array not initialized.\n");
         return NULL;
     }
-    if (tokens->current >= tokens->length) {
+    if (tokens->current - 1 >= tokens->length) {
         fprintf(stderr, "Error: token array out of bounds.\n");
         return NULL;
     }

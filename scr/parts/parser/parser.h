@@ -4,8 +4,8 @@
 #include <stdbool.h>
 #include "token.h"
 
-token_t *lookahead;
-bool nl_flag;    // new line
+extern token_t *lookahead; // TODO
+extern bool nl_flag;    // new line // TODO
 
 bool match(token_type_t type);
 

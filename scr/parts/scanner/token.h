@@ -61,6 +61,8 @@ typedef enum {
     TOKEN_EOF
 } token_type_t;
 
+extern char *tokens_as_str[];
+
 typedef union {
     string_t *identifier;
     bool nillable;

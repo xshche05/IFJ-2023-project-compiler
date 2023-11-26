@@ -20,7 +20,7 @@
 #define DEBUG_PRINT(...)
 #endif
 
-char error_msg[1000];
+extern char error_msg[1000]; // TODO
 
 //Macro for error handling
 #define EXIT_ERROR(error_code) \

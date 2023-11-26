@@ -1,7 +1,5 @@
 #include "parts.h"
 #include "utils.h"
-#include "new_symtable.h"
-#include "../error.h"
 #include "codegen/codegen.h"
 #include "expr_parser.h"
 
@@ -12,60 +10,7 @@ int scope = 0;
 int stayed = 0;
 token_t *last_token = NULL;
 token_t *last_id = NULL;
-
-static char *tokens_as_str[] = {
-        "TOKEN_IDENTIFIER",
-        "TOKEN_DOUBLE_TYPE",
-        "TOKEN_ELSE",
-        "TOKEN_FUNC",
-        "TOKEN_IF",
-        "TOKEN_INT_TYPE",
-        "TOKEN_LET",
-        "TOKEN_RETURN",
-        "TOKEN_STRING_TYPE",
-        "TOKEN_VAR",
-        "TOKEN_WHILE",
-        "TOKEN_BOOL_TYPE",
-        "TOKEN_FOR",
-        "TOKEN_IN",
-        "TOKEN_BREAK",
-        "TOKEN_CONTINUE",
-        "TOKEN_UNDERSCORE",
-        "TOKEN_ASSIGNMENT",
-        "TOKEN_CLOSED_RANGE",
-        "TOKEN_HALF_OPEN_RANGE",
-        "TOKEN_REAL_LITERAL",
-        "TOKEN_STRING_LITERAL",
-        "TOKEN_NIL_LITERAL",
-        "TOKEN_TRUE_LITERAL",
-        "TOKEN_FALSE_LITERAL",
-        "TOKEN_INTEGER_LITERAL",
-        "TOKEN_ADDITION",
-        "TOKEN_SUBTRACTION",
-        "TOKEN_MULTIPLICATION",
-        "TOKEN_DIVISION",
-        "TOKEN_LESS_THAN",
-        "TOKEN_LESS_THAN_OR_EQUAL_TO",
-        "TOKEN_GREATER_THAN",
-        "TOKEN_GREATER_THAN_OR_EQUAL_TO",
-        "TOKEN_EQUAL_TO",
-        "TOKEN_NOT_EQUAL_TO",
-        "TOKEN_IS_NIL",
-        "TOKEN_UNWRAP_NILLABLE",
-        "TOKEN_LOGICAL_AND",
-        "TOKEN_LOGICAL_OR",
-        "TOKEN_LOGICAL_NOT",
-        "TOKEN_LEFT_BRACKET",
-        "TOKEN_RIGHT_BRACKET",
-        "TOKEN_LEFT_BRACE",
-        "TOKEN_RIGHT_BRACE",
-        "TOKEN_COMMA",
-        "TOKEN_COLON",
-        "TOKEN_SEMICOLON",
-        "TOKEN_ARROW",
-        "TOKEN_NEWLINE",
-        "TOKEN_EOF"
-};
+token_t *lookahead = NULL;
 
 bool match(token_type_t type) {
     if (type == TOKEN_RETURN) {
@@ -81,8 +26,8 @@ bool match(token_type_t type) {
         }
     }
     if (type == TOKEN_FUNC) {
-        if (scope - 1 != 0 || inside_loop || inside_branch) { //TODO FIX
-            sprintf(error_msg, "Syntax error: function declaration outside of global scope\n", tokens_as_str[type]);
+        if (scope - 1 != 0 || inside_loop || inside_branch) { // TODO FIX
+            sprintf(error_msg, "Syntax error: function declaration outside of global scope\n");
             return false;
         }
     }
@@ -120,7 +65,8 @@ void scope_leave() {
 }
 
 bool call_expr_parser() {
-    if (parse_expr() == SUCCESS) {
+    char type;
+    if (parse_expr(&type) == SUCCESS) {
         lookahead = TokenArray.prev();
         nl_flag = lookahead->has_newline_after;
         lookahead = TokenArray.next();
@@ -143,7 +89,7 @@ int S() {
     bool s;
     init_codegen();
     gen_header();
-//    gen_register_def();
+    gen_register_def();
     gen_std_functions();
     lookahead = TokenArray.next();
     switch (lookahead->type) {
@@ -492,7 +438,7 @@ bool BR_EXPR() {
             gen_branch_if_start(true);
             break;
         default:
-            if (call_expr_parser(lookahead))
+            if (call_expr_parser())
             {
                 gen_branch_if_start(false);
                 return true;
@@ -559,7 +505,7 @@ bool WHILE_LOOP() {
             increment_scope();
             s = match(TOKEN_WHILE);
             gen_while_start();
-            s = s && call_expr_parser(lookahead);
+            s = s && call_expr_parser();
             gen_while_cond();
             s = s && match(TOKEN_LEFT_BRACE);
             s = s && CODE();
@@ -586,7 +532,7 @@ bool FOR_LOOP() {
             s = match(TOKEN_FOR);
             s = s && FOR_ID(); // TODO: allias for id is GF@$FOR_START
             s = s && match(TOKEN_IN);
-            s = s && call_expr_parser(lookahead);
+            s = s && call_expr_parser();
             s = s && RANGE();
             gen_for_start();
             gen_for_cond();
@@ -628,12 +574,12 @@ bool RANGE() {
     switch (lookahead->type) {
         case TOKEN_CLOSED_RANGE:
             s = match(TOKEN_CLOSED_RANGE);
-            s = s && call_expr_parser(lookahead);
+            s = s && call_expr_parser();
             gen_for_range(false);
             break;
         case TOKEN_HALF_OPEN_RANGE:
             s = match(TOKEN_HALF_OPEN_RANGE);
-            s = s && call_expr_parser(lookahead);
+            s = s && call_expr_parser();
             gen_for_range(true);
             break;
         default:
@@ -663,7 +609,7 @@ bool CALL_PARAM_LIST() {
             s = true;
             break;
         default:
-            if (call_expr_parser(lookahead)) return true;
+            if (call_expr_parser()) return true;
             sprintf(error_msg, "Syntax error [CALL_PARAM_LIST]: expected ['TOKEN_FALSE_LITERAL', 'TOKEN_COLON', 'TOKEN_LESS_THAN', 'TOKEN_LOGICAL_AND', 'TOKEN_LEFT_BRACKET', 'TOKEN_NIL_LITERAL', 'TOKEN_REAL_LITERAL', 'TOKEN_STRING_LITERAL', 'TOKEN_ADDITION', 'TOKEN_SUBTRACTION', 'TOKEN_LOGICAL_OR', 'TOKEN_IDENTIFIER', 'TOKEN_UNWRAP_NILLABLE', 'TOKEN_EQUAL_TO', 'TOKEN_LESS_THAN_OR_EQUAL_TO', 'TOKEN_GREATER_THAN', 'TOKEN_NOT_EQUAL_TO', 'TOKEN_GREATER_THAN_OR_EQUAL_TO', 'TOKEN_TRUE_LITERAL', 'TOKEN_IS_NIL', 'TOKEN_DIVISION', 'TOKEN_MULTIPLICATION', 'TOKEN_LOGICAL_NOT', 'TOKEN_INTEGER_LITERAL', 'TOKEN_RIGHT_BRACKET'], got %s\n", tokens_as_str[lookahead->type]);
             s = false;
     }
@@ -736,7 +682,7 @@ bool NEXT_ID_CALL_OR_ASSIGN() {
             break;
         case TOKEN_ASSIGNMENT:
             s = match(TOKEN_ASSIGNMENT);
-            s = s && call_expr_parser(lookahead);
+            s = s && call_expr_parser();
             gen_var_assign(last_id->attribute.identifier->str, scope, stayed);
             break;
         default:
