@@ -6,8 +6,6 @@
 #include "lists.h"
 #include "token.h"
 
-#include "../error.h"
-
 // TODO: fix range operator form '..' to '...'
 
 char control_char = ' ';
