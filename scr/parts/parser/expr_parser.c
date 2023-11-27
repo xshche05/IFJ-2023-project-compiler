@@ -254,6 +254,10 @@ void reduce() {
             new_elem->token = NULL;
             printf("NOTS\n");
         } else {
+            if (elems[0]->ret_type < 4) {
+                fprintf(stderr, "Error: EXPR type mismatch.\n");
+                exit(TYPE_ERROR);
+            }
             new_elem->type = NON_TERM;
             new_elem->ret_type = elems[0]->ret_type - 4;
             new_elem->token = NULL;
@@ -430,13 +434,14 @@ expr_elem_t *get_top_terminal() {
 bool first_flag = false;
 
 expr_elem_t *next_token() {
+    token_t *current = local_lookahead;
+    token_t *next = after_local_lookahead;
+    bool is_last_on_line = current->has_newline_after;
+
     if (!first_flag) {
         local_lookahead = after_local_lookahead;
         after_local_lookahead = TokenArray.next();
     }
-    token_t *current = local_lookahead;
-    token_t *next = after_local_lookahead;
-    bool is_last_on_line = current->has_newline_after;
 
     // if is_last_on_line, then prefetch action, if error action, then return DOLLAR
     if (is_last_on_line && !first_flag) {
@@ -445,8 +450,8 @@ expr_elem_t *next_token() {
         expr_elem_t *b = get_top_terminal();
         int action = table[b->type][a->type];
         if (action == 4) {
-            local_lookahead = after_local_lookahead;
-            after_local_lookahead = TokenArray.next();
+//            local_lookahead = after_local_lookahead;
+//            after_local_lookahead = TokenArray.next();
             expr_elem_t *dollar = malloc(sizeof(expr_elem_t));
             dollar->type = DOLLAR;
             dollar->token = NULL;
@@ -558,7 +563,7 @@ int parse_expr(char *type) {
             *type = 'n';
             break;
         default:
-            fprintf(stderr, "Error: EXPR internal.\n");
+            fprintf(stderr, "Error: EXPR internal. %d\n", result->ret_type);
             exit(99);
     }
 //    DEBUG_PRINT("EXPR: %c\n", *type);
