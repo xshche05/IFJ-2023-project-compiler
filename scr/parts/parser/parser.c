@@ -4,12 +4,11 @@
 #include "expr_parser.h"
 
 bool inside_func = false;
+bool not_name = true;
 int inside_loop = 0;
 int inside_branch = 0;
 int scope = 0;
 int stayed = 0;
-token_t *last_token = NULL;
-token_t *last_id = NULL;
 token_t *lookahead = NULL;
 
 bool match(token_type_t type) {
@@ -33,10 +32,6 @@ bool match(token_type_t type) {
     }
     if (lookahead->type == type) {
         nl_flag = lookahead->has_newline_after;
-        last_token = lookahead;
-        if (lookahead->type == TOKEN_IDENTIFIER) {
-            last_id = lookahead;
-        }
         lookahead = TokenArray.next();
         return true;
     }
@@ -201,7 +196,7 @@ bool RET_EXPR() {
             gen_return(true);
             break;
         default:
-            if (call_expr_parser(lookahead)) {
+            if (call_expr_parser()) {
                 gen_return(false);
                 return true;
             }
@@ -217,11 +212,11 @@ bool VAR_DECL() {
     switch (lookahead->type) {
         case TOKEN_VAR:
             s = match(TOKEN_VAR);
+            token_t *id = lookahead;
             s = s && match(TOKEN_IDENTIFIER);
-            // if exist in current scope - error
-            gen_var_decl(last_id->attribute.identifier->str, scope, stayed);
+            if (s) gen_var_decl(id->attribute.identifier->str, scope, stayed);
             s = s && VAR_LET_TYPE();
-            s = s && VAR_LET_EXP();
+            s = s && VAR_LET_EXP(id);
             break;
         default:
             sprintf(error_msg, "Syntax error [VAR_DECL]: expected ['TOKEN_VAR'], got %s\n", tokens_as_str[lookahead->type]);
@@ -250,13 +245,13 @@ bool VAR_LET_TYPE() {
 }
 
 
-bool VAR_LET_EXP() {
+bool VAR_LET_EXP(token_t *id) {
     bool s;
     switch (lookahead->type) {
         case TOKEN_ASSIGNMENT:
             s = match(TOKEN_ASSIGNMENT);
             s = s && call_expr_parser();
-            gen_var_assign(last_id->attribute.identifier->str, scope, stayed);
+            if (s) gen_var_assign(id->attribute.identifier->str, scope, stayed);
             break;
         default:
             if (nl_flag) return true;
@@ -272,11 +267,11 @@ bool LET_DECL() {
     switch (lookahead->type) {
         case TOKEN_LET:
             s = match(TOKEN_LET);
+            token_t *id = lookahead;
             s = s && match(TOKEN_IDENTIFIER);
-            // if exist in current scope - error
-            gen_var_decl(last_id->attribute.identifier->str, scope, stayed);
+            if (s) gen_var_decl(id->attribute.identifier->str, scope, stayed);
             s = s && VAR_LET_TYPE();
-            s = s && VAR_LET_EXP();
+            s = s && VAR_LET_EXP(id);
             break;
         default:
             sprintf(error_msg, "Syntax error [LET_DECL]: expected ['TOKEN_LET'], got %s\n", tokens_as_str[lookahead->type]);
@@ -657,10 +652,12 @@ bool NEXT_CALL_PARAM() {
 
 bool ID_CALL_OR_ASSIGN() {
     bool s;
+    token_t *id;
     switch (lookahead->type) {
         case TOKEN_IDENTIFIER:
+            id = lookahead;
             s = match(TOKEN_IDENTIFIER);
-            s = s && NEXT_ID_CALL_OR_ASSIGN();
+            s = s && NEXT_ID_CALL_OR_ASSIGN(id);
             break;
         default:
             sprintf(error_msg, "Syntax error [ID_CALL_OR_ASSIGN]: expected ['TOKEN_IDENTIFIER'], got %s\n", tokens_as_str[lookahead->type]);
@@ -670,7 +667,7 @@ bool ID_CALL_OR_ASSIGN() {
 }
 
 
-bool NEXT_ID_CALL_OR_ASSIGN() {
+bool NEXT_ID_CALL_OR_ASSIGN(token_t *id) {
     bool s;
     switch (lookahead->type) {
         case TOKEN_LEFT_BRACKET:
@@ -683,7 +680,7 @@ bool NEXT_ID_CALL_OR_ASSIGN() {
         case TOKEN_ASSIGNMENT:
             s = match(TOKEN_ASSIGNMENT);
             s = s && call_expr_parser();
-            gen_var_assign(last_id->attribute.identifier->str, scope, stayed);
+            gen_var_assign(id->attribute.identifier->str, scope, stayed);
             break;
         default:
             sprintf(error_msg, "Syntax error [NEXT_ID_CALL_OR_ASSIGN]: expected ['TOKEN_LEFT_BRACKET', 'TOKEN_ASSIGNMENT'], got %s\n", tokens_as_str[lookahead->type]);

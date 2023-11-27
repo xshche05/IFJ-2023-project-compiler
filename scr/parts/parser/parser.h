@@ -17,7 +17,7 @@ bool RETURN();
 bool RET_EXPR();
 bool VAR_DECL();
 bool VAR_LET_TYPE();
-bool VAR_LET_EXP();
+bool VAR_LET_EXP(token_t *id);
 bool LET_DECL();
 bool FUNC_DECL();
 bool FUNC_RET_TYPE();
@@ -39,7 +39,7 @@ bool CALL_PARAM_NAME();
 bool CALL_PARAM_VALUE();
 bool NEXT_CALL_PARAM();
 bool ID_CALL_OR_ASSIGN();
-bool NEXT_ID_CALL_OR_ASSIGN();
+bool NEXT_ID_CALL_OR_ASSIGN(token_t *id);
 bool TYPE();
 bool EXPR();
 #endif //IFJ_PRJ_PARSER_H

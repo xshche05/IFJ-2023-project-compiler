@@ -434,24 +434,24 @@ expr_elem_t *get_top_terminal() {
 bool first_flag = false;
 
 expr_elem_t *next_token() {
+    bool is_last_on_line = false;
+    if (local_lookahead != NULL) {
+        is_last_on_line = local_lookahead->has_newline_after;
+    }
+
+    local_lookahead = after_local_lookahead;
+    after_local_lookahead = TokenArray.next();
+
     token_t *current = local_lookahead;
     token_t *next = after_local_lookahead;
-    bool is_last_on_line = current->has_newline_after;
-
-    if (!first_flag) {
-        local_lookahead = after_local_lookahead;
-        after_local_lookahead = TokenArray.next();
-    }
 
     // if is_last_on_line, then prefetch action, if error action, then return DOLLAR
     if (is_last_on_line && !first_flag) {
         expr_elem_t *a = malloc(sizeof(expr_elem_t));
-        a->type = map_token(next);
+        a->type = map_token(current);
         expr_elem_t *b = get_top_terminal();
         int action = table[b->type][a->type];
         if (action == 4) {
-//            local_lookahead = after_local_lookahead;
-//            after_local_lookahead = TokenArray.next();
             expr_elem_t *dollar = malloc(sizeof(expr_elem_t));
             dollar->type = DOLLAR;
             dollar->token = NULL;
@@ -464,6 +464,7 @@ expr_elem_t *next_token() {
         if (next->type == TOKEN_LEFT_BRACKET) {
             lookahead = TokenArray.next();
             bool tmp = ignore_right_bracket;
+            bool tmp2 = first_flag;
             ignore_right_bracket = true;
             stack_t *tmp_1 = pushdown_stack;
             stack_t *tmp_2 = tmp_stack;
@@ -471,6 +472,7 @@ expr_elem_t *next_token() {
             pushdown_stack = tmp_1;
             tmp_stack = tmp_2;
             ignore_right_bracket = tmp;
+            first_flag = tmp2;
             printf("CALL %s\n", current->attribute.identifier->str);
             local_lookahead = lookahead;
             after_local_lookahead = TokenArray.next();
@@ -489,6 +491,8 @@ expr_elem_t *next_token() {
 }
 
 int parse_expr(char *type) {
+    pushdown_stack = NULL;
+    tmp_stack = NULL;
     init_stacks();
     expr_elem_t *dollar = malloc(sizeof(expr_elem_t));
     dollar->type = DOLLAR;
@@ -498,7 +502,6 @@ int parse_expr(char *type) {
 
     TokenArray.prev();
 
-    local_lookahead = TokenArray.next();
     after_local_lookahead = TokenArray.next();
 
     expr_elem_t *a;
@@ -517,6 +520,7 @@ int parse_expr(char *type) {
 
     while (true) {
         b = get_top_terminal();
+
 
         if (a->type == DOLLAR && b->type == DOLLAR) {
             break;
