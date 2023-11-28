@@ -83,9 +83,9 @@ bool nl_check() {
 int S() {
     bool s;
     init_codegen();
-    gen_header();
-    gen_register_def();
-    gen_std_functions();
+//    gen_header();
+//    gen_register_def();
+//    gen_std_functions();
     lookahead = TokenArray.next();
     switch (lookahead->type) {
         case TOKEN_FUNC:

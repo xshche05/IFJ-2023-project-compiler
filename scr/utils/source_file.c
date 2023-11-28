@@ -153,12 +153,36 @@ static char* print_current_line(void) {
     return sourceFile->lines[sourceFile->current_line]->str;
 }
 
+static int load_stdin(void) {
+    if (sourceFile == NULL) {
+        return -1;
+    }
+    string_t *line = String.ctor();
+    if (line == NULL) {
+        return -1;
+    }
+    int c;
+    while ((c = getc(stdin)) != EOF) {
+        if (c == '\n') {
+            file_add_line(line);
+            line = String.ctor();
+            if (line == NULL) {
+                return -1;
+            }
+            continue;
+        }
+        String.add_char(line, (char) c);
+    }
+    SourceCode.add_line(line);
+    return 0;
+}
+
 const struct file_interface SourceCode = {
         .ctor = file_init,
         .dtor = file_dtor,
         .add_line = file_add_line,
         .from_file = file_load_from_file,
-        .from_stdin = NULL,
+        .from_stdin = load_stdin,
         .getc = file_getc,
         .back_step = file_back_step,
         .line = file_line,

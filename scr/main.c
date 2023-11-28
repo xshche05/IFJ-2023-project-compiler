@@ -6,9 +6,8 @@
 char error_msg[1000];
 
 int main(int argc, char **argv) {
-    char* file_name = "../test.swift";
     SourceCode.ctor();
-    SourceCode.from_file(file_name);
+    SourceCode.from_stdin();
     TokenArray.ctor();
 
     int code = source_code_to_tokens();
