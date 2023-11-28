@@ -6,6 +6,7 @@
 char error_msg[1000];
 
 int main(int argc, char **argv) {
+
     SourceCode.ctor();
     SourceCode.from_stdin();
     TokenArray.ctor();

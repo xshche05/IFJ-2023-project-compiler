@@ -6,6 +6,7 @@
 #define IFJ_PRJ_CODEGEN_H
 
 #include <stdbool.h>
+#include "new_symtable.h"
 
 void gen_register_def();
 
@@ -56,5 +57,15 @@ void gen_for_end();
 void init_codegen();
 
 void gen_header();
+
+void gen_func_label(char *func_name);
+
+void gen_new_frame();
+
+void gen_push_frame();
+
+void gen_pop_frame();
+
+void gen_pop_params(string_t *params);
 
 #endif //IFJ_PRJ_CODEGEN_H

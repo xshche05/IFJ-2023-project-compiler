@@ -25,7 +25,6 @@ char *ret_reg = "GF@$RET";
 char *for_counter_reg = "GF@$FOR_COUNTER";
 char *for_max_val = "GF@$FOR_MAX_VAL";
 
-stack_t *func_label_stack;
 stack_t *branch_label_stack;
 stack_t *loop_label_stack;
 stack_t *cycle_type_stack;
@@ -37,7 +36,6 @@ bool current_loop_is_for = false;
 
 
 void init_codegen() {
-    func_label_stack = Stack.init();
     branch_label_stack = Stack.init();
     loop_label_stack = Stack.init();
     cycle_type_stack = Stack.init();
@@ -389,4 +387,51 @@ void gen_for_end() {
     }
     current_loop_is_for = *(bool*)Stack.top(cycle_type_stack);
     Stack.pop(cycle_type_stack);
+}
+
+void gen_func_label(char *func_name) {
+    printf("LABEL %s\n", func_name);
+}
+
+void gen_new_frame() {
+    printf("CREATEFRAME\n");
+}
+
+void gen_push_frame() {
+    printf("PUSHFRAME\n");
+}
+
+void gen_pop_frame() {
+    printf("POPFRAME\n");
+}
+
+void gen_pop_params(string_t *params) {
+    char *str = malloc(sizeof(char) * (strlen(params->str) + 1));
+    strcpy(str, params->str);
+
+    char *token = strtok(str, "#:");
+
+    int i = 0;
+
+    stack_t *param_stack = Stack.init();
+
+    while (token != NULL) {
+        if (i % 3 == 1) {
+            char *id = malloc(sizeof(char) * (strlen(token) + 1));\
+            strcpy(id, token);
+            printf("DEFVAR TF@%s\n", id);
+            Stack.push(param_stack, id);
+        }
+        token = strtok(NULL, "#:");
+        i++;
+    }
+
+    while (Stack.top(param_stack)) {
+        char *id = (char*)Stack.top(param_stack);
+        Stack.pop(param_stack);
+        printf("POPS TF@%s\n", id);
+        free(id);
+    }
+
+    free(str);
 }

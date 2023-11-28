@@ -2,12 +2,16 @@
 // Created by Spagetik on 08-Nov-23.
 //
 
+#include <string.h>
 #include "new_symtable.h"
 
 node_t *currentScope;
 
 stack_t *scopeStack;
 stack_t *tmpScopeStack;
+
+stack_t *varsToMigrateStack = NULL;
+stack_t *placeHolderStack = NULL;
 
 int scopeDepth;
 
@@ -35,6 +39,8 @@ void symtable_init() {
     tree_init(&currentScope);
     scopeStack = Stack.init();
     tmpScopeStack = Stack.init();
+    varsToMigrateStack = Stack.init();
+    placeHolderStack = Stack.init();
     scopeDepth = 0;
 }
 
@@ -71,7 +77,7 @@ void tree_add(node_t **root, string_t *key, symTableData_t data) {
         (*root)->key = String.copy(key);
         (*root)->data = malloc(sizeof(symTableData_t));
         (*root)->data->type = data.type;
-        (*root)->data->data = data.data;
+        (*root)->data->funcData = data.funcData;
         (*root)->left = NULL;
         (*root)->right = NULL;
     } else {
@@ -153,6 +159,80 @@ void symtable_print() {
         Stack.pop(tmpScopeStack);
         depth++;
     }
+}
+
+bool check_func_signature(string_t *params, funcData_t *funcData) {
+    char *paramsStr = malloc(sizeof(char) * (params->length + 1));
+    strcpy(paramsStr, params->str);
+    char *token = strtok(paramsStr, "#:");
+    stack_t *aliasStack = Stack.init();
+    stack_t *typeStack = Stack.init();
+    char *elem;
+    while (token != NULL) {
+        elem = malloc(sizeof(char) * (strlen(token) + 1));
+        strcpy(elem, token);
+        Stack.push(aliasStack, elem);
+        token = strtok(NULL, "#:");
+        elem = malloc(sizeof(char) * (strlen(token) + 1));
+        strcpy(elem, token);
+        Stack.push(typeStack, elem);
+        token = strtok(NULL, "#:");
+    }
+    char *funcParamsStr = malloc(sizeof(char) * (funcData->params->length + 1));
+    strcpy(funcParamsStr, funcData->params->str);
+    token = strtok(funcParamsStr, "#:");
+    stack_t *funcAliasStack = Stack.init();
+    stack_t *funcTypeStack = Stack.init();
+    while (token != NULL) {
+        elem = malloc(sizeof(char) * (strlen(token) + 1));
+        strcpy(elem, token);
+        Stack.push(funcAliasStack, elem);
+        strtok(NULL, "#:");
+        token = strtok(NULL, "#:");
+        elem = malloc(sizeof(char) * (strlen(token) + 1));
+        strcpy(elem, token);
+        Stack.push(funcTypeStack, elem);
+        token = strtok(NULL, "#:");
+    }
+    free(funcParamsStr);
+    free(paramsStr);
+    while (Stack.top(aliasStack) && Stack.top(funcAliasStack)) {
+        char *alias = Stack.top(aliasStack);
+        char *funcAlias = Stack.top(funcAliasStack);
+        if (strcmp(alias, funcAlias) != 0) {
+            fprintf(stderr, "Error: function signature mismatch.\n");
+            exit(99);
+        }
+        free(alias);
+        free(funcAlias);
+        Stack.pop(aliasStack);
+        Stack.pop(funcAliasStack);
+    }
+    if (Stack.top(aliasStack) || Stack.top(funcAliasStack)) {
+        fprintf(stderr, "Error: wrong number of params\n");
+        exit(99);
+    }
+    while (Stack.top(typeStack) && Stack.top(funcTypeStack)) {
+        char *type = Stack.top(typeStack);
+        char *funcType = Stack.top(funcTypeStack);
+        if (strcmp(type, funcType) != 0) {
+            fprintf(stderr, "Error: function signature mismatch.\n");
+            exit(99);
+        }
+        free(type);
+        free(funcType);
+        Stack.pop(typeStack);
+        Stack.pop(funcTypeStack);
+    }
+    if (Stack.top(typeStack) || Stack.top(funcTypeStack)) {
+        fprintf(stderr, "Error: wrong number of params\n");
+        exit(99);
+    }
+    Stack.destroy(aliasStack);
+    Stack.destroy(funcAliasStack);
+    Stack.destroy(typeStack);
+    Stack.destroy(funcTypeStack);
+    return true;
 }
 
 
