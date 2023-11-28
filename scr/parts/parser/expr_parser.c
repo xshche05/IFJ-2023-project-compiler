@@ -26,73 +26,8 @@ bool ignore_right_bracket = false;
 token_t *local_lookahead;
 token_t *after_local_lookahead;
 
-#define type_check() if (a->ret_type != b->ret_type \
-&& (a->ret_type != int_type && b->ret_type != double_type) \
-&& (a->ret_type != double_type && b->ret_type != int_type)) { \
-fprintf(stderr, "Error: EXPR type mismatch.\n"); \
-exit(TYPE_ERROR); \
-} \
-new_elem->type = NON_TERM; \
-if (a->ret_type == int_type && b->ret_type == int_type) { \
-new_elem->ret_type = int_type; \
-} else if (a->ret_type == double_type && b->ret_type == double_type) { \
-new_elem->ret_type = double_type;\
-} else if (a->ret_type == int_type && b->ret_type == double_type) {\
-if (a->token == NULL) {\
-fprintf(stderr, "ERROR: cant retype VAR (a)");\
-exit(TYPE_ERROR);\
-}\
-new_elem->ret_type = double_type;\
-\
-} else if (a->ret_type == double_type && b->ret_type == int_type) {\
-if (b->token == NULL) {\
-fprintf(stderr, "ERROR: cant retype VAR (b)");\
-exit(TYPE_ERROR);\
-}\
-new_elem->ret_type = double_type;\
-\
-} else {\
-new_elem->ret_type = elems[0]->ret_type;\
-}\
-new_elem->token = (token_t*) ((int)a->token * (int)b->token);\
-
-
 bool nl_flag = false;
-
-typedef enum {
-    UNWRAP = 0,        //0
-    NOT,               //1
-    MUL_DIV,           //2
-    ADD_SUB,           //3
-    NIL_COL,           //4
-    REL_OP,            //5
-    AND,               //6
-    OR,                //7
-    LEFT_BRACKET,      //8
-    IDENTIFIER,        //9
-    RIGHT_BRACKET,     //10
-    DOLLAR,            //11
-    LESS,              //12
-    NON_TERM           //13
-} expr_elem_enum;
-
-typedef enum {
-    int_type = 0,
-    double_type,
-    string_type,
-    bool_type,
-    nil_int_type,
-    nil_double_type,
-    nil_string_type,
-    nil_bool_type,
-    nil_type
-} ret_type_enum;
-
-typedef struct {
-    expr_elem_enum type;
-    token_t *token;
-    ret_type_enum ret_type;
-} expr_elem_t;
+bool first_flag = false;
 
 stack_t *pushdown_stack = NULL;
 stack_t *tmp_stack = NULL;
@@ -151,23 +86,17 @@ static int map_token(token_t *token) {
     }
 }
 
-void init_stacks() {
+static void init_stacks() {
     pushdown_stack = Stack.init();
     tmp_stack = Stack.init();
 }
 
-void destroy_stacks() {
+static void destroy_stacks() {
     Stack.destroy(pushdown_stack);
     Stack.destroy(tmp_stack);
 }
 
-void clear_tmp_stack() {
-    while (Stack.top(tmp_stack) != NULL) {
-        Stack.pop(tmp_stack);
-    }
-}
-
-void clear_until_top_terminal() {
+static void clear_until_top_terminal() {
     expr_elem_t *top = Stack.top(pushdown_stack);
     while (top->type == NON_TERM || top->type == LESS) {
         Stack.push(tmp_stack, top);
@@ -176,14 +105,14 @@ void clear_until_top_terminal() {
     }
 }
 
-void transfer_tmp_stack() {
+static void transfer_tmp_stack() {
     while (Stack.top(tmp_stack) != NULL) {
         Stack.push(pushdown_stack, Stack.top(tmp_stack));
         Stack.pop(tmp_stack);
     }
 }
 
-void reduce() {
+static void reduce() {
     expr_elem_t *elem = Stack.top(pushdown_stack);
     expr_elem_t **elems = malloc(sizeof(expr_elem_t *) * 3);
     int i = 0;
@@ -425,7 +354,7 @@ void reduce() {
     Stack.push(pushdown_stack, new_elem);
 }
 
-expr_elem_t *get_top_terminal() {
+static expr_elem_t *get_top_terminal() {
     expr_elem_t *top = Stack.top(pushdown_stack);
     while (top->type == NON_TERM || top->type == LESS) {
         Stack.push(tmp_stack, top);
@@ -439,9 +368,7 @@ expr_elem_t *get_top_terminal() {
     return top;
 }
 
-bool first_flag = false;
-
-expr_elem_t *next_token() {
+static expr_elem_t *next_token() {
     bool is_last_on_line = false;
     if (local_lookahead != NULL) {
         is_last_on_line = local_lookahead->has_newline_after;
@@ -482,6 +409,8 @@ expr_elem_t *next_token() {
             tmp_stack = tmp_2;
             ignore_right_bracket = tmp;
             first_flag = tmp2;
+            // TODO check if params match
+            // check_func_signature() if false error 4
             printf("CALL %s\n", current->attribute.identifier->str);
             local_lookahead = lookahead;
             after_local_lookahead = TokenArray.next();
@@ -499,7 +428,7 @@ expr_elem_t *next_token() {
     return elem;
 }
 
-int parse_expr(char *type) {
+int parse_expr(type_t *ret_type, bool *is_literal) {
     pushdown_stack = NULL;
     tmp_stack = NULL;
     init_stacks();
@@ -559,27 +488,8 @@ int parse_expr(char *type) {
     }
     lookahead = TokenArray.prev();
     expr_elem_t *result = Stack.top(pushdown_stack);
-    switch (result->ret_type) {
-        case int_type:
-            *type = 'i';
-            break;
-        case double_type:
-            *type = 'f';
-            break;
-        case string_type:
-            *type = 's';
-            break;
-        case bool_type:
-            *type = 'b';
-            break;
-        case nil_type:
-            *type = 'n';
-            break;
-        default:
-            fprintf(stderr, "Error: EXPR internal. %d\n", result->ret_type);
-            exit(99);
-    }
-//    DEBUG_PRINT("EXPR: %c\n", *type);
+    *ret_type = result->ret_type;
+    *is_literal = result->token != NULL;
     free(less);
     free(dollar);
     free(result);
