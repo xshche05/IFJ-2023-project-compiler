@@ -237,11 +237,13 @@ void gen_return(bool void_return) {
 void gen_var_decl(char *var_name, int scope, int stayed) {
     char *var = gen_scope_var(var_name, scope, stayed, true);
     printf("DEFVAR %s\n", var);
+    free(var);
 }
 
 void gen_var_assign(char *var_name, int scope, int stayed) {
     char *var = gen_scope_var(var_name, scope, stayed, true);
     printf("POPS %s\n", var);
+    free(var);
 }
 
 void gen_branch_labels(bool gen_end) {

@@ -418,6 +418,10 @@ void reduce() {
             }
         }
     }
+    for (int j = 0; j < i; ++j) {
+        free(elems[j]);
+    }
+    free(elems);
     Stack.push(pushdown_stack, new_elem);
 }
 
@@ -455,6 +459,7 @@ expr_elem_t *next_token() {
         a->type = map_token(current);
         expr_elem_t *b = get_top_terminal();
         int action = table[b->type][a->type];
+        free(a);
         if (action == 4) {
             expr_elem_t *dollar = malloc(sizeof(expr_elem_t));
             dollar->type = DOLLAR;
@@ -575,6 +580,10 @@ int parse_expr(char *type) {
             exit(99);
     }
 //    DEBUG_PRINT("EXPR: %c\n", *type);
+    free(less);
+    free(dollar);
+    free(result);
+    free(a);
     destroy_stacks();
     return SUCCESS;
 }
