@@ -249,6 +249,10 @@ void reduce() {
     else if (i == 2) // E -> !E ; E ->E!
     {
         if (elems[1]->type == NOT) {
+            if (elems[0]->ret_type != bool_type) {
+                fprintf(stderr, "Error: EXPR type mismatch.\n");
+                exit(TYPE_ERROR);
+            }
             new_elem->type = NON_TERM;
             new_elem->ret_type = bool_type;
             new_elem->token = NULL;
@@ -266,7 +270,7 @@ void reduce() {
     else if (i == 3) // E -> E op E
     {
         token_t *op = elems[1]->token;
-        if (op == NULL || op == (token_t *) 1) {
+        if (elems[1]->type == NON_TERM) {
             new_elem->type = NON_TERM;
             new_elem->ret_type = elems[1]->ret_type;
             new_elem->token = elems[1]->token;
