@@ -63,31 +63,6 @@ char *gen_unique_label(char *prefix) {
     return str;
 }
 
-char *gen_scope_var(char *var_name, int scope, int stayed, bool with_frame) {
-    char *str = malloc(sizeof(char) * (strlen(var_name) + 10 + scope));
-    char *ret = str;
-    if (with_frame) {
-        if (scope == 0) {
-            sprintf(str, "GF@");
-        } else {
-            sprintf(str, "LF@");
-        }
-        str += 3;
-    }
-    for (int i = 0; i < scope; i++) {
-        sprintf(str, "%c", '%');
-        str += 1;
-    }
-    sprintf(str, "%s", var_name);
-    str += strlen(var_name);
-    if (stayed) {
-        sprintf(str, "%c%d", '%', stayed);
-        str += strlen(str);
-    }
-
-    return ret;
-}
-
 void gen_std_functions() {
 
     /*
@@ -232,16 +207,10 @@ void gen_return(bool void_return) {
     printf("RETURN\n");
 }
 
-void gen_var_decl(char *var_name, int scope, int stayed) {
-    char *var = gen_scope_var(var_name, scope, stayed, true);
-    printf("DEFVAR %s\n", var);
-    free(var);
+void gen_var_decl(char *var_name) {
 }
 
-void gen_var_assign(char *var_name, int scope, int stayed) {
-    char *var = gen_scope_var(var_name, scope, stayed, true);
-    printf("POPS %s\n", var);
-    free(var);
+void gen_var_assign(char *var_name) {
 }
 
 void gen_branch_labels(bool gen_end) {

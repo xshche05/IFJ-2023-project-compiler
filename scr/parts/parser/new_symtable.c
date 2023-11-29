@@ -6,6 +6,7 @@
 #include "new_symtable.h"
 
 node_t *currentScope;
+node_t *functions;
 
 stack_t *scopeStack;
 stack_t *tmpScopeStack;
@@ -37,6 +38,7 @@ void tree_destroy(node_t **root) {
 
 void symtable_init() {
     tree_init(&currentScope);
+    tree_init(&functions);
     scopeStack = Stack.init();
     tmpScopeStack = Stack.init();
     varsToMigrateStack = Stack.init();
@@ -46,6 +48,7 @@ void symtable_init() {
 
 void symtable_destroy() {
     tree_destroy(&currentScope);
+    tree_destroy(&functions);
     int depth = scopeDepth;
     while (depth > 0) {
         depth--;
@@ -70,7 +73,7 @@ void pop_frame() {
     scopeDepth--;
 }
 
-void tree_add(node_t **root, string_t *key, symTableData_t data) {
+bool tree_add(node_t **root, string_t *key, symTableData_t data) {
     // if (root == NULL) return;
     if (*root == NULL) {
         *root = malloc(sizeof(node_t));
@@ -88,8 +91,10 @@ void tree_add(node_t **root, string_t *key, symTableData_t data) {
             tree_add(&(*root)->right, key, data);
         } else {
             fprintf(stderr, "Error: symbol already exists.\n");
+            return false;
         }
     }
+    return true;
 }
 
 int tree_find(node_t **root, string_t *key, symTableData_t **data, int depth) {
@@ -103,7 +108,7 @@ int tree_find(node_t **root, string_t *key, symTableData_t **data, int depth) {
         } else if (cmp > 0) {
             return tree_find(&(*root)->right, key, data, depth);
         } else {
-            *data = (*root)->data;
+            if (data != NULL) *data = (*root)->data;
             return depth;
         }
     }
@@ -233,6 +238,87 @@ bool check_func_signature(string_t *params, funcData_t *funcData) {
     Stack.destroy(typeStack);
     Stack.destroy(funcTypeStack);
     return true;
+}
+
+bool add_func(funcData_t *funcData) {
+    symTableData_t data;
+    data.type = ndFunc;
+    data.funcData = funcData;
+    if (data.funcData->params->length == 0) {
+        if (tree_find(&currentScope, funcData->name, NULL, 0) != -1) {
+            fprintf(stderr, "Error: function name collision with var.\n");
+            exit(9); // TODO error code
+        }
+    }
+    return tree_add(&functions, funcData->name, data);
+}
+
+bool add_var(varData_t *varData) {
+    symTableData_t data;
+    data.type = ndVar;
+    data.varData = varData;
+    symTableData_t *funcData = malloc(sizeof(symTableData_t));
+    if (tree_find(&functions, varData->name, &funcData, 0) != -1) {
+        if (funcData->funcData->params->length == 0) {
+            fprintf(stderr, "Error: var name collision with function.\n");
+            exit(9); // TODO error code
+        }
+    }
+    free(funcData);
+    return tree_add(&currentScope, varData->name, data);
+}
+
+bool add_let(letData_t *letData) {
+    symTableData_t data;
+    data.type = ndLet;
+    data.letData = letData;
+    symTableData_t *funcData = malloc(sizeof(symTableData_t));
+    if (tree_find(&functions, letData->name, &funcData, 0) != -1) {
+        if (funcData->funcData->params->length == 0) {
+            fprintf(stderr, "Error: let name collision with function.\n");
+            exit(9); // TODO error code
+        }
+    }
+    free(funcData);
+    return tree_add(&currentScope, letData->name, data);
+}
+
+funcData_t *get_func(string_t *name) {
+    symTableData_t *data = malloc(sizeof(symTableData_t));
+    int found = tree_find(&functions, name, &data, 0);
+    if (found == -1) {
+        fprintf(stderr, "Error: you use undeclared func\n");
+        exit(9); // TODO error code
+    }
+    return data->funcData;
+}
+
+varData_t *get_var(string_t *name, int *scope) {
+    symTableData_t *data = malloc(sizeof(symTableData_t));
+    int found = symtable_find(name, &data);
+    if (found == -1) {
+        fprintf(stderr, "NOTFOUND VAR\n");
+        exit(99); // TODO error code
+    }
+    if (data->type != ndVar) {
+        return NULL;
+    }
+    if (scope != NULL) *scope = found;
+    return data->varData;
+}
+
+letData_t *get_let(string_t *name, int *scope) {
+    symTableData_t *data = malloc(sizeof(symTableData_t));
+    int found = symtable_find(name, &data);
+    if (found == -1) {
+        fprintf(stderr, "NOTFOUND LET\n");
+        exit(99); // TODO error code
+    }
+    if (data->type != ndLet) {
+        return NULL;
+    }
+    if (scope != NULL) *scope = found;
+    return data->letData;
 }
 
 

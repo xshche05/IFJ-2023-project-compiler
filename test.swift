@@ -1,10 +1,17 @@
-f(X, Y, Z)
+// func f(_ X: Int, _ Y: Int, _ Z: Int) -> Double {
+//     return X + Y + Z
+// }
+//
+// func g(_ X: Int, _ Y: Int, _ Z: Int) -> Double {
+//     return X - Y - Z
+// }
 
-func f(_ X: Int, _ Y: Int, _ Z: Int) -> Double {
-    a = 1
-    return 1
-}
 
+var a : Int
+var b : Int? = 2
+
+a = b!
+b = a
 
 
 // var a = a + f(X:

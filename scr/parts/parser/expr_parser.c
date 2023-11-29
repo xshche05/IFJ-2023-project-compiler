@@ -170,9 +170,29 @@ static void reduce() {
         }
         else if (elems[0]->token->type == TOKEN_IDENTIFIER) {
             new_elem->type = NON_TERM;
-            new_elem->ret_type = int_type; // TODO get type from symtable
+            new_elem->ret_type = elems[0]->ret_type;
             new_elem->token = NULL;
-            printf("PUSHS %s\n", elems[0]->token->attribute.identifier->str);
+            // check if var is defined
+            varData_t *varData = get_var(elems[0]->token->attribute.identifier, NULL);
+            letData_t *letData = get_let(elems[0]->token->attribute.identifier, NULL);
+            if (varData == NULL && letData == NULL) {
+                fprintf(stderr, "Error: EXPR undefined variable.\n");
+                exit(5); // TODO error code
+            } else {
+                if (varData == NULL) {
+                    if (!letData->isDefined) {
+                        fprintf(stderr, "Error: EXPR undefined const.\n");
+                        exit(5); // TODO error code
+                    }
+                } else {
+                    if (!varData->isDefined) {
+                        fprintf(stderr, "Error: EXPR undefined variable.\n");
+                        exit(5); // TODO error code
+                    }
+                }
+            }
+            // TODO push var with frame and scope
+            printf("PUSHS %s_%d\n", elems[0]->token->attribute.identifier->str, elems[0]->scope);
         }
     }
     else if (i == 2) // E -> !E ; E ->E!
@@ -187,12 +207,12 @@ static void reduce() {
             new_elem->token = NULL;
             printf("NOTS\n");
         } else {
-            if (elems[0]->ret_type < 4) {
+            if (elems[1]->ret_type < 4) {
                 fprintf(stderr, "Error: EXPR type mismatch.\n");
                 exit(TYPE_ERROR);
             }
             new_elem->type = NON_TERM;
-            new_elem->ret_type = elems[0]->ret_type - 4;
+            new_elem->ret_type = elems[1]->ret_type - 4;
             new_elem->token = NULL;
         }
     }
@@ -211,7 +231,14 @@ static void reduce() {
             switch (op->type) {
                 case TOKEN_ADDITION:
                     type_check()
-                    //DEBUG_PRINT("E: %d, A: %d, B: %d\n", (int)new_elem->token, (int)a->token, (int)b->token);
+                    if (a->ret_type == bool_type) {
+                        fprintf(stderr, "Error: EXPR type mismatch.\n");
+                        exit(TYPE_ERROR);
+                    }
+                    if (a->ret_type > 3) {
+                        fprintf(stderr, "Error: Cant add nillable vars.\n");
+                        exit(TYPE_ERROR);
+                    }
                     if (new_elem->ret_type == string_type){
                         printf("POPS GF@$B\n");
                         printf("POPS GF@$A\n");
@@ -227,12 +254,20 @@ static void reduce() {
                         fprintf(stderr, "Error: EXPR type mismatch.\n");
                         exit(TYPE_ERROR);
                     }
+                    if (a->ret_type > 3) {
+                        fprintf(stderr, "Error: Cant sub nillable vars.\n");
+                        exit(TYPE_ERROR);
+                    }
                     printf("SUBS\n");
                     break;
                 case TOKEN_MULTIPLICATION:
                     type_check()
                     if (a->ret_type == string_type || a->ret_type == bool_type) {
                         fprintf(stderr, "Error: EXPR type mismatch.\n");
+                        exit(TYPE_ERROR);
+                    }
+                    if (a->ret_type > 3) {
+                        fprintf(stderr, "Error: Cant mul nillable vars.\n");
                         exit(TYPE_ERROR);
                     }
                     printf("MULS\n");
@@ -243,11 +278,19 @@ static void reduce() {
                         fprintf(stderr, "Error: EXPR type mismatch.\n");
                         exit(TYPE_ERROR);
                     }
+                    if (a->ret_type > 3) {
+                        fprintf(stderr, "Error: Cant div nillable vars.\n");
+                        exit(TYPE_ERROR);
+                    }
                     printf("DIVS\n");
                     break;
                 case TOKEN_LOGICAL_AND:
                     if (a->ret_type != bool_type || a->ret_type != b->ret_type) {
                         fprintf(stderr, "Error: EXPR type mismatch.\n");
+                        exit(TYPE_ERROR);
+                    }
+                    if (a->ret_type > 3) {
+                        fprintf(stderr, "Error: Cant and nillable vars.\n");
                         exit(TYPE_ERROR);
                     }
                     new_elem->type = NON_TERM;
@@ -258,6 +301,10 @@ static void reduce() {
                 case TOKEN_LOGICAL_OR:
                     if (a->ret_type != bool_type || a->ret_type != b->ret_type)  {
                         fprintf(stderr, "Error: EXPR type mismatch.\n");
+                        exit(TYPE_ERROR);
+                    }
+                    if (a->ret_type > 3) {
+                        fprintf(stderr, "Error: Cant or nillable vars.\n");
                         exit(TYPE_ERROR);
                     }
                     new_elem->type = NON_TERM;
@@ -329,18 +376,22 @@ static void reduce() {
                     printf("NOTS\n");
                     break;
                 case TOKEN_IS_NIL:
-                    if (a->ret_type < 4 || !(a->ret_type - 4 == b->ret_type || b->ret_type - 4 == a->ret_type)) {
-                        fprintf(stderr, "Error: EXPR type mismatch.\n");
-                        exit(TYPE_ERROR);
-                    }
-                    new_elem->type = NON_TERM;
-                    if (a->ret_type > 3) {
-                        new_elem->ret_type = a->ret_type - 4;
-                    } else {
+                    if (b->ret_type > 3) {
+                        if (!(b->ret_type - 4 == a->ret_type || b->ret_type == nil_type || a->ret_type == b->ret_type)) {
+                            fprintf(stderr, "Error: EXPR type mismatch.\n");
+                            exit(TYPE_ERROR);
+                        }
+                        new_elem->type = NON_TERM;
                         new_elem->ret_type = a->ret_type;
+                        new_elem->token = NULL;
+                        printf("???????\n"); // TODO IS NIL operation
+                    } else {
+                        fprintf(stderr, "Warning: Right side of ?? operator is never used\n");
+                        new_elem->type = NON_TERM;
+                        new_elem->ret_type = b->ret_type;
+                        new_elem->token = NULL;
+                        printf("POPS GF@$D\n");
                     }
-                    new_elem->token = NULL;
-                    printf("???????\n");
                     break;
                 default:
                     break;
@@ -404,27 +455,47 @@ static expr_elem_t *next_token() {
             ignore_right_bracket = true;
             stack_t *tmp_1 = pushdown_stack;
             stack_t *tmp_2 = tmp_stack;
-            CALL_PARAM_LIST();
+            string_t *params = String.ctor();
+            CALL_PARAM_LIST(params);
             pushdown_stack = tmp_1;
             tmp_stack = tmp_2;
             ignore_right_bracket = tmp;
             first_flag = tmp2;
-            // TODO check if params match
-            // check_func_signature() if false error 4
+            funcData_t *funcData = get_func(current->attribute.identifier);
+            if (!check_func_signature(params, funcData)) {
+                fprintf(stderr, "Error: EXPR function call signature mismatch.\n");
+                exit(4); // TODO error code
+            }
             printf("CALL %s\n", current->attribute.identifier->str);
             local_lookahead = lookahead;
             after_local_lookahead = TokenArray.next();
             expr_elem_t *elem = malloc(sizeof(expr_elem_t));
             elem->type = IDENTIFIER;
             elem->token = NULL;
-            elem->ret_type = 0; // TODO get ret func type from symtable
+            elem->ret_type = funcData->returnType;
             return elem;
         }
     }
     expr_elem_t *elem = malloc(sizeof(expr_elem_t));
     elem->type = map_token(local_lookahead);
     elem->token = local_lookahead;
-    elem->ret_type = 0;
+    int scope = 0;
+    if (elem ->type == IDENTIFIER) {
+        if (elem->token->type == TOKEN_IDENTIFIER) {
+            varData_t *varData = get_var(elem->token->attribute.identifier, &scope);
+            if (varData == NULL) {
+                letData_t *letData = get_let(elem->token->attribute.identifier, &scope);
+                elem->ret_type = letData->type;
+                elem->scope = scope;
+            } else {
+                elem->ret_type = varData->type;
+                elem->scope = scope;
+            }
+        }
+    } else {
+        elem->ret_type = 0;
+        elem->scope = -1;
+    }
     return elem;
 }
 

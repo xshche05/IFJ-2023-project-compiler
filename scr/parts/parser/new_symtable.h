@@ -18,6 +18,7 @@ typedef enum {
 } NodeDataType_t;
 
 typedef enum {
+    none_type = -1,
     int_type,
     double_type,
     string_type,
@@ -32,12 +33,6 @@ typedef enum {
 
 typedef struct {
     string_t *name;
-    string_t *alias;
-    type_t type;
-} param_t;
-
-typedef struct {
-    string_t *name;
     int paramCount;
     string_t *params;
     type_t returnType;
@@ -45,17 +40,12 @@ typedef struct {
 
 typedef struct {
     string_t *name;
-    string_t *type;
+    type_t type;
     bool isDeclared;
     bool isDefined;
 } varData_t;
 
-typedef struct {
-    string_t *name;
-    string_t *type;
-    bool isDeclared;
-    bool isDefined;
-} letData_t;
+typedef varData_t letData_t;
 
 typedef struct  {
     NodeDataType_t type;
@@ -88,6 +78,18 @@ int symtable_find(string_t *key, symTableData_t **data);
 void symtable_print();
 
 bool check_func_signature(string_t *params, funcData_t *funcData);
+
+bool add_func(funcData_t *funcData);
+
+bool add_var(varData_t *varData);
+
+bool add_let(letData_t *letData);
+
+funcData_t *get_func(string_t *key);
+
+varData_t *get_var(string_t *key, int *scope);
+
+letData_t *get_let(string_t *key, int *scope);
 
 
 

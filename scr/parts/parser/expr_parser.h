@@ -29,6 +29,7 @@ typedef struct {
     expr_elem_enum type;
     token_t *token;
     ret_type_enum ret_type;
+    int scope;
 } expr_elem_t;
 
 extern bool ignore_right_bracket;
@@ -50,17 +51,19 @@ if (a->token == NULL) {\
 fprintf(stderr, "ERROR: cant retype VAR (a)");\
 exit(TYPE_ERROR);\
 }\
-new_elem->ret_type = double_type;\
-\
+new_elem->ret_type = double_type;                   \
+printf("INT2FLOATS\n");                                                    \
 } else if (a->ret_type == double_type && b->ret_type == int_type) {\
 if (b->token == NULL) {\
 fprintf(stderr, "ERROR: cant retype VAR (b)");\
 exit(TYPE_ERROR);\
 }\
-new_elem->ret_type = double_type;\
-\
+new_elem->ret_type = double_type;                   \
+printf("POPS GF@$A\n");                                                 \
+printf("INT2FLOATS\n");                           \
+printf("PUSHS GF@$A\n");                                                  \
 } else {\
-new_elem->ret_type = elems[0]->ret_type;\
+new_elem->ret_type = elems[0]->ret_type;            \
 }\
 new_elem->token = (token_t*) ((int)a->token * (int)b->token);\
 
