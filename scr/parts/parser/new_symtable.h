@@ -71,6 +71,7 @@ typedef struct tBVSNode {
     symTableData_t *data;
     struct tBVSNode *left;
     struct tBVSNode *right;
+    int height;
 } node_t;
 
 void symtable_init();
