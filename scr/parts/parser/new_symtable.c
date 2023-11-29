@@ -70,32 +70,44 @@ void pop_frame() {
     scopeDepth--;
 }
 
-int get_height(node_t **root){
+int tree_get_height(node_t **root){
     if ((*root) == NULL)
         return -1;
     else
         return (*root)->height;
 }
 
-int get_balance(node_t **root){
+int tree_get_balance(node_t **root){
     if ((*root) == NULL)
         return 0;
-    return (get_height(&(*root)->right) -  get_height(&((*root)->left)));
+    return (tree_get_height(&(*root)->right) -  tree_get_height(&((*root)->left)));
 }
 
 void node_swap(node_t **first_node, node_t **second_node){
     string_t *temp_key = (*first_node)->key;
     symTableData_t *temp_data = (*first_node)->data;
-
     (*first_node)->key = (*second_node)->key;
     (*second_node)->key = temp_key;
-
     (*first_node)->data = (*second_node)->data;
     (*second_node)->data = temp_data;
 }
 
-void left_rotate(node_t **root){
+void tree_update_height(node_t **root){
+    int left_height = tree_get_height(&((*root)->left));
+    int right_height = tree_get_height(&((*root)->right));
+    (*root)->height = 1 + max(left_height, right_height);
+}
+
+void tree_left_rotate(node_t **root){
     node_swap(&(*root), &(*root)->right);
+    node_t *temp_node = (*root)->left;
+    (*root)->left = (*root)->right;
+    (*root)->right = (*root)->left->right;
+    (*root)->right->left = (*root)->right->right;
+    (*root)->left->right = (*root)->left->left;
+    (*root)->left->left = temp_node;
+    tree_update_height(&(*root)->left);
+    tree_update_height(&(*root));
 }
 
 void tree_add(node_t **root, string_t *key, symTableData_t data) {
@@ -119,18 +131,12 @@ void tree_add(node_t **root, string_t *key, symTableData_t data) {
             fprintf(stderr, "Error: symbol already exists.\n");
         }
     }
-    int left_height = get_height(&((*root)->left));
-    int right_height = get_height(&((*root)->right));
-
-    (*root)->height = 1 + max(left_height, right_height);
-
-    int balance = get_balance(&(*root));
-
+    tree_update_height(&(*root));
+    int balance = tree_get_balance(&(*root));
     //if (balance > 1)
-    //    left_rotate(&(*root));
+    //    tree_left_rotate(&(*root));
     //else if (balance < -1)
-    //    right_rotate(&(*root));
-
+    //    tree_right_rotate(&(*root));
 }
 
 int tree_find(node_t **root, string_t *key, symTableData_t **data, int depth) {
