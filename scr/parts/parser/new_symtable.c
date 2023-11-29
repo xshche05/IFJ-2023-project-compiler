@@ -110,6 +110,17 @@ void tree_left_rotate(node_t **root){
     tree_update_height(&(*root));
 }
 
+void tree_right_rotate(node_t **root){
+    node_swap(&(*root), &(*root)->left);
+    node_t *temp_node = (*root)->right;
+    (*root)->right = (*root)->left;
+    (*root)->left = (*root)->right->left;
+    (*root)->right->left = (*root)->right->right;
+    (*root)->right->right = temp_node;
+    tree_update_height(&(*root)->right);
+    tree_update_height(&(*root));
+}
+
 void tree_add(node_t **root, string_t *key, symTableData_t data) {
     // if (root == NULL) return;
     if (*root == NULL) {
@@ -133,10 +144,10 @@ void tree_add(node_t **root, string_t *key, symTableData_t data) {
     }
     tree_update_height(&(*root));
     int balance = tree_get_balance(&(*root));
-    //if (balance > 1)
-    //    tree_left_rotate(&(*root));
-    //else if (balance < -1)
-    //    tree_right_rotate(&(*root));
+    if (balance > 1)
+        tree_left_rotate(&(*root));
+    else if (balance < -1)
+        tree_right_rotate(&(*root));
 }
 
 int tree_find(node_t **root, string_t *key, symTableData_t **data, int depth) {
