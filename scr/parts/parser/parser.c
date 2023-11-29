@@ -569,12 +569,16 @@ bool BRANCH() {
             s = s && BR_EXPR();
             s = s && match(TOKEN_LEFT_BRACE);
             // TODO create new frame, migrate all used variables
+            // TODO inc scope
+            // TODO push symbol table
             s = s && CODE();
             s = s && match(TOKEN_RIGHT_BRACE);
             // TODO destroy frame
+            // TODO pop symbol table
             gen_branch_if_end();
             s = s && ELSE();
             gen_branch_end();
+            // TODO dec scope
             break;
         default:
             sprintf(error_msg, "Syntax error [BRANCH]: expected ['TOKEN_IF'], got %s\n", tokens_as_str[lookahead->type]);
@@ -633,18 +637,22 @@ bool ELSE_IF() {
             s = s && BR_EXPR();
             s = s && match(TOKEN_LEFT_BRACE);
             // TODO create new frame, migrate all used variables
+            // TODO push symbol table
             s = s && CODE();
             s = s && match(TOKEN_RIGHT_BRACE);
             // TODO destroy frame
+            // TODO pop symbol table
             gen_branch_if_end();
             s = s && ELSE();
             break;
         case TOKEN_LEFT_BRACE:
             s = match(TOKEN_LEFT_BRACE);
             // TODO create new frame, migrate all used variables
+            // TODO push symbol table
             s = s && CODE();
             s = s && match(TOKEN_RIGHT_BRACE);
             // TODO destroy frame
+            // TODO pop symbol table
             break;
         default:
             if (nl_flag) return true;
@@ -664,6 +672,8 @@ bool WHILE_LOOP() {
             inside_loop++;
             s = match(TOKEN_WHILE);
             // TODO create new frame, migrate all used variables
+            // TODO inc scope
+            // TODO push symbol table
             gen_while_start();
             s = s && call_expr_parser(&type, &is_literal);
             // TODO check if type is bool
@@ -673,6 +683,8 @@ bool WHILE_LOOP() {
             s = s && match(TOKEN_RIGHT_BRACE);
             gen_while_end();
             // TODO destroy frame
+            // TODO dec scope
+            // TODO pop symbol table
             inside_loop--;
             break;
         default:
@@ -687,13 +699,13 @@ bool FOR_LOOP() {
     bool s;
     type_t type;
     bool is_literal;
-    token_t *for_id;
+    token_t for_id;
     switch (lookahead->type) {
         case TOKEN_FOR:
             inside_loop++;
             gen_for_range_save();
             s = match(TOKEN_FOR);
-            s = s && FOR_ID(for_id);
+            s = s && FOR_ID(&for_id);
             s = s && match(TOKEN_IN);
             s = s && call_expr_parser(&type, &is_literal);
             if (s) {
@@ -712,6 +724,7 @@ bool FOR_LOOP() {
             s = s && CODE();
             s = s && match(TOKEN_RIGHT_BRACE);
             // TODO destroy frame
+            // TODO dec scope
             gen_for_end();
             gen_for_range_restore();
             inside_loop--;
