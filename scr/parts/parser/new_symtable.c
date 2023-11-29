@@ -70,12 +70,20 @@ void pop_frame() {
     scopeDepth--;
 }
 
+int get_height(node_t **root){
+    if ((*root) == NULL)
+        return -1;
+    else
+        return (*root)->height;
+}
+
 void tree_add(node_t **root, string_t *key, symTableData_t data) {
     // if (root == NULL) return;
     if (*root == NULL) {
         *root = malloc(sizeof(node_t));
         (*root)->key = String.copy(key);
         (*root)->data = malloc(sizeof(symTableData_t));
+        (*root)->height = 0;
         (*root)->data->type = data.type;
         (*root)->data->funcData = data.funcData;
         (*root)->left = NULL;
@@ -90,6 +98,10 @@ void tree_add(node_t **root, string_t *key, symTableData_t data) {
             fprintf(stderr, "Error: symbol already exists.\n");
         }
     }
+    int left_height = get_height(&((*root)->left));
+    int right_height = get_height(&((*root)->right));
+
+    (*root)->height = 1 + max(left_height, right_height);
 }
 
 int tree_find(node_t **root, string_t *key, symTableData_t **data, int depth) {

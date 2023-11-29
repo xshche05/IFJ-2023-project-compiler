@@ -11,6 +11,8 @@
 extern stack_t *varsToMigrateStack;
 extern stack_t *placeHolderStack;
 
+#define max(x, y) ((x > y) ? x : y)
+
 typedef enum {
     ndLet,
     ndVar,
