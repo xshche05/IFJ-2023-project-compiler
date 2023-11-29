@@ -83,6 +83,21 @@ int get_balance(node_t **root){
     return (get_height(&(*root)->right) -  get_height(&((*root)->left)));
 }
 
+void node_swap(node_t **first_node, node_t **second_node){
+    string_t *temp_key = (*first_node)->key;
+    symTableData_t *temp_data = (*first_node)->data;
+
+    (*first_node)->key = (*second_node)->key;
+    (*second_node)->key = temp_key;
+
+    (*first_node)->data = (*second_node)->data;
+    (*second_node)->data = temp_data;
+}
+
+void left_rotate(node_t **root){
+    node_swap(&(*root), &(*root)->right);
+}
+
 void tree_add(node_t **root, string_t *key, symTableData_t data) {
     // if (root == NULL) return;
     if (*root == NULL) {
