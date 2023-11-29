@@ -10,7 +10,6 @@
 var a : Int
 var b : Int? = 2
 
-a = b!
 b = a
 
 
