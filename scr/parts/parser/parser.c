@@ -404,6 +404,7 @@ bool FUNC_DECL() {
             }
             s = s && match(TOKEN_LEFT_BRACKET);
             gen_new_frame();
+            // TODO increase scope
             // TODO push symbol table
             s = s && PARAM_LIST(&funcData);
             gen_pop_params(funcData->params);
@@ -424,6 +425,9 @@ bool FUNC_DECL() {
             }
             s = s && match(TOKEN_RIGHT_BRACE);
             inside_func = false;
+            // TODO pop symbol table
+            // TODO decrease scope
+            gen_pop_frame();
             if (s) {
                 if (!add_func(funcData)) { // TODO overloading
                     fprintf(stderr, "Error: function already defined\n");
@@ -485,7 +489,6 @@ bool PARAM(funcData_t **funcData) {
             s = PARAM_NAME(funcData);
             token_t *id = lookahead;
             s = s && match(TOKEN_IDENTIFIER);
-            // TODO add param to current scope symbol table
             if (s) {
                 string_t *param = id->attribute.identifier;
                 String.add_string((*funcData)->params, param);
@@ -497,6 +500,7 @@ bool PARAM(funcData_t **funcData) {
                 String.add_char((*funcData)->params, ':');
                 String.add_char((*funcData)->params, type + '0');
             }
+            // TODO add param to current scope symbol table
             break;
         default:
             sprintf(error_msg, "Syntax error [PARAM]: expected ['TOKEN_UNDERSCORE', 'TOKEN_IDENTIFIER'], got %s\n", tokens_as_str[lookahead->type]);
