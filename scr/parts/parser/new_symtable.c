@@ -77,6 +77,12 @@ int get_height(node_t **root){
         return (*root)->height;
 }
 
+int get_balance(node_t **root){
+    if ((*root) == NULL)
+        return 0;
+    return (get_height(&(*root)->right) -  get_height(&((*root)->left)));
+}
+
 void tree_add(node_t **root, string_t *key, symTableData_t data) {
     // if (root == NULL) return;
     if (*root == NULL) {
@@ -102,6 +108,14 @@ void tree_add(node_t **root, string_t *key, symTableData_t data) {
     int right_height = get_height(&((*root)->right));
 
     (*root)->height = 1 + max(left_height, right_height);
+
+    int balance = get_balance(&(*root));
+
+    //if (balance > 1)
+    //    left_rotate(&(*root));
+    //else if (balance < -1)
+    //    right_rotate(&(*root));
+
 }
 
 int tree_find(node_t **root, string_t *key, symTableData_t **data, int depth) {
