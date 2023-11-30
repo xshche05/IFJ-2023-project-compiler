@@ -435,6 +435,10 @@ static void reduce() {
                         printf("???????\n"); // TODO IS NIL operation
                     } else {
                         fprintf(stderr, "Warning: Right side of ?? operator is never used\n");
+                        if (b->ret_type != a->ret_type && a->ret_type != nil_type && b->ret_type != nil_type) {
+                            fprintf(stderr, "Error: EXPR type mismatch.\n");
+                            exit(TYPE_ERROR);
+                        }
                         new_elem->type = NON_TERM;
                         new_elem->ret_type = b->ret_type;
                         new_elem->token = NULL;
