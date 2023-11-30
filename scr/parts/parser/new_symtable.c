@@ -148,10 +148,17 @@ bool tree_add(node_t **root, string_t *key, symTableData_t data) {
     }
     tree_update_height(&(*root));
     int balance = tree_get_balance(&(*root));
-    if (balance > 1)
+    if (balance > 1) {
+        if (tree_get_height(&(*root)->right->left) > tree_get_height(&(*root)->right->right)) {
+            tree_right_rotate(&(*root)->right);
+        }
         tree_left_rotate(&(*root));
-    else if (balance < -1)
+    } else if (balance < -1) {
+        if (tree_get_height(&(*root)->left->right) > tree_get_height(&(*root)->left->left)) {
+            tree_left_rotate(&(*root)->left);
+        }
         tree_right_rotate(&(*root));
+    }
     return true;
 }
 
