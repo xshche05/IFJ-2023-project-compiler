@@ -29,7 +29,6 @@ typedef struct {
     expr_elem_enum type;
     token_t *token;
     ret_type_enum ret_type;
-    int scope;
 } expr_elem_t;
 
 extern bool ignore_right_bracket;

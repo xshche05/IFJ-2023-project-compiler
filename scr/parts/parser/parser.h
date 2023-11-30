@@ -7,6 +7,7 @@
 
 extern token_t *lookahead; // TODO
 extern bool nl_flag;    // new line // TODO
+extern bool collect_funcs; // TODO
 
 bool match(token_type_t type);
 

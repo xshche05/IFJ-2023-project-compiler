@@ -119,5 +119,6 @@ struct token_array_interface {
     token_t *(*prev)(void);
     int (*total)(void);
     int (*set_nl_after)(void);
+    int (*reset)(void);
 };
 #endif //IFJ_PRJ_TOKEN_H

@@ -266,6 +266,15 @@ static int token_array_set_nl_after() {
     return 0;
 }
 
+static int token_array_to_start() {
+    if (tokens == NULL) {
+        fprintf(stderr, "Error: token array not initialized.\n");
+        return -1;
+    }
+    tokens->current = -1;
+    return 0;
+}
+
 const struct token_interface Token = {
         .ctor = token_ctor,
         .dtor = token_dtor,
@@ -280,5 +289,6 @@ const struct token_array_interface TokenArray = {
         .next = token_array_next,
         .prev = token_array_prev,
         .total = token_array_total,
-        .set_nl_after = token_array_set_nl_after
+        .set_nl_after = token_array_set_nl_after,
+        .reset = token_array_to_start
 };

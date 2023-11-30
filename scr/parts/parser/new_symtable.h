@@ -45,6 +45,7 @@ typedef struct {
     type_t type;
     bool isDeclared;
     bool isDefined;
+    int scope;
 } varData_t;
 
 typedef varData_t letData_t;
@@ -70,15 +71,13 @@ void symtable_init();
 
 void symtable_destroy();
 
-void push_frame();
-
-void pop_frame();
-
 void symtable_add(string_t *key, symTableData_t data);
 
 int symtable_find(string_t *key, symTableData_t **data);
 
 void symtable_print();
+
+int get_scope();
 
 bool check_func_signature(string_t *params, funcData_t *funcData);
 
@@ -90,9 +89,9 @@ bool add_let(letData_t *letData);
 
 funcData_t *get_func(string_t *key);
 
-varData_t *get_var(string_t *key, int *scope);
+varData_t *get_var(string_t *key);
 
-letData_t *get_let(string_t *key, int *scope);
+letData_t *get_let(string_t *key);
 
 void new_frame();
 

@@ -4,6 +4,7 @@
 
 #include <string.h>
 #include "new_symtable.h"
+#include "parser.h"
 
 node_t *currentScope;
 node_t *functions;
@@ -119,6 +120,15 @@ void std_func_init() {
 }
 
 void symtable_init() {
+    if (!collect_funcs) {
+        tree_init(&currentScope);
+        scopeStack = Stack.init();
+        tmpScopeStack = Stack.init();
+        varsToMigrateStack = Stack.init();
+        placeHolderStack = Stack.init();
+        scopeDepth = 0;
+        return;
+    }
     tree_init(&currentScope);
     tree_init(&functions);
     scopeStack = Stack.init();
@@ -262,6 +272,10 @@ int tree_find(node_t **root, string_t *key, symTableData_t **data, int depth) {
     }
 }
 
+int get_scope() {
+    return scopeDepth;
+}
+
 int symtable_find(string_t *key, symTableData_t **data) {
     int depth = scopeDepth;
     int found = tree_find(&currentScope, key, data, depth);
@@ -403,37 +417,40 @@ bool add_func(funcData_t *funcData) {
             exit(9); // TODO error code
         }
     }
-
-    if (data.funcData->params->length > 0) {
-        char *paramsStr = malloc(sizeof(char) * (funcData->params->length + 1));
-        strcpy(paramsStr, funcData->params->str);
-        if (strcmp(paramsStr, "*") != 0) {
-            char *token = strtok(paramsStr, "#:");
-            while (token != NULL) {
-                char *alias = malloc(sizeof(char) * (strlen(token) + 1));
-                strcpy(alias, token);
-                char *param = malloc(sizeof(char) * (strlen(token) + 1));
-                token = strtok(NULL, "#:");
-                strcpy(param, token);
-                if (strcmp(alias, param) == 0) {
-                    fprintf(stderr, "Error: param name should be diff from its id.\n");
-                    exit(99); //  TODO error code
+    if (collect_funcs) {
+        if (data.funcData->params->length > 0) {
+            char *paramsStr = malloc(sizeof(char) * (funcData->params->length + 1));
+            strcpy(paramsStr, funcData->params->str);
+            if (strcmp(paramsStr, "*") != 0) {
+                char *token = strtok(paramsStr, "#:");
+                while (token != NULL) {
+                    char *alias = malloc(sizeof(char) * (strlen(token) + 1));
+                    strcpy(alias, token);
+                    char *param = malloc(sizeof(char) * (strlen(token) + 1));
+                    token = strtok(NULL, "#:");
+                    strcpy(param, token);
+                    if (strcmp(alias, param) == 0) {
+                        fprintf(stderr, "Error: param name should be diff from its id.\n");
+                        exit(99); //  TODO error code
+                    }
+                    free(alias);
+                    free(param);
+                    strtok(NULL, "#:");
+                    token = strtok(NULL, "#:");
                 }
-                free(alias);
-                free(param);
-                strtok(NULL, "#:");
-                token = strtok(NULL, "#:");
             }
+            free(paramsStr);
         }
-        free(paramsStr);
+        return tree_add(&functions, funcData->name, data);
     }
-    return tree_add(&functions, funcData->name, data);
+    return true;
 }
 
 bool add_var(varData_t *varData) {
     symTableData_t data;
     data.type = ndVar;
     data.varData = varData;
+    data.varData->scope = scopeDepth;
     symTableData_t *funcData = malloc(sizeof(symTableData_t));
     if (tree_find(&functions, varData->name, &funcData, 0) != -1) {
         if (funcData->funcData->params->length == 0) {
@@ -449,6 +466,7 @@ bool add_let(letData_t *letData) {
     symTableData_t data;
     data.type = ndLet;
     data.letData = letData;
+    data.letData->scope = scopeDepth;
     symTableData_t *funcData = malloc(sizeof(symTableData_t));
     if (tree_find(&functions, letData->name, &funcData, 0) != -1) {
         if (funcData->funcData->params->length == 0) {
@@ -472,13 +490,14 @@ funcData_t *get_func(string_t *name) {
     symTableData_t *data = malloc(sizeof(symTableData_t));
     int found = tree_find(&functions, name, &data, 0);
     if (found == -1) {
+        if (collect_funcs) return NULL;
         fprintf(stderr, "Error: you use undeclared func `%s`\n", name->str);
         exit(9); // TODO error code
     }
     return data->funcData;
 }
 
-varData_t *get_var(string_t *name, int *scope) {
+varData_t *get_var(string_t *name) {
     symTableData_t *data = malloc(sizeof(symTableData_t));
     int found = symtable_find(name, &data);
     if (found == -1) {
@@ -488,11 +507,10 @@ varData_t *get_var(string_t *name, int *scope) {
     if (data->type != ndVar) {
         return NULL;
     }
-    if (scope != NULL) *scope = found;
     return data->varData;
 }
 
-letData_t *get_let(string_t *name, int *scope) {
+letData_t *get_let(string_t *name) {
     symTableData_t *data = malloc(sizeof(symTableData_t));
     int found = symtable_find(name, &data);
     if (found == -1) {
@@ -502,7 +520,6 @@ letData_t *get_let(string_t *name, int *scope) {
     if (data->type != ndLet) {
         return NULL;
     }
-    if (scope != NULL) *scope = found;
     return data->letData;
 }
 

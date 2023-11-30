@@ -14,7 +14,7 @@ char *gen_unique_label(char *prefix);
 
 void gen_std_functions();
 
-void gen_line(char *line);
+void gen_line(char *format, ...);
 
 void gen_break();
 

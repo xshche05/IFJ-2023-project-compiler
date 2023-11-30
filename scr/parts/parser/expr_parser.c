@@ -1,6 +1,7 @@
 #include "token.h"
 #include "parser.h"
 #include "expr_parser.h"
+#include "codegen/codegen.h"
 
 int table[12][12] = {
         {4,2,2,2,2,2,2,2,4,4,2,2},
@@ -123,6 +124,7 @@ static void reduce() {
         i++;
     }
     Stack.pop(pushdown_stack);
+    if (collect_funcs) return;
     expr_elem_t *new_elem = malloc(sizeof(expr_elem_t));
     if (i == 1) // reduce E -> i
     {
@@ -130,69 +132,57 @@ static void reduce() {
             new_elem->type = NON_TERM;
             new_elem->ret_type = elems[0]->ret_type;
             new_elem->token = NULL;
-            printf("PUSHS GF@$RET\n");
+            gen_line("PUSHS GF@$RET\n");
         }
         else if (elems[0]->token->type == TOKEN_INTEGER_LITERAL) {
             new_elem->type = NON_TERM;
             new_elem->ret_type = int_type;
             new_elem->token = (token_t *) 1;
-            printf("PUSHS int@%d\n", elems[0]->token->attribute.integer);
+            gen_line("PUSHS int@%d\n", elems[0]->token->attribute.integer);
         }
         else if (elems[0]->token->type == TOKEN_REAL_LITERAL) {
             new_elem->type = NON_TERM;
             new_elem->ret_type = double_type;
             new_elem->token = (token_t *) 1;
-            printf("PUSHS float@%a\n", elems[0]->token->attribute.real);
+            gen_line("PUSHS float@%a\n", elems[0]->token->attribute.real);
         }
         else if (elems[0]->token->type == TOKEN_STRING_LITERAL) {
             new_elem->type = NON_TERM;
             new_elem->ret_type = string_type;
             new_elem->token = (token_t *) 1;
-            printf("PUSHS string@%s\n", elems[0]->token->attribute.string->str);
+            gen_line("PUSHS string@%s\n", elems[0]->token->attribute.string->str);
         }
         else if (elems[0]->token->type == TOKEN_TRUE_LITERAL) {
             new_elem->type = NON_TERM;
             new_elem->ret_type = bool_type;
             new_elem->token = (token_t *) 1;
-            printf("PUSHS bool@true\n");
+            gen_line("PUSHS bool@true\n");
         }
         else if (elems[0]->token->type == TOKEN_FALSE_LITERAL) {
             new_elem->type = NON_TERM;
             new_elem->ret_type = bool_type;
             new_elem->token = (token_t *) 1;
-            printf("PUSHS bool@false\n");
+            gen_line("PUSHS bool@false\n");
         }
         else if (elems[0]->token->type == TOKEN_NIL_LITERAL) {
             new_elem->type = NON_TERM;
             new_elem->ret_type = nil_type;
             new_elem->token = (token_t *) 1;
-            printf("PUSHS nil@nil\n");
+            gen_line("PUSHS nil@nil\n");
         }
         else if (elems[0]->token->type == TOKEN_IDENTIFIER) {
             new_elem->type = NON_TERM;
             new_elem->ret_type = elems[0]->ret_type;
             new_elem->token = NULL;
             // check if var is defined
-            varData_t *varData = get_var(elems[0]->token->attribute.identifier, NULL);
-            letData_t *letData = get_let(elems[0]->token->attribute.identifier, NULL);
-            if (varData == NULL && letData == NULL) {
+            varData_t *varData = get_var(elems[0]->token->attribute.identifier);
+            if (varData == NULL) varData = get_let(elems[0]->token->attribute.identifier);
+            if (!varData->isDefined) {
                 fprintf(stderr, "Error: EXPR undefined variable.\n");
                 exit(5); // TODO error code
-            } else {
-                if (varData == NULL) {
-                    if (!letData->isDefined) {
-                        fprintf(stderr, "Error: EXPR undefined const.\n");
-                        exit(5); // TODO error code
-                    }
-                } else {
-                    if (!varData->isDefined) {
-                        fprintf(stderr, "Error: EXPR undefined variable.\n");
-                        exit(5); // TODO error code
-                    }
-                }
             }
             // TODO push var with frame and scope
-            printf("PUSHS %s_%d\n", elems[0]->token->attribute.identifier->str, elems[0]->scope);
+            gen_line("PUSHS %s_%d\n", elems[0]->token->attribute.identifier->str, varData->scope);
         }
     }
     else if (i == 2) // E -> !E ; E ->E!
@@ -205,7 +195,7 @@ static void reduce() {
             new_elem->type = NON_TERM;
             new_elem->ret_type = bool_type;
             new_elem->token = NULL;
-            printf("NOTS\n");
+            gen_line("NOTS\n");
         } else {
             if (elems[1]->ret_type < 4) {
                 fprintf(stderr, "Error: EXPR type mismatch.\n");
@@ -240,12 +230,12 @@ static void reduce() {
                         exit(TYPE_ERROR);
                     }
                     if (new_elem->ret_type == string_type){
-                        printf("POPS GF@$B\n");
-                        printf("POPS GF@$A\n");
-                        printf("CONCAT GF@$RET GF@$A GF@$B\n");
-                        printf("PUSHS GF@$RET\n");
+                        gen_line("POPS GF@$B\n");
+                        gen_line("POPS GF@$A\n");
+                        gen_line("CONCAT GF@$RET GF@$A GF@$B\n");
+                        gen_line("PUSHS GF@$RET\n");
                     } else {
-                        printf("ADDS\n");
+                        gen_line("ADDS\n");
                     }
                     break;
                 case TOKEN_SUBTRACTION:
@@ -258,7 +248,7 @@ static void reduce() {
                         fprintf(stderr, "Error: Cant sub nillable vars.\n");
                         exit(TYPE_ERROR);
                     }
-                    printf("SUBS\n");
+                    gen_line("SUBS\n");
                     break;
                 case TOKEN_MULTIPLICATION:
                     type_check()
@@ -270,7 +260,7 @@ static void reduce() {
                         fprintf(stderr, "Error: Cant mul nillable vars.\n");
                         exit(TYPE_ERROR);
                     }
-                    printf("MULS\n");
+                    gen_line("MULS\n");
                     break;
                 case TOKEN_DIVISION:
                     type_check()
@@ -282,7 +272,7 @@ static void reduce() {
                         fprintf(stderr, "Error: Cant div nillable vars.\n");
                         exit(TYPE_ERROR);
                     }
-                    printf("DIVS\n");
+                    gen_line("DIVS\n");
                     break;
                 case TOKEN_LOGICAL_AND:
                     if (a->ret_type != bool_type || a->ret_type != b->ret_type) {
@@ -296,7 +286,7 @@ static void reduce() {
                     new_elem->type = NON_TERM;
                     new_elem->ret_type = bool_type;
                     new_elem->token = NULL;
-                    printf("ANDS\n");
+                    gen_line("ANDS\n");
                     break;
                 case TOKEN_LOGICAL_OR:
                     if (a->ret_type != bool_type || a->ret_type != b->ret_type)  {
@@ -310,19 +300,19 @@ static void reduce() {
                     new_elem->type = NON_TERM;
                     new_elem->ret_type = bool_type;
                     new_elem->token = NULL;
-                    printf("ORS\n");
+                    gen_line("ORS\n");
                     break;
                 case TOKEN_LESS_THAN:
                     if (a->ret_type != b->ret_type || (a->ret_type > 3 && a->ret_type != nil_type) || a->ret_type == bool_type)  {
                         if (a->ret_type == double_type) {
                             if (b->ret_type == int_type && b->token != NULL) {
-                                printf("POPS GF@$A\n");
-                                printf("INT2FLOATS\n");
-                                printf("PUSHS GF@$A\n");
+                                gen_line("POPS GF@$A\n");
+                                gen_line("INT2FLOATS\n");
+                                gen_line("PUSHS GF@$A\n");
                             }
                         } else if (b->ret_type == double_type) {
                             if (a->ret_type == int_type && a->token != NULL) {
-                                printf("INT2FLOATS\n");
+                                gen_line("INT2FLOATS\n");
                             }
                         } else {
                             fprintf(stderr, "Error: EXPR type mismatch.\n");
@@ -332,19 +322,19 @@ static void reduce() {
                     new_elem->type = NON_TERM;
                     new_elem->ret_type = bool_type;
                     new_elem->token = NULL;
-                    printf("LTS\n");
+                    gen_line("LTS\n");
                     break;
                 case TOKEN_LESS_THAN_OR_EQUAL_TO:
                     if (a->ret_type != b->ret_type || (a->ret_type > 3 && a->ret_type != nil_type) || a->ret_type == bool_type)  {
                         if (a->ret_type == double_type) {
                             if (b->ret_type == int_type && b->token != NULL) {
-                                printf("POPS GF@$A\n");
-                                printf("INT2FLOATS\n");
-                                printf("PUSHS GF@$A\n");
+                                gen_line("POPS GF@$A\n");
+                                gen_line("INT2FLOATS\n");
+                                gen_line("PUSHS GF@$A\n");
                             }
                         } else if (b->ret_type == double_type) {
                             if (a->ret_type == int_type && a->token != NULL) {
-                                printf("INT2FLOATS\n");
+                                gen_line("INT2FLOATS\n");
                             }
                         } else {
                             fprintf(stderr, "Error: EXPR type mismatch.\n");
@@ -354,20 +344,20 @@ static void reduce() {
                     new_elem->type = NON_TERM;
                     new_elem->ret_type = bool_type;
                     new_elem->token = NULL;
-                    printf("GTS\n");
-                    printf("NOTS\n");
+                    gen_line("GTS\n");
+                    gen_line("NOTS\n");
                     break;
                 case TOKEN_GREATER_THAN:
                     if (a->ret_type != b->ret_type || (a->ret_type > 3 && a->ret_type != nil_type) || a->ret_type == bool_type)  {
                         if (a->ret_type == double_type) {
                             if (b->ret_type == int_type && b->token != NULL) {
-                                printf("POPS GF@$A\n");
-                                printf("INT2FLOATS\n");
-                                printf("PUSHS GF@$A\n");
+                                gen_line("POPS GF@$A\n");
+                                gen_line("INT2FLOATS\n");
+                                gen_line("PUSHS GF@$A\n");
                             }
                         } else if (b->ret_type == double_type) {
                             if (a->ret_type == int_type && a->token != NULL) {
-                                printf("INT2FLOATS\n");
+                                gen_line("INT2FLOATS\n");
                             }
                         } else {
                             fprintf(stderr, "Error: EXPR type mismatch.\n");
@@ -377,19 +367,19 @@ static void reduce() {
                     new_elem->type = NON_TERM;
                     new_elem->ret_type = bool_type;
                     new_elem->token = NULL;
-                    printf("GTS\n");
+                    gen_line("GTS\n");
                     break;
                 case TOKEN_GREATER_THAN_OR_EQUAL_TO:
                     if (a->ret_type != b->ret_type || (a->ret_type > 3 && a->ret_type != nil_type) || a->ret_type == bool_type)  {
                         if (a->ret_type == double_type) {
                             if (b->ret_type == int_type && b->token != NULL) {
-                                printf("POPS GF@$A\n");
-                                printf("INT2FLOATS\n");
-                                printf("PUSHS GF@$A\n");
+                                gen_line("POPS GF@$A\n");
+                                gen_line("INT2FLOATS\n");
+                                gen_line("PUSHS GF@$A\n");
                             }
                         } else if (b->ret_type == double_type) {
                             if (a->ret_type == int_type && a->token != NULL) {
-                                printf("INT2FLOATS\n");
+                                gen_line("INT2FLOATS\n");
                             }
                         } else {
                             fprintf(stderr, "Error: EXPR type mismatch.\n");
@@ -399,8 +389,8 @@ static void reduce() {
                     new_elem->type = NON_TERM;
                     new_elem->ret_type = bool_type;
                     new_elem->token = NULL;
-                    printf("LTS\n");
-                    printf("NOTS\n");
+                    gen_line("LTS\n");
+                    gen_line("NOTS\n");
                     break;
                 case TOKEN_EQUAL_TO:
                     if (!(a->ret_type == b->ret_type || a->ret_type == nil_type || b->ret_type == nil_type || a->ret_type - 4 == b->ret_type || b->ret_type - 4 == a->ret_type))  {
@@ -410,7 +400,7 @@ static void reduce() {
                     new_elem->type = NON_TERM;
                     new_elem->ret_type = bool_type;
                     new_elem->token = NULL;
-                    printf("EQS\n");
+                    gen_line("EQS\n");
                     break;
                 case TOKEN_NOT_EQUAL_TO:
                     if (!(a->ret_type == b->ret_type || a->ret_type == nil_type || b->ret_type == nil_type || a->ret_type - 4 == b->ret_type || b->ret_type - 4 == a->ret_type))  {
@@ -420,8 +410,8 @@ static void reduce() {
                     new_elem->type = NON_TERM;
                     new_elem->ret_type = bool_type;
                     new_elem->token = NULL;
-                    printf("EQS\n");
-                    printf("NOTS\n");
+                    gen_line("EQS\n");
+                    gen_line("NOTS\n");
                     break;
                 case TOKEN_IS_NIL:
                     if (b->ret_type > 3) {
@@ -432,7 +422,7 @@ static void reduce() {
                         new_elem->type = NON_TERM;
                         new_elem->ret_type = a->ret_type;
                         new_elem->token = NULL;
-                        printf("???????\n"); // TODO IS NIL operation
+                        gen_line("???????\n"); // TODO IS NIL operation
                     } else {
                         fprintf(stderr, "Warning: Right side of ?? operator is never used\n");
                         if (b->ret_type != a->ret_type && a->ret_type != nil_type && b->ret_type != nil_type) {
@@ -442,7 +432,7 @@ static void reduce() {
                         new_elem->type = NON_TERM;
                         new_elem->ret_type = b->ret_type;
                         new_elem->token = NULL;
-                        printf("POPS GF@$D\n");
+                        gen_line("POPS GF@$D\n");
                     }
                     break;
                 default:
@@ -513,40 +503,44 @@ static expr_elem_t *next_token() {
             tmp_stack = tmp_2;
             ignore_right_bracket = tmp;
             first_flag = tmp2;
-            funcData_t *funcData = get_func(current->attribute.identifier);
-            if (!check_func_signature(params, funcData)) {
-                fprintf(stderr, "Error: EXPR function call signature mismatch.\n");
-                exit(4); // TODO error code
+            funcData_t *funcData;
+            if (!collect_funcs) {
+                funcData = get_func(current->attribute.identifier);
+                if (!check_func_signature(params, funcData)) {
+                    fprintf(stderr, "Error: EXPR function call signature mismatch.\n");
+                    exit(4); // TODO error code
+                }
+                gen_line("CALL %s\n", current->attribute.identifier->str);
             }
-            printf("CALL %s\n", current->attribute.identifier->str);
             local_lookahead = lookahead;
             after_local_lookahead = TokenArray.next();
             expr_elem_t *elem = malloc(sizeof(expr_elem_t));
             elem->type = IDENTIFIER;
             elem->token = NULL;
-            elem->ret_type = funcData->returnType;
+            if (collect_funcs) {
+                elem->ret_type = -10;
+            } else {
+                elem->ret_type = funcData->returnType;
+            }
             return elem;
         }
     }
     expr_elem_t *elem = malloc(sizeof(expr_elem_t));
     elem->type = map_token(local_lookahead);
+    if (collect_funcs) return elem;
     elem->token = local_lookahead;
-    int scope = 0;
     if (elem ->type == IDENTIFIER) {
         if (elem->token->type == TOKEN_IDENTIFIER) {
-            varData_t *varData = get_var(elem->token->attribute.identifier, &scope);
+            varData_t *varData = get_var(elem->token->attribute.identifier);
             if (varData == NULL) {
-                letData_t *letData = get_let(elem->token->attribute.identifier, &scope);
+                letData_t *letData = get_let(elem->token->attribute.identifier);
                 elem->ret_type = letData->type;
-                elem->scope = scope;
             } else {
                 elem->ret_type = varData->type;
-                elem->scope = scope;
             }
         }
     } else {
         elem->ret_type = 0;
-        elem->scope = -1;
     }
     return elem;
 }
@@ -615,7 +609,9 @@ int parse_expr(type_t *ret_type, bool *is_literal) {
     *is_literal = result->token != NULL;
     free(less);
     free(dollar);
-    free(result);
+    if (result != dollar) {
+        free(result);
+    }
     free(a);
     destroy_stacks();
     return SUCCESS;
