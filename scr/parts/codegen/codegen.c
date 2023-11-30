@@ -85,52 +85,46 @@ void gen_std_functions() {
      */
 
     // readString
-    printf("LABEL $readString_std\n");
+    printf("LABEL readString\n");
     printf("READ GF@$RET string\n");
     printf("RETURN\n");
     // readInt
-    printf("LABEL $readInt_std\n");
+    printf("LABEL readInt\n");
     printf("READ GF@$RET int\n");
     printf("RETURN\n");
     // readDouble
-    printf("LABEL $readDouble_std\n");
+    printf("LABEL readDouble\n");
     printf("READ GF@$RET float\n");
     printf("RETURN\n");
     // readBool
-    printf("LABEL $readBool_std\n");
+    printf("LABEL readBool\n");
     printf("READ GF@$RET bool\n");
     printf("RETURN\n");
 
     // write
-    printf("LABEL $write_std\n");
+    printf("LABEL write\n");
     // while $C != 0 do pop and print decremented $C
-    printf("POPS GF@$C\n");
-    printf("LABEL $write_std_write_loop\n");
-    printf("JUMPIFEQ $write_std_write_end GF@$C int@0\n");
     printf("POPS GF@$A\n");
     printf("WRITE GF@$A\n");
-    printf("SUB GF@$C GF@$C int@1\n");
-    printf("JUMP $write_std_write_loop\n");
-    printf("LABEL $write_std_write_end\n");
     printf("RETURN\n");
 
     // Int2Double
-    printf("LABEL $Int2Double_std\n");
+    printf("LABEL Int2Double\n");
     printf("POPS GF@$A\n");
     printf("INT2FLOAT GF@$RET GF@$A\n");
     printf("RETURN\n");
     // Double2Int
-    printf("LABEL $Double2Int_std\n");
+    printf("LABEL Double2Int\n");
     printf("POPS GF@$A\n");
     printf("FLOAT2INT GF@$RET GF@$A\n");
     printf("RETURN\n");
     // length
-    printf("LABEL $length_std\n");
+    printf("LABEL length\n");
     printf("POPS GF@$A\n");
     printf("STRLEN GF@$RET GF@$A\n");
     printf("RETURN\n");
     // substring
-    printf("LABEL $substring_std\n");
+    printf("LABEL substring\n");
     printf("CREATEFRAME\n");
     printf("PUSHFRAME\n");
     printf("POPS GF@$C\n");
@@ -172,12 +166,12 @@ void gen_std_functions() {
     printf("RETURN\n"); // return
 
     // ord
-    printf("LABEL $ord_std\n");
+    printf("LABEL ord\n");
     printf("POPS GF@$A\n");
     printf("STRI2INT GF@$RET GF@$A\n");
     printf("RETURN\n");
     // chr
-    printf("LABEL $chr_std\n");
+    printf("LABEL chr\n");
     printf("POPS GF@$A\n");
     printf("INT2CHAR GF@$RET GF@$A\n");
     printf("RETURN\n");

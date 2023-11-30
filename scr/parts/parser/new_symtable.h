@@ -94,6 +94,9 @@ varData_t *get_var(string_t *key, int *scope);
 
 letData_t *get_let(string_t *key, int *scope);
 
+void new_frame();
+
+void del_frame();
 
 
 

@@ -1,3 +1,4 @@
+#include <string.h>
 #include "utils.h"
 #include "codegen/codegen.h"
 #include "expr_parser.h"
@@ -248,7 +249,8 @@ bool VAR_DECL() {
             } else {
                 varData->type = none_type;
             }
-            s = s && VAR_LET_EXP(id, &type);
+            bool is_literal;
+            s = s && VAR_LET_EXP(id, &type, &is_literal);
             if (s && type != none_type) {
                 varData->isDefined = true;
                 if (varData->type == none_type) {
@@ -258,18 +260,39 @@ bool VAR_DECL() {
                     }
                     varData->type = type;
                 }
-                else if (varData->type != type && abs(varData->type - type) != nil_int_type-int_type && !(varData->type > 3 && type == nil_type)) {
+                else if (varData->type != type && varData->type - type != nil_int_type-int_type && !(varData->type > 3 && type == nil_type)) {
                     // TODO int to double, double to int if literal
-                    fprintf(stderr, "Error: variable type mismatch\n");
-                    exit(99);
+
+                    if (varData->type == int_type || varData->type == nil_int_type) {
+                        if (type == double_type) {
+                            if (!is_literal) {
+                                fprintf(stderr, "Error: cant convert non literal value from INT to DOUBLE\n");
+                                exit(99);
+                            }
+                            printf("INT2FLOATS\n");
+                        }
+                    } else if (varData->type == double_type || varData->type == nil_double_type) {
+                        if (type == int_type) {
+                            if (!is_literal) {
+                                fprintf(stderr, "Error: cant convert non literal value from DOUBLE to INT\n");
+                                exit(99);
+                            }
+                            printf("FLOAT2INTS\n");
+                        }
+                    } else {
+                        fprintf(stderr, "Error: variable type mismatch\n");
+                        exit(99);
+                    }
                 }
             }
             if (s) {
                 if (varData->type == none_type) {
                     fprintf(stderr, "Error: variable without type\n");
                     exit(NO_TYPE_ERROR);
+                } else if (type == void_type) {
+                    fprintf(stderr, "Error: assign to void\n");
+                    exit(NO_TYPE_ERROR);
                 }
-
                 if (!add_var(varData)) {
                     fprintf(stderr, "Error: variable already defined\n");
                     exit(VAR_REDEFINITION_ERROR);
@@ -307,20 +330,41 @@ bool LET_DECL() {
             } else {
                 letData->type = none_type;
             }
-            s = s && VAR_LET_EXP(id, &type);
+            bool is_literal;
+            s = s && VAR_LET_EXP(id, &type, &is_literal);
             if (s && type != none_type) {
                 letData->isDefined = true;
                 if (letData->type == none_type) {
                     if (type == nil_type) {
                         fprintf(stderr, "Error: nil constant without type\n");
                         exit(NO_TYPE_ERROR);
+                    } else if (type == void_type) {
+                        fprintf(stderr, "Error: assign to void\n");
+                        exit(NO_TYPE_ERROR);
                     }
                     letData->type = type;
                 }
-                else if (letData->type != type && abs(letData->type - type) != nil_int_type-int_type && !(letData->type > 3 && type == nil_type)) {
-                    // TODO int to double, double to int if literal
-                    fprintf(stderr, "Error: constant type mismatch\n");
-                    exit(99);
+                else if (letData->type != type && letData->type - type != nil_int_type-int_type && !(letData->type > 3 && type == nil_type)) {
+                    if (letData->type == int_type || letData->type == nil_int_type) {
+                        if (type == double_type) {
+                            if (!is_literal) {
+                                fprintf(stderr, "Error: cant convert non literal value from INT to DOUBLE\n");
+                                exit(99);
+                            }
+                            printf("INT2FLOATS\n");
+                        }
+                    } else if (letData->type == double_type || letData->type == nil_double_type) {
+                        if (type == int_type) {
+                            if (!is_literal) {
+                                fprintf(stderr, "Error: cant convert non literal value from DOUBLE to INT\n");
+                                exit(99);
+                            }
+                            printf("FLOAT2INTS\n");
+                        }
+                    } else {
+                        fprintf(stderr, "Error: variable type mismatch\n");
+                        exit(99);
+                    }
                 }
             }
 
@@ -365,16 +409,15 @@ bool VAR_LET_TYPE(type_t *type) {
 }
 
 
-bool VAR_LET_EXP(token_t *id, type_t *type) {
+bool VAR_LET_EXP(token_t *id, type_t *type, bool *is_literal) {
     bool s;
-    bool is_literal;
     *type = none_type;
     switch (lookahead->type) {
         case TOKEN_ASSIGNMENT:
             s = match(TOKEN_ASSIGNMENT);
-            s = s && call_expr_parser(type, &is_literal);
+            s = s && call_expr_parser(type, is_literal);
             if (s) {
-                // TODO var assign
+                printf("ASSIGN %s\n", id->attribute.identifier->str); // TODO assign
             }
             break;
         default:
@@ -403,10 +446,15 @@ bool FUNC_DECL() {
                 gen_func_label(id->attribute.identifier->str);
             }
             s = s && match(TOKEN_LEFT_BRACKET);
+            new_frame();
             gen_new_frame();
-            // TODO increase scope
-            // TODO push symbol table
             s = s && PARAM_LIST(&funcData);
+            if (s) {
+                if (!add_func(funcData)) { // TODO overloading
+                    fprintf(stderr, "Error: function already defined\n");
+                    exit(VAR_REDEFINITION_ERROR);
+                }
+            }
             gen_pop_params(funcData->params);
             gen_push_frame();
             s = s && match(TOKEN_RIGHT_BRACKET);
@@ -425,15 +473,7 @@ bool FUNC_DECL() {
             }
             s = s && match(TOKEN_RIGHT_BRACE);
             inside_func = false;
-            // TODO pop symbol table
-            // TODO decrease scope
-            gen_pop_frame();
-            if (s) {
-                if (!add_func(funcData)) { // TODO overloading
-                    fprintf(stderr, "Error: function already defined\n");
-                    exit(VAR_REDEFINITION_ERROR);
-                }
-            }
+            del_frame();
             break;
         default:
             sprintf(error_msg, "Syntax error [FUNC_DECL]: expected ['TOKEN_FUNC'], got %s\n", tokens_as_str[lookahead->type]);
@@ -483,12 +523,16 @@ bool PARAM_LIST(funcData_t **funcData) {
 
 bool PARAM(funcData_t **funcData) {
     bool s;
+    varData_t *func_param = malloc(sizeof(varData_t));
+    func_param->isDeclared = true;
+    func_param->isDefined = true;
     switch (lookahead->type) {
         case TOKEN_IDENTIFIER:
         case TOKEN_UNDERSCORE:
             s = PARAM_NAME(funcData);
             token_t *id = lookahead;
             s = s && match(TOKEN_IDENTIFIER);
+            func_param->name = id->attribute.identifier;
             if (s) {
                 string_t *param = id->attribute.identifier;
                 String.add_string((*funcData)->params, param);
@@ -497,10 +541,19 @@ bool PARAM(funcData_t **funcData) {
             type_t type;
             s = s && TYPE(&type);
             if (s) {
+                func_param->type = type;
+            }
+            if (s) {
                 String.add_char((*funcData)->params, ':');
                 String.add_char((*funcData)->params, type + '0');
             }
-            // TODO add param to current scope symbol table
+            if (s) {
+                bool flag = add_var(func_param);
+                if (!flag) {
+                    fprintf(stderr, "Error: parameter already defined\n");
+                    exit(99); // TODO error
+                }
+            }
             break;
         default:
             sprintf(error_msg, "Syntax error [PARAM]: expected ['TOKEN_UNDERSCORE', 'TOKEN_IDENTIFIER'], got %s\n", tokens_as_str[lookahead->type]);
@@ -566,19 +619,18 @@ bool BRANCH() {
         case TOKEN_IF:
             gen_branch_labels(true);
             s = match(TOKEN_IF);
+            gen_new_frame();
+            new_frame();
             s = s && BR_EXPR();
             s = s && match(TOKEN_LEFT_BRACE);
-            // TODO create new frame, migrate all used variables
-            // TODO inc scope
-            // TODO push symbol table
+            push_frame();
             s = s && CODE();
             s = s && match(TOKEN_RIGHT_BRACE);
-            // TODO destroy frame
-            // TODO pop symbol table
+            gen_pop_frame();
+            del_frame();
             gen_branch_if_end();
             s = s && ELSE();
             gen_branch_end();
-            // TODO dec scope
             break;
         default:
             sprintf(error_msg, "Syntax error [BRANCH]: expected ['TOKEN_IF'], got %s\n", tokens_as_str[lookahead->type]);
@@ -595,8 +647,28 @@ bool BR_EXPR() {
     switch (lookahead->type) {
         case TOKEN_LET:
             s = match(TOKEN_LET);
+            token_t *id = lookahead;
             s = s && match(TOKEN_IDENTIFIER);
-            gen_branch_if_start(true);
+            if (s) {
+                if (id->attribute.nillable) {
+                    varData_t *varData = get_var(id->attribute.identifier, NULL);
+                    if (varData == NULL) {
+                        varData = get_let(id->attribute.identifier, NULL);
+                    }
+                    letData_t *letData = malloc(sizeof(letData_t));
+                    letData->name = id->attribute.identifier;
+                    letData->isDeclared = true;
+                    letData->isDefined = true;
+                    letData->type = varData->type - (nil_int_type - int_type);
+                    if (!add_let(letData)) {
+                        fprintf(stderr, "Error: constant already defined\n");
+                        exit(VAR_REDEFINITION_ERROR);
+                    }
+                } else {
+                    fprintf(stderr, "Error: variable is not nillable\n");
+                }
+                gen_branch_if_start(true);
+            }
             break;
         default:
             if (call_expr_parser(&type, &is_literal))
@@ -634,25 +706,25 @@ bool ELSE_IF() {
         case TOKEN_IF:
             gen_branch_labels(false);
             s = match(TOKEN_IF);
+            gen_new_frame();
+            new_frame();
             s = s && BR_EXPR();
             s = s && match(TOKEN_LEFT_BRACE);
-            // TODO create new frame, migrate all used variables
-            // TODO push symbol table
             s = s && CODE();
             s = s && match(TOKEN_RIGHT_BRACE);
-            // TODO destroy frame
-            // TODO pop symbol table
+            gen_pop_frame();
+            del_frame();
             gen_branch_if_end();
             s = s && ELSE();
             break;
         case TOKEN_LEFT_BRACE:
             s = match(TOKEN_LEFT_BRACE);
-            // TODO create new frame, migrate all used variables
-            // TODO push symbol table
+            gen_new_frame();
+            new_frame();
             s = s && CODE();
             s = s && match(TOKEN_RIGHT_BRACE);
-            // TODO destroy frame
-            // TODO pop symbol table
+            gen_pop_frame();
+            del_frame();
             break;
         default:
             if (nl_flag) return true;
@@ -792,7 +864,7 @@ bool RANGE() {
 }
 
 
-bool CALL_PARAM_LIST(string_t *call_params) {
+bool CALL_PARAM_LIST(string_t *call_params, bool call_after_param, char *func_name) {
     bool s;
     switch (lookahead->type) {
         case TOKEN_IDENTIFIER:
@@ -804,8 +876,8 @@ bool CALL_PARAM_LIST(string_t *call_params) {
         case TOKEN_STRING_LITERAL:
         case TOKEN_LEFT_BRACKET:
         case TOKEN_LOGICAL_NOT:
-            s = CALL_PARAM(call_params);
-            s = s && NEXT_CALL_PARAM(call_params);
+            s = CALL_PARAM(call_params, call_after_param, func_name);
+            s = s && NEXT_CALL_PARAM(call_params, call_after_param, func_name);
             break;
         case TOKEN_RIGHT_BRACKET:
             s = true;
@@ -820,7 +892,7 @@ bool CALL_PARAM_LIST(string_t *call_params) {
 }
 
 
-bool CALL_PARAM(string_t *call_params) {
+bool CALL_PARAM(string_t *call_params, bool call_after_param, char *func_name) {
     bool s;
     type_t type;
     bool is_literal;
@@ -840,12 +912,22 @@ bool CALL_PARAM(string_t *call_params) {
                 String.add_char(call_params, ':');
                 String.add_char(call_params, type + '0');
             }
+            if (s) {
+                if (call_after_param) {
+                    printf("CALL %s\n", func_name);
+                }
+            }
             break;
         default:
             if (call_expr_parser(&type, &is_literal)) {
                 String.add_char(call_params, '_');
                 String.add_char(call_params, ':');
                 String.add_char(call_params, type + '0');
+                if (s) {
+                    if (call_after_param) {
+                        printf("CALL %s\n", func_name);
+                    }
+                }
                 return true;
             }
             sprintf(error_msg, "Syntax error [CALL_PARAM_VALUE]: expected ['TOKEN_FALSE_LITERAL', 'TOKEN_LESS_THAN', 'TOKEN_LOGICAL_AND', 'TOKEN_LEFT_BRACKET', 'TOKEN_NIL_LITERAL', 'TOKEN_REAL_LITERAL', 'TOKEN_STRING_LITERAL', 'TOKEN_ADDITION', 'TOKEN_SUBTRACTION', 'TOKEN_LOGICAL_OR', 'TOKEN_IDENTIFIER', 'TOKEN_EQUAL_TO', 'TOKEN_LESS_THAN_OR_EQUAL_TO', 'TOKEN_GREATER_THAN', 'TOKEN_NOT_EQUAL_TO', 'TOKEN_GREATER_THAN_OR_EQUAL_TO', 'TOKEN_TRUE_LITERAL', 'TOKEN_IS_NIL', 'TOKEN_DIVISION', 'TOKEN_MULTIPLICATION', 'TOKEN_LOGICAL_NOT', 'TOKEN_UNWRAP_NILLABLE', 'TOKEN_INTEGER_LITERAL'], got %s\n", tokens_as_str[lookahead->type]);
@@ -855,14 +937,14 @@ bool CALL_PARAM(string_t *call_params) {
 }
 
 
-bool NEXT_CALL_PARAM(string_t *call_params) {
+bool NEXT_CALL_PARAM(string_t *call_params, bool call_after_param, char *func_name) {
     bool s;
     switch (lookahead->type) {
         case TOKEN_COMMA:
             s = match(TOKEN_COMMA);
             if (s) String.add_char(call_params, '#');
-            s = s && CALL_PARAM(call_params);
-            s = s && NEXT_CALL_PARAM(call_params);
+            s = s && CALL_PARAM(call_params, call_after_param, func_name);
+            s = s && NEXT_CALL_PARAM(call_params, call_after_param, func_name);
             break;
         case TOKEN_RIGHT_BRACKET:
             s = true;
@@ -901,13 +983,16 @@ bool NEXT_ID_CALL_OR_ASSIGN(token_t *id) {
         case TOKEN_LEFT_BRACKET:
             s = match(TOKEN_LEFT_BRACKET);
             ignore_right_bracket = true;
-            s = s && CALL_PARAM_LIST(params);
+            funcData_t *funcData = get_func(id->attribute.identifier);
+            bool call_after_param = strcmp(funcData->params->str, "*") == 0;
+            s = s && CALL_PARAM_LIST(params, call_after_param, funcData->name->str);
             s = s && match(TOKEN_RIGHT_BRACKET);
             // TODO check if params match
             if (s) {
-                funcData_t *funcData = get_func(id->attribute.identifier);
                 if (check_func_signature(params, funcData)) {
-                    printf("CALL %s\n", id->attribute.identifier->str);
+                    if (!call_after_param) {
+                        printf("CALL %s\n", funcData->name->str);
+                    }
                 } else {
                     fprintf(stderr, "Error: function call signature mismatch\n");
                     exit(4); // TODO error

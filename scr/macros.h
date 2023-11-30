@@ -4,10 +4,23 @@
 //Define error codes
 #define SUCCESS 0
 #define LEXICAL_ERROR 1
+
 #define SYNTAX_ERROR 2
+
 #define SEMANTIC_ERROR_1 3
+#define SEM_NON_DEF_FUNC 3
+#define SEM_REDEF_VAR 3
+
 #define SEMANTIC_ERROR_2 4
+#define SEM_FUNC_PARAM_SIG 4
+#define SEM_FUNC_RET_VAL 4
+
 #define SEMANTIC_ERROR_3 5
+#define SEM_USE_OF_NON_INIT_VAR 5
+#define SEM_USE_OF_NON_DEF_VAR 5
+
+
+
 #define SEMANTIC_ERROR_4 6
 #define SEMANTIC_ERROR_5 7
 #define SEMANTIC_ERROR_6 8

@@ -36,6 +36,88 @@ void tree_destroy(node_t **root) {
     free(*root);
 }
 
+void std_func_init() {
+    funcData_t *readString = malloc(sizeof(funcData_t));
+    readString->name = String.ctor();
+    String.assign_cstr(readString->name, "readString");
+    readString->params = String.ctor();
+    String.assign_cstr(readString->params, "");
+    readString->returnType = nil_string_type;
+    add_func(readString);
+
+    funcData_t *readInt = malloc(sizeof(funcData_t));
+    readInt->name = String.ctor();
+    String.assign_cstr(readInt->name, "readInt");
+    readInt->params = String.ctor();
+    String.assign_cstr(readInt->params, "");
+    readInt->returnType = nil_int_type;
+    add_func(readInt);
+
+    funcData_t *readDouble = malloc(sizeof(funcData_t));
+    readDouble->name = String.ctor();
+    String.assign_cstr(readDouble->name, "readDouble");
+    readDouble->params = String.ctor();
+    String.assign_cstr(readDouble->params, "");
+    readDouble->returnType = nil_double_type;
+    add_func(readDouble);
+
+    funcData_t *int2double = malloc(sizeof(funcData_t));
+    int2double->name = String.ctor();
+    String.assign_cstr(int2double->name, "Int2Double");
+    int2double->params = String.ctor();
+    String.assign_cstr(int2double->params, "_:i:0");
+    int2double->returnType = double_type;
+    add_func(int2double);
+
+    funcData_t *double2int = malloc(sizeof(funcData_t));
+    double2int->name = String.ctor();
+    String.assign_cstr(double2int->name, "Double2Int");
+    double2int->params = String.ctor();
+    String.assign_cstr(double2int->params, "_:d:1");
+    double2int->returnType = int_type;
+    add_func(double2int);
+
+    funcData_t *write = malloc(sizeof(funcData_t));
+    write->name = String.ctor();
+    String.assign_cstr(write->name, "write");
+    write->params = String.ctor();
+    String.assign_cstr(write->params, "*");
+    write->returnType = void_type;
+    add_func(write);
+
+    funcData_t *length = malloc(sizeof(funcData_t));
+    length->name = String.ctor();
+    String.assign_cstr(length->name, "length");
+    length->params = String.ctor();
+    String.assign_cstr(length->params, "_:s:2");
+    length->returnType = int_type;
+    add_func(length);
+
+    funcData_t *substr = malloc(sizeof(funcData_t));
+    substr->name = String.ctor();
+    String.assign_cstr(substr->name, "substring");
+    substr->params = String.ctor();
+    String.assign_cstr(substr->params, "of:string:2#startingAt:i:0#endingBefore:j:0");
+    substr->returnType = string_type;
+    add_func(substr);
+
+    funcData_t *ord = malloc(sizeof(funcData_t));
+    ord->name = String.ctor();
+    String.assign_cstr(ord->name, "ord");
+    ord->params = String.ctor();
+    String.assign_cstr(ord->params, "_:c:2");
+    ord->returnType = int_type;
+    add_func(ord);
+
+    funcData_t *chr = malloc(sizeof(funcData_t));
+    chr->name = String.ctor();
+    String.assign_cstr(chr->name, "chr");
+    chr->params = String.ctor();
+    String.assign_cstr(chr->params, "_:i:0");
+    chr->returnType = string_type;
+    add_func(chr);
+}
+
 void symtable_init() {
     tree_init(&currentScope);
     tree_init(&functions);
@@ -44,6 +126,7 @@ void symtable_init() {
     varsToMigrateStack = Stack.init();
     placeHolderStack = Stack.init();
     scopeDepth = 0;
+    std_func_init();
 }
 
 void symtable_destroy() {
@@ -138,9 +221,9 @@ bool tree_add(node_t **root, string_t *key, symTableData_t data) {
     } else {
         int cmp = String.cmp(key, (*root)->key);
         if (cmp < 0) {
-            tree_add(&(*root)->left, key, data);
+            return tree_add(&(*root)->left, key, data);
         } else if (cmp > 0) {
-            tree_add(&(*root)->right, key, data);
+            return tree_add(&(*root)->right, key, data);
         } else {
             fprintf(stderr, "Error: symbol already exists.\n");
             return false;
@@ -227,6 +310,13 @@ void symtable_print() {
 bool check_func_signature(string_t *params, funcData_t *funcData) {
     char *paramsStr = malloc(sizeof(char) * (params->length + 1));
     strcpy(paramsStr, params->str);
+    char *funcParamsStr = malloc(sizeof(char) * (funcData->params->length + 1));
+    strcpy(funcParamsStr, funcData->params->str);
+    if (strcmp(funcParamsStr, "*") == 0) {
+        free(funcParamsStr);
+        free(paramsStr);
+        return true;
+    }
     char *token = strtok(paramsStr, "#:");
     stack_t *aliasStack = Stack.init();
     stack_t *typeStack = Stack.init();
@@ -241,8 +331,6 @@ bool check_func_signature(string_t *params, funcData_t *funcData) {
         Stack.push(typeStack, elem);
         token = strtok(NULL, "#:");
     }
-    char *funcParamsStr = malloc(sizeof(char) * (funcData->params->length + 1));
-    strcpy(funcParamsStr, funcData->params->str);
     token = strtok(funcParamsStr, "#:");
     stack_t *funcAliasStack = Stack.init();
     stack_t *funcTypeStack = Stack.init();
@@ -308,6 +396,30 @@ bool add_func(funcData_t *funcData) {
             exit(9); // TODO error code
         }
     }
+
+    if (data.funcData->params->length > 0) {
+        char *paramsStr = malloc(sizeof(char) * (funcData->params->length + 1));
+        strcpy(paramsStr, funcData->params->str);
+        if (strcmp(paramsStr, "*") != 0) {
+            char *token = strtok(paramsStr, "#:");
+            while (token != NULL) {
+                char *alias = malloc(sizeof(char) * (strlen(token) + 1));
+                strcpy(alias, token);
+                char *param = malloc(sizeof(char) * (strlen(token) + 1));
+                token = strtok(NULL, "#:");
+                strcpy(param, token);
+                if (strcmp(alias, param) == 0) {
+                    fprintf(stderr, "Error: param name should be diff from its id.\n");
+                    exit(99); //  TODO error code
+                }
+                free(alias);
+                free(param);
+                strtok(NULL, "#:");
+                token = strtok(NULL, "#:");
+            }
+        }
+        free(paramsStr);
+    }
     return tree_add(&functions, funcData->name, data);
 }
 
@@ -341,11 +453,19 @@ bool add_let(letData_t *letData) {
     return tree_add(&currentScope, letData->name, data);
 }
 
+void new_frame() {
+    push_frame();
+}
+
+void del_frame() {
+    pop_frame();
+}
+
 funcData_t *get_func(string_t *name) {
     symTableData_t *data = malloc(sizeof(symTableData_t));
     int found = tree_find(&functions, name, &data, 0);
     if (found == -1) {
-        fprintf(stderr, "Error: you use undeclared func\n");
+        fprintf(stderr, "Error: you use undeclared func `%s`\n", name->str);
         exit(9); // TODO error code
     }
     return data->funcData;
@@ -355,7 +475,7 @@ varData_t *get_var(string_t *name, int *scope) {
     symTableData_t *data = malloc(sizeof(symTableData_t));
     int found = symtable_find(name, &data);
     if (found == -1) {
-        fprintf(stderr, "NOTFOUND VAR\n");
+        fprintf(stderr, "Error: usage of undecl var\n");
         exit(99); // TODO error code
     }
     if (data->type != ndVar) {
@@ -369,7 +489,7 @@ letData_t *get_let(string_t *name, int *scope) {
     symTableData_t *data = malloc(sizeof(symTableData_t));
     int found = symtable_find(name, &data);
     if (found == -1) {
-        fprintf(stderr, "NOTFOUND LET\n");
+        fprintf(stderr, "Error: usage of undecl const\n");
         exit(99); // TODO error code
     }
     if (data->type != ndLet) {
