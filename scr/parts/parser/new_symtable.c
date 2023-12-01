@@ -373,7 +373,7 @@ bool check_func_signature(string_t *params, funcData_t *funcData) {
         char *funcAlias = Stack.top(funcAliasStack);
         if (strcmp(alias, funcAlias) != 0) {
             fprintf(stderr, "Error: function signature mismatch.\n");
-            exit(99);
+            exit(SEMANTIC_ERROR_2);
         }
         free(alias);
         free(funcAlias);
@@ -382,14 +382,14 @@ bool check_func_signature(string_t *params, funcData_t *funcData) {
     }
     if (Stack.top(aliasStack) || Stack.top(funcAliasStack)) {
         fprintf(stderr, "Error: wrong number of params\n");
-        exit(99);
+        exit(SEMANTIC_ERROR_2);
     }
     while (Stack.top(typeStack) && Stack.top(funcTypeStack)) {
         char *type = Stack.top(typeStack);
         char *funcType = Stack.top(funcTypeStack);
         if (strcmp(type, funcType) != 0) {
             fprintf(stderr, "Error: function signature mismatch.\n");
-            exit(99);
+            exit(SEMANTIC_ERROR_2);
         }
         free(type);
         free(funcType);
@@ -398,7 +398,7 @@ bool check_func_signature(string_t *params, funcData_t *funcData) {
     }
     if (Stack.top(typeStack) || Stack.top(funcTypeStack)) {
         fprintf(stderr, "Error: wrong number of params\n");
-        exit(99);
+        exit(SEMANTIC_ERROR_2);
     }
     Stack.destroy(aliasStack);
     Stack.destroy(funcAliasStack);

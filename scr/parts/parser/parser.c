@@ -15,7 +15,7 @@ token_t *lookahead = NULL;
 funcData_t *currentFunc = NULL;
 bool collect_funcs = false;
 
-#define RETURN_TYPE_ERROR 4
+#define RETURN_TYPE_ERROR 4 //
 #define VOID_RETURN_ERROR 6
 #define NO_TYPE_ERROR 8
 #define VAR_REDEFINITION_ERROR 3
@@ -69,7 +69,7 @@ bool nl_check() {
     return false;
 }
 
-int S() {
+int S() { //start
     bool s;
     collect_funcs = !collect_funcs;
     init_codegen();
@@ -197,20 +197,13 @@ void check_return_type(type_t type, bool is_literal, funcData_t **funcData) {
         if (type == int_type && (*funcData)->returnType == double_type) {
             if (!is_literal) {
                 fprintf(stderr, "Error: cant convert non literal value from INT to DOUBLE\n");
-                exit(RETURN_TYPE_ERROR);
+                exit(SEMANTIC_ERROR_2);
             }
             gen_line("INT2FLOATS\n");
         }
-        else if (type == double_type && (*funcData)->returnType == int_type) {
-            if (!is_literal) {
-                fprintf(stderr, "Error: cant convert non literal value from DOUBLE to INT\n");
-                exit(RETURN_TYPE_ERROR);
-            }
-            gen_line("FLOAT2INTS\n");
-        }
         else {
             fprintf(stderr, "Error: return type mismatch\n");
-            exit(RETURN_TYPE_ERROR);
+            exit(SEMANTIC_ERROR_2);
         }
     }
     if (type == void_type && (*funcData)->returnType == void_type) {
@@ -231,7 +224,7 @@ bool RET_EXPR(funcData_t **funcData) {
             if (collect_funcs) break;
             if ((*funcData)->returnType != void_type) {
                 fprintf(stderr, "Error: void return in non void func\n");
-                exit(VOID_RETURN_ERROR);
+                exit(SEMANTIC_ERROR_4);
             }
             gen_return(true);
             break;
@@ -268,7 +261,7 @@ void check_decl_expr(type_t type, bool is_literal, varData_t *varData) {
         if (varData->type == none_type) {
             if (type == nil_type) {
                 fprintf(stderr, "Error: nil variable without type\n");
-                exit(NO_TYPE_ERROR);
+                exit(SEMANTIC_ERROR_6);
             }
             varData->type = type;
         }
@@ -309,10 +302,10 @@ void check_if_none(type_t type, varData_t *varData) {
     if (collect_funcs) return;
     if (varData->type == none_type) {
         fprintf(stderr, "Error: variable without type\n");
-        exit(NO_TYPE_ERROR);
+        exit(SEMANTIC_ERROR_6);
     } else if (type == void_type) {
         fprintf(stderr, "Error: assign to void\n");
-        exit(NO_TYPE_ERROR);
+        exit(SEMANTIC_ERROR_6);
     }
 }
 
@@ -342,7 +335,7 @@ bool VAR_DECL() {
                 if (collect_funcs) return s;
                 if (!add_var(varData)) {
                     fprintf(stderr, "Error: variable already defined\n");
-                    exit(VAR_REDEFINITION_ERROR);
+                    exit(SEMANTIC_ERROR_1);
                 }
             }
             break;
@@ -379,7 +372,7 @@ bool LET_DECL() {
                 if (collect_funcs) return s;
                 if (!add_let(letData)) {
                     fprintf(stderr, "Error: constant already defined\n");
-                    exit(VAR_REDEFINITION_ERROR);
+                    exit(SEMANTIC_ERROR_1);
                 }
             }
             break;
@@ -457,7 +450,7 @@ bool FUNC_DECL() {
                 if (collect_funcs) {
                     if (!add_func(funcData)) { // TODO overloading
                         fprintf(stderr, "Error: function already defined\n");
-                        exit(VAR_REDEFINITION_ERROR);
+                        exit(SEMANTIC_ERROR_1);
                     }
                 }
             }
@@ -674,7 +667,7 @@ bool BR_EXPR() {
                 gen_line("MOVE %s %s\n", gen_var_name(letData->name->str, get_scope()), gen_var_name(varData->name->str, varData->scope));
                 if (!add_let(letData)) {
                     fprintf(stderr, "Error: constant already defined\n");
-                    exit(VAR_REDEFINITION_ERROR);
+                    exit(SEMANTIC_ERROR_1);
                 }
                 gen_branch_if_start(true);
             }
