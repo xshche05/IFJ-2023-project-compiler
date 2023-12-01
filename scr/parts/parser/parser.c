@@ -266,31 +266,20 @@ void check_decl_expr(type_t type, bool is_literal, varData_t *varData) {
             varData->type = type;
         }
         else if (varData->type != type && varData->type - type != nil_int_type-int_type && !(varData->type > 3 && type == nil_type)) {
-            if (varData->type == int_type || varData->type == nil_int_type) {
-                if (type == double_type) {
-                    if (!is_literal) {
-                        fprintf(stderr, "Error: cant convert non literal value from INT to DOUBLE\n");
-                        exit(99);
-                    }
-                    gen_line("INT2FLOATS\n");
-                } else {
-                    fprintf(stderr, "Error: variable type mismatch\n");
-                    exit(99);
-                }
-            } else if (varData->type == double_type || varData->type == nil_double_type) {
+            if (varData->type == double_type || varData->type == nil_double_type) {
                 if (type == int_type) {
                     if (!is_literal) {
                         fprintf(stderr, "Error: cant convert non literal value from DOUBLE to INT\n");
-                        exit(99);
+                        exit(SEMANTIC_ERROR_7);
                     }
                     gen_line("INT2FLOATS\n");
                 } else {
                     fprintf(stderr, "Error: variable type mismatch\n");
-                    exit(99);
+                    exit(SEMANTIC_ERROR_7);
                 }
             } else {
                 fprintf(stderr, "Error: variable type mismatch\n");
-                exit(99);
+                exit(SEMANTIC_ERROR_7);
             }
         }
         int scope = get_scope();
@@ -472,7 +461,7 @@ bool FUNC_DECL() {
                 } else {
                     if (!has_return) {
                         fprintf(stderr, "Error: missing return statement in non void function\n");
-                        exit(RETURN_TYPE_ERROR);
+                        exit(SEMANTIC_ERROR_4);
                     }
                 }
             }
