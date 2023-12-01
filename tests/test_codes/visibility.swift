@@ -1,26 +1,26 @@
-var y : Int = 10  // global variable in main body
+var y : Int = 10
 
-func foo(x x : Int) {  // void function (no return value)
-  let y = "hello" + "\n"  // local variable, scope for entire function
+func foo(x x : Int) {
+  let y = "hello" + "\n"
   if (y == "hello\n") {
-    let y = 42 // new local variable, scope only in this block
-    write(y)        // prints 42
+    let y = 42
+    write(y)
   } else {
     write(y)
   }
-  write(y) // prints hello
+  write(y)
   
   var i = 0
   while i <= 10 {
-    i = i + 1   // local variable of the whole function is used 
+    i = i + 1
     incrGlobal()
     write(i)
-    write("Insert non-empty input for quiting, otherwise next iteration.\n");
-    let x = readString()  // formal parameter behave in the function body as local variable, but cannot be modified, we can redefine it/hide it
+    write("Insert non-empty input for quiting, otherwise next iteration.\n")
+    let x = readString()
     if let x {
       let inp = length(x)
       if (inp != 0) { write(x, "\n")
-        return } else {}  // explicitly stops looping by exiting foo
+        return } else {}
     }
   }
 }

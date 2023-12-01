@@ -183,6 +183,9 @@ static int add_token(token_type_t type, token_attribute attribute, bool has_attr
     token->has_newline_after = false;
     if (!isspace(control_char)) SourceCode.back_step();
     token_added = true;
+    if (type == TOKEN_RIGHT_BRACE) {
+        TokenArray.set_nl_after();
+    }
     return TokenArray.add(token);
 }
 
@@ -269,9 +272,9 @@ int source_code_to_tokens() {
                     case ':':
                         fsm_state = COLON_S;
                         break;
-                    case ';':
-                        fsm_state = SEMICOLON_S;
-                        break;
+//                    case ';':
+//                        fsm_state = SEMICOLON_S;
+//                        break;
                     case ',':
                         fsm_state = COMMA_S;
                         break;

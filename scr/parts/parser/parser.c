@@ -10,7 +10,7 @@ bool not_name = true;
 bool has_return = false;
 int inside_loop = 0;
 int inside_branch = 0;
-int scope = 0;
+//int scope = 0;
 token_t *lookahead = NULL;
 funcData_t *currentFunc = NULL;
 bool collect_funcs = false;
@@ -35,7 +35,7 @@ bool match(token_type_t type) {
         }
     }
     if (type == TOKEN_FUNC) {
-        if (scope != 0 || inside_loop || inside_branch) { // TODO FIX
+        if (get_scope() != 0 || inside_loop || inside_branch) { // TODO FIX
             sprintf(error_msg, "Syntax error: function declaration outside of global scope\n");
             return false;
         }
@@ -396,7 +396,7 @@ bool VAR_LET_EXP(token_t *id, type_t *type, bool *is_literal) {
             s = s && call_expr_parser(type, is_literal);
             if (s) {
                 int scope = get_scope();
-                gen_line("ASSIGN %s_%d\n", id->attribute.identifier->str, scope); // TODO assign
+                gen_line("POPS %s_%d\n", id->attribute.identifier->str, scope); // TODO assign
             }
             break;
         default:
@@ -632,6 +632,8 @@ bool BR_EXPR() {
                     fprintf(stderr, "Var type should be nillable\n");
                     exit(99); // TODO error
                 }
+                // TODO push var to stack
+                gen_line("PUSHS %s_%d\n", varData->name->str, varData->scope);
                 letData_t *letData = malloc(sizeof(letData_t));
                 letData->name = id->attribute.identifier;
                 letData->isDeclared = true;
@@ -1018,7 +1020,7 @@ bool NEXT_ID_CALL_OR_ASSIGN(token_t *id) {
                     }
                     varData->isDefined = true;
                     // TODO assign
-                    gen_line("ASSIGN %s_%d\n", id->attribute.identifier->str, varData->scope);
+                    gen_line("POPS %s_%d\n", id->attribute.identifier->str, varData->scope);
                 }
             }
             break;
