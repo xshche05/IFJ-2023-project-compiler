@@ -555,7 +555,7 @@ bool PARAM(funcData_t **funcData) {
                 bool flag = add_let(func_param);
                 if (!flag) {
                     fprintf(stderr, "Error: parameter already defined\n");
-                    exit(99); // TODO error
+                    exit(SEMANTIC_ERROR_7);
                 }
             }
             break;
@@ -654,7 +654,7 @@ bool BR_EXPR() {
                 }
                 if (varData->type < 4) {
                     fprintf(stderr, "Var type should be nillable\n");
-                    exit(99); // TODO error
+                    exit(SEMANTIC_ERROR_7);
                 }
                 // TODO push var to stack
                 gen_line("PUSHS %s\n", gen_var_name(varData->name->str, varData->scope));
@@ -678,7 +678,7 @@ bool BR_EXPR() {
                 if (!collect_funcs) {
                     if (type != bool_type) {
                         fprintf(stderr, "Error: if condition expr must return BOOL\n");
-                        exit(99); // TODO error
+                        exit(SEMANTIC_ERROR_7);
                     }
                     gen_branch_if_start(false);
                 }
@@ -749,7 +749,7 @@ bool WHILE_LOOP() {
                 if (!collect_funcs) {
                     if (type != bool_type) {
                         fprintf(stderr, "Error: while condition expr must return BOOL\n");
-                        exit(99); // TODO error
+                        exit(SEMANTIC_ERROR_7);
                     }
                 }
             }
@@ -786,7 +786,7 @@ bool FOR_LOOP() {
                 if (!collect_funcs) {
                     if (type != int_type) {
                         fprintf(stderr, "Error: range type must be INT\n");
-                        exit(99); // TODO error
+                        exit(SEMANTIC_ERROR_7);
                     }
                 }
             }
@@ -840,7 +840,7 @@ bool RANGE() {
                 if (!collect_funcs) {
                     if (type != int_type) {
                         fprintf(stderr, "Error: range type must be INT\n");
-                        exit(99); // TODO error
+                        exit(SEMANTIC_ERROR_7);
                     }
                 }
             }
@@ -853,7 +853,7 @@ bool RANGE() {
                 if (!collect_funcs) {
                     if (type != int_type) {
                         fprintf(stderr, "Error: range type must be INT\n");
-                        exit(99); // TODO error
+                        exit(SEMANTIC_ERROR_7);
                     }
                 }
             }
@@ -997,7 +997,7 @@ bool NEXT_ID_CALL_OR_ASSIGN(token_t *id) {
                 if (!collect_funcs) {
                     if (!check_func_signature(params, funcData)) {
                         fprintf(stderr, "Error: function signature mismatch\n");
-                        exit(99); // TODO error
+                        exit(SEMANTIC_ERROR_2);
                     }
                 }
             }

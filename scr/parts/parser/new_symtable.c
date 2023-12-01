@@ -414,7 +414,7 @@ bool add_func(funcData_t *funcData) {
     if (data.funcData->params->length == 0) {
         if (tree_find(&currentScope, funcData->name, NULL, 0) != -1) {
             fprintf(stderr, "Error: function name collision with var.\n");
-            exit(9); // TODO error code
+            exit(SEMANTIC_ERROR_7);
         }
     }
     if (collect_funcs) {
@@ -431,7 +431,7 @@ bool add_func(funcData_t *funcData) {
                     strcpy(param, token);
                     if (strcmp(alias, param) == 0) {
                         fprintf(stderr, "Error: param name should be diff from its id.\n");
-                        exit(99); //  TODO error code
+                        exit(SEMANTIC_ERROR_7);
                     }
                     free(alias);
                     free(param);
@@ -455,7 +455,7 @@ bool add_var(varData_t *varData) {
     if (tree_find(&functions, varData->name, &funcData, 0) != -1) {
         if (funcData->funcData->params->length == 0) {
             fprintf(stderr, "Error: var name collision with function.\n");
-            exit(9); // TODO error code
+            exit(SEMANTIC_ERROR_7);
         }
     }
     free(funcData);
@@ -479,7 +479,7 @@ bool add_let(letData_t *letData) {
     if (tree_find(&functions, letData->name, &funcData, 0) != -1) {
         if (funcData->funcData->params->length == 0) {
             fprintf(stderr, "Error: let name collision with function.\n");
-            exit(9); // TODO error code
+            exit(SEMANTIC_ERROR_7);
         }
     }
     free(funcData);
@@ -507,8 +507,8 @@ funcData_t *get_func(string_t *name) {
     int found = tree_find(&functions, name, &data, 0);
     if (found == -1) {
         if (collect_funcs) return NULL;
-        fprintf(stderr, "Error: you use undeclared func `%s`\n", name->str);
-        exit(9); // TODO error code
+        fprintf(stderr, "Error: you use undefined func `%s`\n", name->str);
+        exit(SEMANTIC_ERROR_1);
     }
     return data->funcData;
 }
@@ -517,8 +517,8 @@ varData_t *get_var(string_t *name) {
     symTableData_t *data = malloc(sizeof(symTableData_t));
     int found = symtable_find(name, &data);
     if (found == -1) {
-        fprintf(stderr, "Error: usage of undecl var\n");
-        exit(99); // TODO error code
+        fprintf(stderr, "Error: usage of undefined var\n");
+        exit(SEMANTIC_ERROR_3);
     }
     if (data->type != ndVar) {
         return NULL;
@@ -530,8 +530,8 @@ letData_t *get_let(string_t *name) {
     symTableData_t *data = malloc(sizeof(symTableData_t));
     int found = symtable_find(name, &data);
     if (found == -1) {
-        fprintf(stderr, "Error: usage of undecl const\n");
-        exit(99); // TODO error code
+        fprintf(stderr, "Error: usage of undefined const\n");
+        exit(SEMANTIC_ERROR_3);
     }
     if (data->type != ndLet) {
         return NULL;

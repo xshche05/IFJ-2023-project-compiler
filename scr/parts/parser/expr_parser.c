@@ -272,7 +272,7 @@ static void reduce() {
             if (varData == NULL) varData = get_let(elems[0]->token->attribute.identifier);
             if (!varData->isDeclared) {
                 fprintf(stderr, "Error: EXPR undefined variable.\n");
-                exit(5); // TODO error code
+                exit(SEMANTIC_ERROR_7);
             }
             // TODO push var with frame and scope
             gen_line("PUSHS %s\n", gen_var_name(varData->name->str, varData->scope));
@@ -495,7 +495,7 @@ static expr_elem_t *next_token() {
                 funcData = get_func(current->attribute.identifier);
                 if (!check_func_signature(params, funcData)) {
                     fprintf(stderr, "Error: EXPR function call signature mismatch.\n");
-                    exit(4); // TODO error code
+                    exit(SEMANTIC_ERROR_2);
                 }
                 gen_line("CALL %s\n", current->attribute.identifier->str);
             }
