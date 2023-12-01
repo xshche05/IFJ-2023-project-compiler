@@ -25,7 +25,8 @@ typedef enum {
     LOGICAL_OR1_S,    // |
     LOGICAL_OR2_S,    // ||
     RANGE_START_S,    // .
-    RANGE_CLOSED_S,   // ..
+    RANGE_START_1_S,  // ..
+    RANGE_CLOSED_S,   // ...
     RANGE_HALF_OPEN_S,// ..<
     BRACE_L_S,        // {
     BRACE_R_S,        // }

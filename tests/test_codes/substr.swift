@@ -1,13 +1,13 @@
-// Ukazka prace s retezci a vestavenymi funkcemi
+// Ukazka prace s retezci a vestavenymi funkcemi 
 
-write("Ahoj\n\"Sve'te \\\u{0022}", "\n")  /* */
+write("Ahoj\n\"Sve'te \\\u{0022}", "\n")  // 042 oktalove = 34 decimalne = 22 hexadecimalne = znak uvozovek
 
-var s1 : String? =
+var s1 : String? = 
   """
-   Toto
-   je
+   Toto 
+   je 
 
-   nejaky
+   nejaky 
    text
  """  // ukoncujici uvozovky ovlivnuji implicitni odsazeni vnitrnich radku retezce
 var s2:String = (s1!) + ", ktery jeste trochu obohatime"
@@ -21,7 +21,8 @@ let s1_16ty_znak : Int = s1_20ty_znak - s1len
 let s11 = substring(of: s2, startingAt: s1_16ty_znak, endingBefore: s1_20ty_znak)
 write(s1len, " znaky od ", 16, ". znaku (index ", s1_16ty_znak, ") v \"", s2, "\":", s11, "\n")
 
-s1String = substring(of:s2,startingAt:15,endingBefore:19) ??
+let s3 = substring(of:s2,startingAt:15,endingBefore:19) 
+s1String = s3 ?? 
 """
 viceradkovy
 "retezec"

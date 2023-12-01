@@ -42,19 +42,39 @@ static int is_keyword(string_t *lexeme) {
     return -1;
 }
 
+void split_to_lines(string_t *source_code, dynamic_array_t *lines) {
+    for (int i = 0; i < source_code->length;i++) {
+        for (int j = i; j < source_code->length; j++) {
+            if (source_code->str[j] == '\n' || source_code->str[j+1] == '\0') {
+                char *line = malloc(sizeof(char) * (j - i + 1));
+                strncpy(line, source_code->str + i, j - i + 1);
+                strcat(line, "\0");
+                DynamicArray.add(lines, line);
+                i = j;
+                break;
+            }
+        }
+    }
+}
+
+bool has_only_spaces(char *str, int length) {
+    for (int i = 0; i < length; i++) {
+        if (!isspace(str[i])) return false;
+    }
+    return true;
+}
+
 static string_t *verify_str(string_t *lexeme, bool multiline) {
     // if multiline string, split by '\n'
     string_t *tmp_lex = String.copy(lexeme);
     string_t *new_lex = String.ctor();
     if (multiline) {
+        bool not_empty = false;
+
         dynamic_array_t *lines = DynamicArray.ctor();
-        char *line = strtok(tmp_lex->str, "\n");
-        while (line != NULL) {
-            char *tmp = malloc(sizeof(char) * (strlen(line) + 1));
-            strcpy(tmp, line);
-            DynamicArray.add(lines, tmp);
-            line = strtok(NULL, "\n");
-        }
+
+        split_to_lines(lexeme, lines);
+
         int spaces_before_closing_quotes = 0;
         while (isspace(*((char *) DynamicArray.get(lines, lines->size - 1) + spaces_before_closing_quotes))) {
             spaces_before_closing_quotes++;
@@ -68,32 +88,37 @@ static string_t *verify_str(string_t *lexeme, bool multiline) {
             String.dtor(tmp_lex);
             String.dtor(new_lex);
             return NULL;
-        } else if (number_of_spaces_in_first_line) {
-            char *new_first = (char *) DynamicArray.get(lines, 1) + number_of_spaces_in_first_line;
-            String.add_cstr(new_lex, new_first);
-        } else {
-            String.add_cstr(new_lex, DynamicArray.get(lines, 1));
         }
-        if (lines->size > 3) String.add_char(new_lex, '\n');
+//        else if (number_of_spaces_in_first_line) {
+//            char *new_first = (char *) DynamicArray.get(lines, 1) + number_of_spaces_in_first_line;
+//            String.add_cstr(new_lex, new_first);
+//        } else {
+//            String.add_cstr(new_lex, DynamicArray.get(lines, 1));
+//        }
+//        if (lines->size > 2) String.add_char(new_lex, '\n');
         if (spaces_before_closing_quotes > 0) {
-            for (int i = 2; i < lines->size - 1; i++) {
+            for (int i = 1; i < lines->size - 1; i++) {
                 int spaces_to_remove = spaces_before_closing_quotes;
-                char *cur_line = DynamicArray.get(lines, i) + spaces_to_remove;
-                if (!isspace(*(cur_line - 1))) {
-                    fprintf(stderr, "Error: Invalid multiline string. Before closing quotes too many whitespaces\n");
-
-                    String.dtor(tmp_lex);
-                    String.dtor(new_lex);
-                    return NULL;
+                char *cur_line = DynamicArray.get(lines, i);
+                if (!has_only_spaces(cur_line, strlen(cur_line))) {
+                    cur_line += spaces_to_remove;
+                    not_empty = not_empty || true;
                 }
                 String.add_cstr(new_lex, cur_line);
-                if (i != lines->size - 2) String.add_char(new_lex, '\n');
+                if (i == lines->size - 2) String.del_last_char(new_lex);
             }
         } else {
-            for (int i = 2; i < lines->size - 1; i++) {
-                String.add_cstr(new_lex, DynamicArray.get(lines, i));
-                if (i != lines->size - 2) String.add_char(new_lex, '\n');
+            for (int i = 1; i < lines->size - 1; i++) {
+                char *cur_line = DynamicArray.get(lines, i);
+                if (!has_only_spaces(cur_line, strlen(cur_line))) {
+                    not_empty = not_empty || true;
+                }
+                String.add_cstr(new_lex, cur_line);
+                if (i == lines->size - 2) String.del_last_char(new_lex);
             }
+        }
+        if (!not_empty) {
+            String.clear(new_lex);
         }
         DynamicArray.dtor(lines);
     } else {
@@ -173,6 +198,9 @@ static string_t *verify_str(string_t *lexeme, bool multiline) {
         } else {
             String.add_char(tmp_lex, tmp[i]);
         }
+    }
+    if (new_lex->length == 0) {
+        String.add_char(new_lex, '\0');
     }
     String.dtor(new_lex);
     return tmp_lex;
@@ -603,7 +631,7 @@ int source_code_to_tokens() {
                 break;
             case STR_2_START_S:
                 if (c == '\n') {
-                    fsm_state = STR_MULT_S;
+                    fsm_state = STR_LF_S;
                     multiline = true;
                     String.add_char(lexeme, c);
                 } else {
@@ -890,21 +918,22 @@ int source_code_to_tokens() {
                 break;
             case RANGE_START_S:
                 if (c == '.') {
-                    fsm_state = RANGE_CLOSED_S;
+                    fsm_state = RANGE_START_1_S;
                 } else {
                     //fprintf(stderr, "Error: Unknown character '%c' (0x%02x). Expected '.'\n", c, c);
                     ERROR(stderr, "Unknown character '%c' (0x%02x). Expected '.'", c, c)
-
                     return LEXICAL_ERROR;
                 }
                 break;
-            case RANGE_CLOSED_S:
+            case RANGE_START_1_S:
                 if (c == '<')
                     fsm_state = RANGE_HALF_OPEN_S;
-                else {
-                    type = TOKEN_CLOSED_RANGE;
-                    add_token(type, attribute, false);
-                    fsm_state = START_S;
+                else if (c == '.') {
+                    fsm_state = RANGE_CLOSED_S;
+                } else {
+                    //fprintf(stderr, "Error: Unknown character '%c' (0x%02x). Expected '.' or '<'\n", c, c);
+                    ERROR(stderr, "Unknown character '%c' (0x%02x). Expected '.' or '<'", c, c)
+                    return LEXICAL_ERROR;
                 }
                 break;
             case RANGE_HALF_OPEN_S:
@@ -912,9 +941,18 @@ int source_code_to_tokens() {
                 add_token(type, attribute, false);
                 fsm_state = START_S;
                 break;
+            case RANGE_CLOSED_S:
+                type = TOKEN_CLOSED_RANGE;
+                add_token(type, attribute, false);
+                fsm_state = START_S;
+                break;
         }
         prev_prev = prev;
         prev = c;
+    }
+    if (lexeme->length > 0) {
+        fprintf(stderr, "Error: Unclosed string literal\n");
+        return LEXICAL_ERROR;
     }
     String.dtor(lexeme);
     if (comment_cnt > 0) {

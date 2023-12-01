@@ -4,6 +4,7 @@
 
 #include "lists.h"
 #include <stdlib.h>
+#include <string.h>
 
 dynamic_array_t *dynamic_array_ctor() {
     dynamic_array_t *array = malloc(sizeof(dynamic_array_t));
@@ -66,10 +67,23 @@ void* dynamic_array_get(dynamic_array_t *array, int index) {
     return array->array[index];
 }
 
+void dynamic_add_unique_cstr(dynamic_array_t *array, char *item) {
+    if (array == NULL) {
+        return;
+    }
+    for (int i = 0; i < array->size; i++) {
+        if (strcmp((char*)dynamic_array_get(array, i), item) == 0) {
+            return;
+        }
+    }
+    dynamic_array_add(array, item);
+}
+
 const struct dynamic_array_interface DynamicArray = {
         .ctor = dynamic_array_ctor,
         .dtor = dynamic_array_dtor,
         .add = dynamic_array_add,
+        .add_unique_cstr = dynamic_add_unique_cstr,
         .del = dynamic_array_del,
         .get = dynamic_array_get
 };

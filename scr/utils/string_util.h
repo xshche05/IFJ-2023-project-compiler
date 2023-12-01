@@ -44,6 +44,7 @@ struct string_interface {
     int (*add_cstr)(string_t *dest, char *source);
     int (*assign)(string_t *dest, string_t *source);
     int (*assign_cstr)(string_t *dest, char *source);
+    int (*del_last_char)(string_t *string);
     string_t *(*create)(char *source);
 };
 

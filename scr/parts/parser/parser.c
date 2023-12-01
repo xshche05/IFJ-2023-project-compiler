@@ -74,9 +74,15 @@ int S() {
     collect_funcs = !collect_funcs;
     init_codegen();
     symtable_init();
-//    gen_header();
-//    gen_register_def();
-//    gen_std_functions();
+    gen_header();
+    gen_std_functions();
+    gen_new_frame();
+    gen_push_frame();
+    // Jump to GF and LF defvar
+    char *main_defvar_label = gen_unique_label("main_defvar");
+    char *main_defvar_label_back = gen_unique_label("main_defvar_back");
+    gen_line("JUMP %s\n", main_defvar_label);
+    gen_line("LABEL %s\n", main_defvar_label_back);
     lookahead = TokenArray.next();
     switch (lookahead->type) {
         case TOKEN_FUNC:
@@ -97,6 +103,15 @@ int S() {
             sprintf(error_msg, "Syntax error [S]: expected ['TOKEN_EOF', 'TOKEN_IF', 'TOKEN_IDENTIFIER', 'TOKEN_WHILE', 'TOKEN_FOR', 'TOKEN_VAR', 'TOKEN_LET', 'TOKEN_RETURN', 'TOKEN_FUNC', 'TOKEN_BREAK', 'TOKEN_CONTINUE'], got %s\n", tokens_as_str[lookahead->type]);
             s = false;
     }
+    gen_pop_frame();
+    // gen skip label
+    char *skip_label = gen_unique_label("main_def_skip");
+    gen_line("JUMP %s\n", skip_label);
+    gen_line("LABEL %s\n", main_defvar_label);
+    gen_used_vars();
+    gen_used_global_vars();
+    gen_line("JUMP %s\n", main_defvar_label_back);
+    gen_line("LABEL %s\n", skip_label);
     if (s) return SUCCESS;
     else return SYNTAX_ERROR;
 }
@@ -198,6 +213,10 @@ void check_return_type(type_t type, bool is_literal, funcData_t **funcData) {
             exit(RETURN_TYPE_ERROR);
         }
     }
+    if (type == void_type && (*funcData)->returnType == void_type) {
+        fprintf(stderr, "Error: smth after return\n");
+        exit(9);
+    }
     gen_return(false);
 }
 
@@ -209,7 +228,7 @@ bool RET_EXPR(funcData_t **funcData) {
         case TOKEN_RIGHT_BRACE:
         case TOKEN_EOF:
             s = true;
-            if (collect_funcs) return s;
+            if (collect_funcs) break;
             if ((*funcData)->returnType != void_type) {
                 fprintf(stderr, "Error: void return in non void func\n");
                 exit(VOID_RETURN_ERROR);
@@ -234,8 +253,8 @@ void check_decl_type(type_t type, varData_t *varData) {
     if (type != none_type) {
         varData->type = type;
         if (type > 3) {
-            varData->isDefined = true;
-            // TODO declare variable as nil
+            varData->isDeclared = true;
+            gen_line("MOVE %s nil@nil\n", gen_var_name(varData->name->str, get_scope()));
         }
     } else {
         varData->type = none_type;
@@ -245,7 +264,7 @@ void check_decl_type(type_t type, varData_t *varData) {
 void check_decl_expr(type_t type, bool is_literal, varData_t *varData) {
     if (collect_funcs) return;
     if (type != none_type) {
-        varData->isDefined = true;
+        varData->isDeclared = true;
         if (varData->type == none_type) {
             if (type == nil_type) {
                 fprintf(stderr, "Error: nil variable without type\n");
@@ -271,7 +290,7 @@ void check_decl_expr(type_t type, bool is_literal, varData_t *varData) {
                         fprintf(stderr, "Error: cant convert non literal value from DOUBLE to INT\n");
                         exit(99);
                     }
-                    gen_line("FLOAT2INTS\n");
+                    gen_line("INT2FLOATS\n");
                 } else {
                     fprintf(stderr, "Error: variable type mismatch\n");
                     exit(99);
@@ -281,6 +300,8 @@ void check_decl_expr(type_t type, bool is_literal, varData_t *varData) {
                 exit(99);
             }
         }
+        int scope = get_scope();
+        gen_line("POPS %s\n", gen_var_name(varData->name->str, scope));
     }
 }
 
@@ -299,15 +320,16 @@ bool VAR_DECL() {
     bool s;
     varData_t *varData = malloc(sizeof(varData_t));
     type_t type = none_type;
-    varData->isDefined = false;
+    varData->isDeclared = false;
+    varData->canBeRedefined = false;
     switch (lookahead->type) {
         case TOKEN_VAR:
             s = match(TOKEN_VAR);
             token_t *id = lookahead;
             s = s && match(TOKEN_IDENTIFIER);
             varData->name = id->attribute.identifier;
-            varData->isDeclared = true;
-            // TODO declare variable in LF if scope > 0 else in GF
+            varData->isDefined = true;
+            // TODO define variable in LF if scope > 0 else in GF
             s = s && VAR_LET_TYPE(&type);
             if (s) {
                 check_decl_type(type, varData);
@@ -335,15 +357,16 @@ bool LET_DECL() {
     bool s;
     type_t type = none_type;
     letData_t *letData = malloc(sizeof(letData_t));
-    letData->isDefined = false;
+    letData->isDeclared = false;
+    letData->canBeRedefined = false;
     switch (lookahead->type) {
         case TOKEN_LET:
             s = match(TOKEN_LET);
             token_t *id = lookahead;
             s = s && match(TOKEN_IDENTIFIER);
             letData->name = id->attribute.identifier;
-            letData->isDeclared = true;
-            // TODO declare variable in LF if scope > 0 else in GF
+            letData->isDefined = true;
+            // TODO define variable in LF if scope > 0 else in GF
             s = s && VAR_LET_TYPE(&type);
             if (s) {
                 check_decl_type(type, letData);
@@ -359,7 +382,6 @@ bool LET_DECL() {
                     exit(VAR_REDEFINITION_ERROR);
                 }
             }
-
             break;
         default:
             sprintf(error_msg, "Syntax error [LET_DECL]: expected ['TOKEN_LET'], got %s\n", tokens_as_str[lookahead->type]);
@@ -394,10 +416,6 @@ bool VAR_LET_EXP(token_t *id, type_t *type, bool *is_literal) {
         case TOKEN_ASSIGNMENT:
             s = match(TOKEN_ASSIGNMENT);
             s = s && call_expr_parser(type, is_literal);
-            if (s) {
-                int scope = get_scope();
-                gen_line("POPS %s_%d\n", id->attribute.identifier->str, scope); // TODO assign
-            }
             break;
         default:
             if (nl_flag) return true;
@@ -420,12 +438,20 @@ bool FUNC_DECL() {
             token_t *id = lookahead;
             funcData->name = id->attribute.identifier;
             s = s && match(TOKEN_IDENTIFIER);
+            char *skip_label = gen_unique_label("skip");
+            gen_line("JUMP %s\n", skip_label);
             if (s) {
                 gen_func_label(id->attribute.identifier->str);
             }
+            // Goto defvar label
+            char *defvar_label = gen_unique_label("defvar");
+            char *defvar_label_back = gen_unique_label("defvar_back");
             s = s && match(TOKEN_LEFT_BRACKET);
             new_frame();
             gen_new_frame();
+            gen_push_frame();
+            gen_line("JUMP %s\n", defvar_label);
+            gen_line("LABEL %s\n", defvar_label_back);
             s = s && PARAM_LIST(&funcData);
             if (s) {
                 if (collect_funcs) {
@@ -435,13 +461,19 @@ bool FUNC_DECL() {
                     }
                 }
             }
+            new_frame();
             gen_pop_params(funcData->params);
-            gen_push_frame();
             s = s && match(TOKEN_RIGHT_BRACKET);
             s = s && FUNC_RET_TYPE(&funcData->returnType);
             s = s && match(TOKEN_LEFT_BRACE);
             s = s && CODE();
-            if (s && collect_funcs) {
+            char *def_skip_label = gen_unique_label("def_skip");
+            gen_line("JUMP %s\n", def_skip_label);
+            gen_line("LABEL %s\n", defvar_label);
+            gen_used_vars();
+            gen_line("JUMP %s\n", defvar_label_back);
+            gen_line("LABEL %s\n", def_skip_label);
+            if (s) {
                 if (funcData->returnType == void_type) {
                     gen_return(true);
                 } else {
@@ -454,6 +486,8 @@ bool FUNC_DECL() {
             s = s && match(TOKEN_RIGHT_BRACE);
             inside_func = false;
             del_frame();
+            del_frame();
+            gen_line("LABEL %s\n", skip_label);
             break;
         default:
             sprintf(error_msg, "Syntax error [FUNC_DECL]: expected ['TOKEN_FUNC'], got %s\n", tokens_as_str[lookahead->type]);
@@ -500,9 +534,9 @@ bool PARAM_LIST(funcData_t **funcData) {
 
 bool PARAM(funcData_t **funcData) {
     bool s;
-    varData_t *func_param = malloc(sizeof(varData_t));
-    func_param->isDeclared = true;
+    letData_t *func_param = malloc(sizeof(varData_t));
     func_param->isDefined = true;
+    func_param->isDeclared = true;
     switch (lookahead->type) {
         case TOKEN_IDENTIFIER:
         case TOKEN_UNDERSCORE:
@@ -525,7 +559,7 @@ bool PARAM(funcData_t **funcData) {
                 String.add_char((*funcData)->params, type + '0');
             }
             if (s) {
-                bool flag = add_var(func_param);
+                bool flag = add_let(func_param);
                 if (!flag) {
                     fprintf(stderr, "Error: parameter already defined\n");
                     exit(99); // TODO error
@@ -593,14 +627,11 @@ bool BRANCH() {
         case TOKEN_IF:
             gen_branch_labels(true);
             s = match(TOKEN_IF);
-            gen_new_frame();
             new_frame();
             s = s && BR_EXPR();
             s = s && match(TOKEN_LEFT_BRACE);
-            gen_push_frame();
             s = s && CODE();
             s = s && match(TOKEN_RIGHT_BRACE);
-            gen_pop_frame();
             del_frame();
             gen_branch_if_end();
             s = s && ELSE();
@@ -633,12 +664,14 @@ bool BR_EXPR() {
                     exit(99); // TODO error
                 }
                 // TODO push var to stack
-                gen_line("PUSHS %s_%d\n", varData->name->str, varData->scope);
+                gen_line("PUSHS %s\n", gen_var_name(varData->name->str, varData->scope));
                 letData_t *letData = malloc(sizeof(letData_t));
                 letData->name = id->attribute.identifier;
-                letData->isDeclared = true;
                 letData->isDefined = true;
+                letData->isDeclared = true;
+                letData->canBeRedefined = true;
                 letData->type = varData->type - (nil_int_type - int_type);
+                gen_line("MOVE %s %s\n", gen_var_name(letData->name->str, get_scope()), gen_var_name(varData->name->str, varData->scope));
                 if (!add_let(letData)) {
                     fprintf(stderr, "Error: constant already defined\n");
                     exit(VAR_REDEFINITION_ERROR);
@@ -685,24 +718,20 @@ bool ELSE_IF() {
         case TOKEN_IF:
             gen_branch_labels(false);
             s = match(TOKEN_IF);
-            gen_new_frame();
             new_frame();
             s = s && BR_EXPR();
             s = s && match(TOKEN_LEFT_BRACE);
             s = s && CODE();
             s = s && match(TOKEN_RIGHT_BRACE);
-            gen_pop_frame();
             del_frame();
             gen_branch_if_end();
             s = s && ELSE();
             break;
         case TOKEN_LEFT_BRACE:
             s = match(TOKEN_LEFT_BRACE);
-            gen_new_frame();
             new_frame();
             s = s && CODE();
             s = s && match(TOKEN_RIGHT_BRACE);
-            gen_pop_frame();
             del_frame();
             break;
         default:
@@ -733,11 +762,9 @@ bool WHILE_LOOP() {
             }
             gen_while_cond();
             s = s && match(TOKEN_LEFT_BRACE);
-            gen_new_frame();
             new_frame();
             s = s && CODE();
             s = s && match(TOKEN_RIGHT_BRACE);
-            gen_pop_frame();
             del_frame();
             gen_while_end();
             inside_loop--;
@@ -774,12 +801,10 @@ bool FOR_LOOP() {
             gen_for_start();
             gen_for_cond();
             s = s && match(TOKEN_LEFT_BRACE);
-            gen_new_frame();
             new_frame();
             // TODO add for_id to frame, copy counter to for_id
             s = s && CODE();
             s = s && match(TOKEN_RIGHT_BRACE);
-            gen_pop_frame();
             del_frame();
             gen_for_end();
             gen_for_range_restore();
@@ -906,10 +931,8 @@ bool CALL_PARAM(string_t *call_params, bool call_after_param, char *func_name) {
                 String.add_char(call_params, '_');
                 String.add_char(call_params, ':');
                 String.add_char(call_params, type + '0');
-                if (s) {
-                    if (call_after_param) {
-                        gen_line("CALL %s\n", func_name);
-                    }
+                if (call_after_param) {
+                    gen_line("CALL %s\n", func_name);
                 }
                 return true;
             }
@@ -994,34 +1017,28 @@ bool NEXT_ID_CALL_OR_ASSIGN(token_t *id) {
                 varData_t *varData = get_var(id->attribute.identifier);
                 letData_t *letData = get_let(id->attribute.identifier);
                 if (varData == NULL && letData != NULL) {
-                    fprintf(stderr, "Error: const redefinition\n");
-                    exit(9); // TODO error
-                } else {
-                    if (varData->type != type && varData->type - type != nil_int_type-int_type && !(varData->type > 3 && type == nil_type)) {
-                        if (varData->type == int_type || varData->type == nil_int_type) {
-                            if (is_literal && type == double_type) {
-                                gen_line("INT2FLOATS\n");
-                            } else {
-                                fprintf(stderr, "Error: variable type mismatch\n");
-                                exit(99); // TODO error
-                            }
-                        } else if (varData->type == double_type || varData->type == nil_double_type) {
-                            if (is_literal && type == int_type) {
-                                gen_line("FLOAT2INTS\n");
-                            } else {
-                                fprintf(stderr, "Error: variable type mismatch\n");
-                                exit(99); // TODO error
-                            }
-                        }
-                        else {
+                    varData = letData;
+                    if (letData->isDeclared) {
+                        fprintf(stderr, "Error: const redeclaration\n");
+                        exit(SEMANTIC_ERROR_7);
+                    }
+                }
+                if (varData->type != type && varData->type - type != nil_int_type-int_type && !(varData->type > 3 && type == nil_type)) {
+                    if (varData->type == double_type || varData->type == nil_double_type) {
+                        if (is_literal && type == int_type) {
+                            gen_line("INT2FLOATS\n");
+                        } else {
                             fprintf(stderr, "Error: variable type mismatch\n");
-                            exit(99); // TODO error
+                            exit(SEMANTIC_ERROR_7);
                         }
                     }
-                    varData->isDefined = true;
-                    // TODO assign
-                    gen_line("POPS %s_%d\n", id->attribute.identifier->str, varData->scope);
+                    else {
+                        fprintf(stderr, "Error: variable type mismatch\n");
+                        exit(SEMANTIC_ERROR_7);
+                    }
                 }
+                varData->isDeclared = true;
+                gen_line("POPS %s\n", gen_var_name(id->attribute.identifier->str, varData->scope));
             }
             break;
         default:

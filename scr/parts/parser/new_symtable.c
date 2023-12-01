@@ -99,7 +99,7 @@ void std_func_init() {
     String.assign_cstr(substr->name, "substring");
     substr->params = String.ctor();
     String.assign_cstr(substr->params, "of:string:2#startingAt:i:0#endingBefore:j:0");
-    substr->returnType = string_type;
+    substr->returnType = nil_string_type;
     add_func(substr);
 
     funcData_t *ord = malloc(sizeof(funcData_t));
@@ -459,7 +459,15 @@ bool add_var(varData_t *varData) {
         }
     }
     free(funcData);
-    return tree_add(&currentScope, varData->name, data);
+    bool s = tree_add(&currentScope, varData->name, data);
+    if (!s) {
+        symTableData_t *data2 = malloc(sizeof(symTableData_t));
+        symtable_find(varData->name, &data2);
+        bool tmp = data2->varData->canBeRedefined;
+        data2->varData->canBeRedefined = false;
+        return tmp;
+    }
+    return s;
 }
 
 bool add_let(letData_t *letData) {
@@ -475,7 +483,15 @@ bool add_let(letData_t *letData) {
         }
     }
     free(funcData);
-    return tree_add(&currentScope, letData->name, data);
+    bool s = tree_add(&currentScope, letData->name, data);
+    if (!s) {
+        symTableData_t *data2 = malloc(sizeof(symTableData_t));
+        symtable_find(letData->name, &data2);
+        bool tmp = data2->letData->canBeRedefined;
+        data2->letData->canBeRedefined = false;
+        return tmp;
+    }
+    return s;
 }
 
 void new_frame() {

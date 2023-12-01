@@ -7,7 +7,7 @@ set(CMAKE_C_STANDARD 11)
 
 include_directories(scr/utils scr/parts src scr/parts/scanner scr/parts/parser)
 
-add_compile_options(-Wall -Wextra -std=c11 -g -DDEBUG)
+add_compile_options(-Wall -Wextra -std=c11 -g)
 
 add_executable(IFJ_PRJ
         scr/main.c
@@ -25,8 +25,6 @@ add_executable(IFJ_PRJ
         scr/parts/parser/expr_parser.h
         scr/utils/stack.c
         scr/utils/stack.h
-        archive/symtable.c
-        archive/symtable.h
         scr/parts/codegen/codegen.c
         scr/parts/parser/new_symtable.c
         scr/parts/parser/new_symtable.c)

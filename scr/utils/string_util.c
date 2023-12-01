@@ -220,6 +220,14 @@ static string_t *string_create(char *source) {
     return string;
 }
 
+static int string_del_last_char(string_t *string) {
+    if (string->length == 0) {
+        return -1;
+    }
+    string->str[--string->length] = '\0';
+    return 0;
+}
+
 const struct string_interface String = {
         .ctor = string_ctor,
         .copy = string_copy,
@@ -228,6 +236,7 @@ const struct string_interface String = {
         .cmp = string_compare,
         .cmp_cstr = string_compare_cstr,
         .add_char = string_add_char,
+        .del_last_char = string_del_last_char,
         .add_string = string_add_string,
         .add_cstr = string_add_cstr,
         .assign = string_assign,

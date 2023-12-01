@@ -12,6 +12,7 @@ if let newInput {
 	str1 = newInput
 	while (str1 != "abcdefgh") {
 		write("Spatne zadana posloupnost, zkuste znovu:\n")
-		str1 = readString() ?? ""
+		let tmp = readString()
+		str1 = tmp ?? ""
 	}
-}
+}else{}

@@ -22,10 +22,6 @@ void gen_continue();
 
 void gen_return(bool void_return);
 
-void gen_var_decl(char *var_name);
-
-void gen_var_assign(char *var_name);
-
 void gen_branch_labels(bool gen_end);
 
 void gen_branch_if_start(bool let);
@@ -65,5 +61,11 @@ void gen_push_frame();
 void gen_pop_frame();
 
 void gen_pop_params(string_t *params);
+
+char *gen_var_name(char *id, int scope);
+
+void gen_used_global_vars();
+
+void gen_used_vars();
 
 #endif //IFJ_PRJ_CODEGEN_H

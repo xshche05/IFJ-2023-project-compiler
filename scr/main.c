@@ -17,7 +17,7 @@ int main(int argc, char **argv) {
         return LEXICAL_ERROR;
     }
     code = S();
-    printf("code: %d\n", code);
+//    fprintf(stderr, "code: %d\n", code);
     if (code != SUCCESS) {
         fprintf(stderr, "Error: Parsing failed.\n");
         fprintf(stderr, "Error: %s\n", error_msg);

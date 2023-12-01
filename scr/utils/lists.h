@@ -17,6 +17,7 @@ struct dynamic_array_interface {
     dynamic_array_t *(*ctor)(void);
     void (*dtor)(dynamic_array_t *array);
     int (*add)(dynamic_array_t *array, void *item);
+    void (*add_unique_cstr)(dynamic_array_t *array, char *item);
     int (*del)(dynamic_array_t *array, int index);
     void *(*get)(dynamic_array_t *array, int index);
 };

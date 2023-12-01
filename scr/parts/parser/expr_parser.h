@@ -34,38 +34,6 @@ typedef struct {
 extern bool ignore_right_bracket;
 int parse_expr(type_t *type, bool *is_literal);
 
-#define type_check() if (a->ret_type != b->ret_type \
-&& (a->ret_type != int_type && b->ret_type != double_type) \
-&& (a->ret_type != double_type && b->ret_type != int_type)) { \
-fprintf(stderr, "Error: EXPR type mismatch.\n"); \
-exit(TYPE_ERROR); \
-} \
-new_elem->type = NON_TERM; \
-if (a->ret_type == int_type && b->ret_type == int_type) { \
-new_elem->ret_type = int_type; \
-} else if (a->ret_type == double_type && b->ret_type == double_type) { \
-new_elem->ret_type = double_type;\
-} else if (a->ret_type == int_type && b->ret_type == double_type) {\
-if (a->token == NULL) {\
-fprintf(stderr, "ERROR: cant retype VAR (a)");\
-exit(TYPE_ERROR);\
-}\
-new_elem->ret_type = double_type;                   \
-printf("INT2FLOATS\n");                                                    \
-} else if (a->ret_type == double_type && b->ret_type == int_type) {\
-if (b->token == NULL) {\
-fprintf(stderr, "ERROR: cant retype VAR (b)");\
-exit(TYPE_ERROR);\
-}\
-new_elem->ret_type = double_type;                   \
-printf("POPS GF@$A\n");                                                 \
-printf("INT2FLOATS\n");                           \
-printf("PUSHS GF@$A\n");                                                  \
-} else {\
-new_elem->ret_type = elems[0]->ret_type;            \
-}\
-new_elem->token = (token_t*) ((int)a->token * (int)b->token);\
-
 #endif //IFJ_PRJ_EXPR_PARSER_H
 
 // if (a->ret_type != b->ret_type

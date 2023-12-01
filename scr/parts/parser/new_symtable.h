@@ -43,9 +43,10 @@ typedef struct {
 typedef struct {
     string_t *name;
     type_t type;
-    bool isDeclared;
     bool isDefined;
+    bool isDeclared;
     int scope;
+    bool canBeRedefined;
 } varData_t;
 
 typedef varData_t letData_t;

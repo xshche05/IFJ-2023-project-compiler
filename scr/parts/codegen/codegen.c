@@ -5,6 +5,7 @@
 #include "codegen.h"
 #include "stack.h"
 #include "parser.h"
+#include "lists.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -30,6 +31,9 @@ char *for_max_val = "GF@$FOR_MAX_VAL";
 stack_t *branch_label_stack;
 stack_t *loop_label_stack;
 stack_t *cycle_type_stack;
+dynamic_array_t *used_vars = NULL;
+dynamic_array_t *global_vars = NULL;
+stack_t *array_stack;
 
 char* current_loop_start_label = NULL;
 char* current_loop_end_label = NULL;
@@ -44,6 +48,8 @@ void init_codegen() {
     branch_label_stack = Stack.init();
     loop_label_stack = Stack.init();
     cycle_type_stack = Stack.init();
+    array_stack = Stack.init();
+    global_vars = DynamicArray.ctor();
 }
 
 void gen_header() {
@@ -63,10 +69,10 @@ void gen_register_def() {
 }
 
 char *gen_unique_label(char *prefix) {
-    start;
+    start NULL;
     static int label = 0;
     char *str = malloc(sizeof(char) * strlen(prefix) + 10);
-    sprintf(str, "%s_%X", prefix, label);
+    sprintf(str, "%s$%X", prefix, label);
     label++;
     return str;
 }
@@ -150,7 +156,7 @@ void gen_std_functions() {
     gen_line("GT LF@exit GF@$B GF@$C\n"); // exit = i > j
     gen_line("JUMPIFEQ $substring_std_exit_nil LF@exit bool@true\n");
     gen_line("PUSHS GF@$A\n");
-    gen_line("CALL $length_std\n"); // $RET = length(s)
+    gen_line("CALL length\n"); // $RET = length(s)
     gen_line("LT LF@exit GF@$B GF@$RET\n"); // exit = !(i >= length(s))
     gen_line("JUMPIFEQ $substring_std_exit_nil LF@exit bool@false\n");
     gen_line("GT LF@exit GF@$C GF@$RET\n"); // exit = j > length(s)
@@ -176,13 +182,24 @@ void gen_std_functions() {
     // ord
     gen_line("LABEL ord\n");
     gen_line("POPS GF@$A\n");
-    gen_line("STRI2INT GF@$RET GF@$A\n");
+    gen_line("STRI2INT GF@$RET GF@$A int@0\n");
     gen_line("RETURN\n");
     // chr
     gen_line("LABEL chr\n");
     gen_line("POPS GF@$A\n");
     gen_line("INT2CHAR GF@$RET GF@$A\n");
     gen_line("RETURN\n");
+    // ??
+    gen_line("LABEL $??op\n");
+    gen_line("POPS GF@$B\n");
+    gen_line("POPS GF@$A\n");
+    gen_line("TYPE GF@$C GF@$A\n");
+    gen_line("MOVE GF@$RET GF@$A\n");
+    gen_line("JUMPIFNEQ $??op_skip GF@$C string@nil\n");
+    gen_line("MOVE GF@$RET GF@$B\n");
+    gen_line("LABEL $??op_skip\n");
+    gen_line("RETURN\n");
+
     gen_line("LABEL $$main\n");
 }
 
@@ -387,11 +404,29 @@ void gen_new_frame() {
 void gen_push_frame() {
     start;
     gen_line("PUSHFRAME\n");
+    Stack.push(array_stack, used_vars);
+    used_vars = DynamicArray.ctor();
 }
 
 void gen_pop_frame() {
     start;
     gen_line("POPFRAME\n");
+}
+
+void gen_used_vars() {
+    start;
+    for (int i = 0; i < used_vars->size; i++) {
+        gen_line("DEFVAR %s\n", (char*)DynamicArray.get(used_vars, i));
+    }
+    used_vars = (dynamic_array_t*)Stack.top(array_stack);
+    Stack.pop(array_stack);
+}
+
+void gen_used_global_vars() {
+    start;
+    for (int i = 0; i < global_vars->size; i++) {
+        gen_line("DEFVAR %s\n", (char*)DynamicArray.get(global_vars, i));
+    }
 }
 
 void gen_pop_params(string_t *params) {
@@ -409,7 +444,6 @@ void gen_pop_params(string_t *params) {
         if (i % 3 == 1) {
             char *id = malloc(sizeof(char) * (strlen(token) + 1));\
             strcpy(id, token);
-            gen_line("DEFVAR TF@%s\n", id);
             Stack.push(param_stack, id);
         }
         token = strtok(NULL, "#:");
@@ -419,9 +453,22 @@ void gen_pop_params(string_t *params) {
     while (Stack.top(param_stack)) {
         char *id = (char*)Stack.top(param_stack);
         Stack.pop(param_stack);
-        gen_line("POPS TF@%s\n", id);
+        gen_line("POPS LF@%s%c1\n", id, '%');
         free(id);
     }
 
     free(str);
+}
+
+char *gen_var_name(char *id, int scope) {
+    start NULL;
+    char *str = malloc(sizeof(char) * (strlen(id) + 10));
+    if (scope == 0) {
+        sprintf(str, "GF@%s", id);
+        DynamicArray.add_unique_cstr(global_vars, str);
+    } else {
+        sprintf(str, "LF@%s%c%d", id, '%', scope);
+        DynamicArray.add_unique_cstr(used_vars, str);
+    }
+    return str;
 }
