@@ -6,21 +6,15 @@
 #include "../macros.h"
 #include <limits.h>
 #include <stdio.h>
+#include "memory.h"
 
 bool inside_func = false;
-bool not_name = true;
 bool has_return = false;
 int inside_loop = 0;
 int inside_branch = 0;
-//int scope = 0;
 token_t *lookahead = NULL;
 funcData_t *currentFunc = NULL;
 bool collect_funcs = false;
-
-#define RETURN_TYPE_ERROR 4 //
-#define VOID_RETURN_ERROR 6
-#define NO_TYPE_ERROR 8
-#define VAR_REDEFINITION_ERROR 3
 
 
 bool match(token_type_t type) {
@@ -37,7 +31,7 @@ bool match(token_type_t type) {
         }
     }
     if (type == TOKEN_FUNC) {
-        if (get_scope() != 0 || inside_loop || inside_branch) { // TODO FIX
+        if (get_scope() != 0 || inside_loop || inside_branch) {
             sprintf(error_msg, "Syntax error: function declaration outside of global scope\n");
             return false;
         }
@@ -114,6 +108,10 @@ int S() { //start
     gen_used_global_vars();
     gen_line("JUMP %s\n", main_defvar_label_back);
     gen_line("LABEL %s\n", skip_label);
+    safe_free(main_defvar_label);
+    safe_free(main_defvar_label_back);
+    safe_free(skip_label);
+    symtable_destroy();
     if (s) return SUCCESS;
     else return SYNTAX_ERROR;
 }
@@ -195,22 +193,22 @@ bool RETURN(funcData_t **funcData) {
 
 void check_return_type(type_t type, bool is_literal, funcData_t **funcData) {
     if (collect_funcs) return;
-    if (type != (*funcData)->returnType) {
+    if (type != (*funcData)->returnType && (*funcData)->returnType - type != nil_int_type-int_type) {
         if (type == int_type && (*funcData)->returnType == double_type) {
             if (!is_literal) {
                 fprintf(stderr, "Error: cant convert non literal value from INT to DOUBLE\n");
-                exit(SEMANTIC_ERROR_4);
+                safe_exit(SEMANTIC_ERROR_4);
             }
             gen_line("INT2FLOATS\n");
         }
         else {
             fprintf(stderr, "Error: return type mismatch\n");
-            exit(SEMANTIC_ERROR_4);
+            safe_exit(SEMANTIC_ERROR_4);
         }
     }
     if (type == void_type && (*funcData)->returnType == void_type) {
         fprintf(stderr, "Error: smth after return\n");
-        exit(9);
+        safe_exit(9);
     }
     gen_return(false);
 }
@@ -226,7 +224,7 @@ bool RET_EXPR(funcData_t **funcData) {
             if (collect_funcs) break;
             if ((*funcData)->returnType != void_type) {
                 fprintf(stderr, "Error: void return in non void func\n");
-                exit(SEMANTIC_ERROR_6);
+                safe_exit(SEMANTIC_ERROR_6);
             }
             gen_return(true);
             break;
@@ -265,7 +263,7 @@ void check_decl_expr(type_t type, bool is_literal, varData_t *varData) {
         if (varData->type == none_type) {
             if (type == nil_type) {
                 fprintf(stderr, "Error: nil variable without type\n");
-                exit(SEMANTIC_ERROR_8);
+                safe_exit(SEMANTIC_ERROR_8);
             }
             varData->type = type;
         }
@@ -274,16 +272,16 @@ void check_decl_expr(type_t type, bool is_literal, varData_t *varData) {
                 if (type == int_type) {
                     if (!is_literal) {
                         fprintf(stderr, "Error: cant convert non literal value from DOUBLE to INT\n");
-                        exit(SEMANTIC_ERROR_7);
+                        safe_exit(SEMANTIC_ERROR_7);
                     }
                     gen_line("INT2FLOATS\n");
                 } else {
                     fprintf(stderr, "Error: variable type mismatch\n");
-                    exit(SEMANTIC_ERROR_7);
+                    safe_exit(SEMANTIC_ERROR_7);
                 }
             } else {
                 fprintf(stderr, "Error: variable type mismatch\n");
-                exit(SEMANTIC_ERROR_7);
+                safe_exit(SEMANTIC_ERROR_7);
             }
         }
         int scope = get_scope();
@@ -295,16 +293,16 @@ void check_if_none(type_t type, varData_t *varData) {
     if (collect_funcs) return;
     if (varData->type == none_type) {
         fprintf(stderr, "Error: variable without type\n");
-        exit(SEMANTIC_ERROR_8);
+        safe_exit(SEMANTIC_ERROR_8);
     } else if (type == void_type) {
         fprintf(stderr, "Error: assign to void\n");
-        exit(SEMANTIC_ERROR_8);
+        safe_exit(SEMANTIC_ERROR_8);
     }
 }
 
 bool VAR_DECL() {
     bool s;
-    varData_t *varData = malloc(sizeof(varData_t));
+    varData_t *varData = safe_malloc(sizeof(varData_t));
     type_t type = none_type;
     varData->isDeclared = false;
     varData->minInitScope = INT_MAX;
@@ -316,20 +314,24 @@ bool VAR_DECL() {
             s = s && match(TOKEN_IDENTIFIER);
             varData->name = id->attribute.identifier;
             varData->isDefined = true;
-            // TODO define variable in LF if scope > 0 else in GF
             s = s && VAR_LET_TYPE(&type);
+            type_t tmp_type = type;
             if (s) {
                 check_decl_type(type, varData);
             }
             bool is_literal;
             s = s && VAR_LET_EXP(id, &type, &is_literal);
+            if (tmp_type == none_type && type == none_type && !collect_funcs) {
+                fprintf(stderr, "Error: variable without type and expression\n");
+                safe_exit(SYNTAX_ERROR);
+            }
             if (s) {
                 check_decl_expr(type, is_literal, varData);
                 check_if_none(type, varData);
                 if (collect_funcs) return s;
                 if (!add_var(varData)) {
                     fprintf(stderr, "Error: variable already defined\n");
-                    exit(SEMANTIC_ERROR_3);
+                    safe_exit(SEMANTIC_ERROR_3);
                 }
             }
             break;
@@ -343,7 +345,7 @@ bool VAR_DECL() {
 bool LET_DECL() {
     bool s;
     type_t type = none_type;
-    letData_t *letData = malloc(sizeof(letData_t));
+    letData_t *letData = safe_malloc(sizeof(letData_t));
     letData->isDeclared = false;
     letData->minInitScope = INT_MAX;
     letData->canBeRedefined = false;
@@ -354,20 +356,24 @@ bool LET_DECL() {
             s = s && match(TOKEN_IDENTIFIER);
             letData->name = id->attribute.identifier;
             letData->isDefined = true;
-            // TODO define variable in LF if scope > 0 else in GF
             s = s && VAR_LET_TYPE(&type);
+            type_t tmp_type = type;
             if (s) {
                 check_decl_type(type, letData);
             }
             bool is_literal;
             s = s && VAR_LET_EXP(id, &type, &is_literal);
+            if (tmp_type == none_type && type == none_type && !collect_funcs) {
+                fprintf(stderr, "Error: variable without type and expression\n");
+                safe_exit(SYNTAX_ERROR);
+            }
             if (s) {
                 check_decl_expr(type, is_literal, letData);
                 check_if_none(type, letData);
                 if (collect_funcs) return s;
                 if (!add_let(letData)) {
                     fprintf(stderr, "Error: constant already defined\n");
-                    exit(SEMANTIC_ERROR_3);
+                    safe_exit(SEMANTIC_ERROR_3);
                 }
             }
             break;
@@ -415,7 +421,7 @@ bool VAR_LET_EXP(token_t *id, type_t *type, bool *is_literal) {
 
 bool FUNC_DECL() {
     bool s;
-    funcData_t *funcData = malloc(sizeof(funcData_t));
+    funcData_t *funcData = safe_malloc(sizeof(funcData_t));
     currentFunc = funcData;
     funcData->params = String.ctor();
     switch (lookahead->type) {
@@ -445,7 +451,7 @@ bool FUNC_DECL() {
                 if (collect_funcs) {
                     if (!add_func(funcData)) { // TODO overloading
                         fprintf(stderr, "Error: function already defined\n");
-                        exit(SEMANTIC_ERROR_3);
+                        safe_exit(SEMANTIC_ERROR_3);
                     }
                 }
             }
@@ -467,7 +473,7 @@ bool FUNC_DECL() {
                 } else {
                     if (!has_return) {
                         fprintf(stderr, "Error: missing return statement in non void function\n");
-                        exit(SEMANTIC_ERROR_6);
+                        safe_exit(SEMANTIC_ERROR_6);
                     }
                 }
             }
@@ -522,9 +528,10 @@ bool PARAM_LIST(funcData_t **funcData) {
 
 bool PARAM(funcData_t **funcData) {
     bool s;
-    letData_t *func_param = malloc(sizeof(varData_t));
+    letData_t *func_param = safe_malloc(sizeof(varData_t));
     func_param->isDefined = true;
     func_param->isDeclared = true;
+    func_param->minInitScope = get_scope();
     switch (lookahead->type) {
         case TOKEN_IDENTIFIER:
         case TOKEN_UNDERSCORE:
@@ -550,7 +557,7 @@ bool PARAM(funcData_t **funcData) {
                 bool flag = add_let(func_param);
                 if (!flag) {
                     fprintf(stderr, "Error: parameter already defined\n");
-                    exit(SEMANTIC_ERROR_9);
+                    safe_exit(SEMANTIC_ERROR_9);
                 }
             }
             break;
@@ -641,7 +648,6 @@ bool BR_EXPR() {
             s = match(TOKEN_LET);
             token_t *id = lookahead;
             s = s && match(TOKEN_IDENTIFIER);
-            // TODO copy to frame
             if (s && !collect_funcs) {
                 varData_t *varData = get_var(id->attribute.identifier);
                 if (varData == NULL) {
@@ -649,15 +655,14 @@ bool BR_EXPR() {
                 }
                 if (varData->type < 4) {
                     fprintf(stderr, "Var type should be nillable\n");
-                    exit(SEMANTIC_ERROR_9);
+                    safe_exit(SEMANTIC_ERROR_9);
                 }
-                // TODO push var to stack
                 if (varData->minInitScope > get_scope()) {
                     fprintf(stderr, "Error: variable not initialized in this scope\n");
-                    exit(SEMANTIC_ERROR_5);
+                    safe_exit(SEMANTIC_ERROR_5);
                 }
                 gen_line("PUSHS %s\n", gen_var_name(varData->name->str, varData->scope));
-                letData_t *letData = malloc(sizeof(letData_t));
+                letData_t *letData = safe_malloc(sizeof(letData_t));
                 letData->name = id->attribute.identifier;
                 letData->isDefined = true;
                 letData->isDeclared = true;
@@ -667,7 +672,7 @@ bool BR_EXPR() {
                 gen_line("MOVE %s %s\n", gen_var_name(letData->name->str, get_scope()), gen_var_name(varData->name->str, varData->scope));
                 if (!add_let(letData)) {
                     fprintf(stderr, "Error: constant already defined\n");
-                    exit(SEMANTIC_ERROR_3);
+                    safe_exit(SEMANTIC_ERROR_3);
                 }
                 gen_branch_if_start(true);
             }
@@ -678,7 +683,7 @@ bool BR_EXPR() {
                 if (!collect_funcs) {
                     if (type != bool_type) {
                         fprintf(stderr, "Error: if condition expr must return BOOL\n");
-                        exit(SEMANTIC_ERROR_7);
+                        safe_exit(SEMANTIC_ERROR_7);
                     }
                     gen_branch_if_start(false);
                 }
@@ -749,7 +754,7 @@ bool WHILE_LOOP() {
                 if (!collect_funcs) {
                     if (type != bool_type) {
                         fprintf(stderr, "Error: while condition expr must return BOOL\n");
-                        exit(SEMANTIC_ERROR_9);
+                        safe_exit(SEMANTIC_ERROR_9);
                     }
                 }
             }
@@ -786,7 +791,7 @@ bool FOR_LOOP() {
                 if (!collect_funcs) {
                     if (type != int_type) {
                         fprintf(stderr, "Error: range type must be INT\n");
-                        exit(SEMANTIC_ERROR_9);
+                        safe_exit(SEMANTIC_ERROR_9);
                     }
                 }
             }
@@ -840,7 +845,7 @@ bool RANGE() {
                 if (!collect_funcs) {
                     if (type != int_type) {
                         fprintf(stderr, "Error: range type must be INT\n");
-                        exit(SEMANTIC_ERROR_9);
+                        safe_exit(SEMANTIC_ERROR_9);
                     }
                 }
             }
@@ -853,7 +858,7 @@ bool RANGE() {
                 if (!collect_funcs) {
                     if (type != int_type) {
                         fprintf(stderr, "Error: range type must be INT\n");
-                        exit(SEMANTIC_ERROR_9);
+                        safe_exit(SEMANTIC_ERROR_9);
                     }
                 }
             }
@@ -868,6 +873,8 @@ bool RANGE() {
 
 bool CALL_PARAM_LIST(string_t *call_params, bool call_after_param, char *func_name) {
     bool s;
+    type_t type;
+    bool is_literal;
     switch (lookahead->type) {
         case TOKEN_IDENTIFIER:
         case TOKEN_FALSE_LITERAL:
@@ -885,7 +892,7 @@ bool CALL_PARAM_LIST(string_t *call_params, bool call_after_param, char *func_na
             s = true;
             break;
         default:
-//            if (call_expr_parser()) return true; TODO check if really needed
+            if (call_expr_parser(&type, &is_literal)) return true;
             sprintf(error_msg, "Syntax error [CALL_PARAM_LIST]: expected ['TOKEN_FALSE_LITERAL', 'TOKEN_COLON', 'TOKEN_LESS_THAN', 'TOKEN_LOGICAL_AND', 'TOKEN_LEFT_BRACKET', 'TOKEN_NIL_LITERAL', 'TOKEN_REAL_LITERAL', 'TOKEN_STRING_LITERAL', 'TOKEN_ADDITION', 'TOKEN_SUBTRACTION', 'TOKEN_LOGICAL_OR', 'TOKEN_IDENTIFIER', 'TOKEN_UNWRAP_NILLABLE', 'TOKEN_EQUAL_TO', 'TOKEN_LESS_THAN_OR_EQUAL_TO', 'TOKEN_GREATER_THAN', 'TOKEN_NOT_EQUAL_TO', 'TOKEN_GREATER_THAN_OR_EQUAL_TO', 'TOKEN_TRUE_LITERAL', 'TOKEN_IS_NIL', 'TOKEN_DIVISION', 'TOKEN_MULTIPLICATION', 'TOKEN_LOGICAL_NOT', 'TOKEN_INTEGER_LITERAL', 'TOKEN_RIGHT_BRACKET'], got %s\n", tokens_as_str[lookahead->type]);
             s = false;
     }
@@ -997,7 +1004,7 @@ bool NEXT_ID_CALL_OR_ASSIGN(token_t *id) {
                 if (!collect_funcs) {
                     if (!check_func_signature(params, funcData)) {
                         fprintf(stderr, "Error: function signature mismatch\n");
-                        exit(SEMANTIC_ERROR_4);
+                        safe_exit(SEMANTIC_ERROR_4);
                     }
                 }
             }
@@ -1013,7 +1020,7 @@ bool NEXT_ID_CALL_OR_ASSIGN(token_t *id) {
                     varData = letData;
                     if (letData->isDeclared) {
                         fprintf(stderr, "Error: const redeclaration\n");
-                        exit(SEMANTIC_ERROR_9);
+                        safe_exit(SEMANTIC_ERROR_9);
                     }
                 }
                 if (varData->type != type && varData->type - type != nil_int_type-int_type && !(varData->type > 3 && type == nil_type)) {
@@ -1022,12 +1029,12 @@ bool NEXT_ID_CALL_OR_ASSIGN(token_t *id) {
                             gen_line("INT2FLOATS\n");
                         } else {
                             fprintf(stderr, "Error: variable type mismatch\n");
-                            exit(SEMANTIC_ERROR_7);
+                            safe_exit(SEMANTIC_ERROR_7);
                         }
                     }
                     else {
                         fprintf(stderr, "Error: variable type mismatch\n");
-                        exit(SEMANTIC_ERROR_7);
+                        safe_exit(SEMANTIC_ERROR_7);
                     }
                 }
                 varData->isDeclared = true;

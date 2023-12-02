@@ -4,6 +4,7 @@
 #include "codegen.h"
 #include <stdio.h>
 #include "macros.h"
+#include "memory.h"
 
 int table[12][12] = {
         {4, 2, 2, 2, 2, 2, 2, 2, 4, 4, 2, 2},
@@ -124,18 +125,18 @@ static void rel_op_check(expr_elem_t *a, expr_elem_t *b) {
                 gen_line("PUSHS GF@$A\n");
             } else {
                 fprintf(stderr, "Error: EXPR type mismatch.\n");
-                exit(TYPE_ERROR);
+                safe_exit(TYPE_ERROR);
             }
         } else if (b->ret_type == double_type) {
             if (a->ret_type == int_type && a->token != NULL) {
                 gen_line("INT2FLOATS\n");
             } else {
                 fprintf(stderr, "Error: EXPR type mismatch.\n");
-                exit(TYPE_ERROR);
+                safe_exit(TYPE_ERROR);
             }
         } else {
             fprintf(stderr, "Error: EXPR type mismatch.\n");
-            exit(TYPE_ERROR);
+            safe_exit(TYPE_ERROR);
         }
     }
 }
@@ -143,11 +144,11 @@ static void rel_op_check(expr_elem_t *a, expr_elem_t *b) {
 static void log_op_check(expr_elem_t *a, expr_elem_t *b) {
     if (a->ret_type != bool_type || a->ret_type != b->ret_type) {
         fprintf(stderr, "Error: EXPR type mismatch.\n");
-        exit(TYPE_ERROR);
+        safe_exit(TYPE_ERROR);
     }
     if (a->ret_type > 3 || b->ret_type > 3) {
         fprintf(stderr, "Error: Cant or nillable vars.\n");
-        exit(TYPE_ERROR);
+        safe_exit(TYPE_ERROR);
     }
 }
 
@@ -156,7 +157,7 @@ static void ar_op_check(expr_elem_t *a, expr_elem_t *b, expr_elem_t *new_elem, e
         && !(a->ret_type == int_type && b->ret_type == double_type)
         && !(a->ret_type == double_type && b->ret_type == int_type)) {
         fprintf(stderr, "Error: EXPR type mismatch.\n");
-        exit(TYPE_ERROR); // TODO FIX COND
+        safe_exit(TYPE_ERROR); // TODO FIX COND
     }
     new_elem->type = NON_TERM;
     if (a->ret_type == int_type && b->ret_type == int_type) {
@@ -166,14 +167,14 @@ static void ar_op_check(expr_elem_t *a, expr_elem_t *b, expr_elem_t *new_elem, e
     } else if (a->ret_type == int_type && b->ret_type == double_type) {
         if (a->token == NULL) {
             fprintf(stderr, "ERROR: cant retype VAR (a)");
-            exit(TYPE_ERROR);
+            safe_exit(TYPE_ERROR);
         }
         new_elem->ret_type = double_type;
         printf("INT2FLOATS\n");
     } else if (a->ret_type == double_type && b->ret_type == int_type) {
         if (b->token == NULL) {
             fprintf(stderr, "ERROR: cant retype VAR (b)");
-            exit(TYPE_ERROR);
+            safe_exit(TYPE_ERROR);
         }
         new_elem->ret_type = double_type;
         printf("POPS GF@$A\n");
@@ -188,36 +189,52 @@ static void ar_op_check(expr_elem_t *a, expr_elem_t *b, expr_elem_t *new_elem, e
 static void add_op_check(expr_elem_t *a, expr_elem_t *b) {
     if (a->ret_type == bool_type) {
         fprintf(stderr, "Error: EXPR type mismatch.\n");
-        exit(TYPE_ERROR);
+        safe_exit(TYPE_ERROR);
     }
     if (a->ret_type > 3 || b->ret_type > 3) {
         fprintf(stderr, "Error: Cant add nillable vars.\n");
-        exit(TYPE_ERROR);
+        safe_exit(TYPE_ERROR);
     }
 }
 
 static void other_ar_op_check(expr_elem_t *a, expr_elem_t *b) {
     if (a->ret_type == string_type || a->ret_type == bool_type) {
         fprintf(stderr, "Error: EXPR type mismatch.\n");
-        exit(TYPE_ERROR);
+        safe_exit(TYPE_ERROR);
     }
     if (a->ret_type > 3 || b->ret_type > 3) {
         fprintf(stderr, "Error: Cant sub nillable vars.\n");
-        exit(TYPE_ERROR);
+        safe_exit(TYPE_ERROR);
     }
 }
 
 static void eq_op_check(expr_elem_t *a, expr_elem_t *b) {
     if (!(a->ret_type == b->ret_type || a->ret_type == nil_type || b->ret_type == nil_type ||
           a->ret_type - 4 == b->ret_type || b->ret_type - 4 == a->ret_type)) {
-        fprintf(stderr, "Error: EXPR type mismatch.\n");
-        exit(TYPE_ERROR);
+        if ((a->ret_type == double_type || a->ret_type == nil_double_type) && b->ret_type == int_type) {
+            if (b->token == NULL) {
+                fprintf(stderr, "ERROR: cant retype VAR (b)");
+                safe_exit(TYPE_ERROR);
+            }
+            gen_line("POPS GF@$A\n");
+            gen_line("INT2FLOATS\n");
+            gen_line("PUSHS GF@$A\n");
+        } else if ((b->ret_type == double_type || b->ret_type == nil_double_type) && a->ret_type == int_type) {
+            if (a->token == NULL) {
+                fprintf(stderr, "ERROR: cant retype VAR (a)");
+                safe_exit(TYPE_ERROR);
+            }
+            gen_line("INT2FLOATS\n");
+        } else {
+            fprintf(stderr, "Error: EXPR type mismatch.\n");
+            safe_exit(TYPE_ERROR);
+        }
     }
 }
 
 static void reduce() {
     expr_elem_t *elem = Stack.top(pushdown_stack);
-    expr_elem_t **elems = malloc(sizeof(expr_elem_t *) * 3);
+    expr_elem_t **elems = safe_malloc(sizeof(expr_elem_t *) * 3);
     int i = 0;
     while (elem->type != LESS) {
         elems[i] = elem;
@@ -227,11 +244,15 @@ static void reduce() {
     }
     Stack.pop(pushdown_stack);
     if (collect_funcs) return;
-    expr_elem_t *new_elem = malloc(sizeof(expr_elem_t));
+    expr_elem_t *new_elem = safe_malloc(sizeof(expr_elem_t));
     if (i == 1) // reduce E -> i
     {
         if (elems[0]->token == NULL) {
             new_elem->type = NON_TERM;
+            if (elems[0]->ret_type == void_type) {
+                fprintf(stderr, "Error: EXPR Void type operand.\n");
+                safe_exit(TYPE_ERROR);
+            }
             new_elem->ret_type = elems[0]->ret_type;
             new_elem->token = NULL;
             gen_line("PUSHS GF@$RET\n");
@@ -274,12 +295,12 @@ static void reduce() {
             if (varData == NULL) varData = get_let(elems[0]->token->attribute.identifier);
             if (!varData->isDeclared) {
                 fprintf(stderr, "Error: EXPR undefined variable.\n");
-                exit(SEMANTIC_ERROR_5);
+                safe_exit(SEMANTIC_ERROR_5);
             }
             // TODO push var with frame and scope
             if (varData->minInitScope > get_scope()) {
                 fprintf(stderr, "Error: variable not initialized in this scope\n");
-                exit(SEMANTIC_ERROR_5);
+                safe_exit(SEMANTIC_ERROR_5);
             }
             gen_line("PUSHS %s\n", gen_var_name(varData->name->str, varData->scope));
         }
@@ -288,7 +309,7 @@ static void reduce() {
         if (elems[1]->type == NOT) {
             if (elems[0]->ret_type != bool_type) {
                 fprintf(stderr, "Error: EXPR type mismatch.\n");
-                exit(TYPE_ERROR);
+                safe_exit(TYPE_ERROR);
             }
             new_elem->type = NON_TERM;
             new_elem->ret_type = bool_type;
@@ -297,7 +318,7 @@ static void reduce() {
         } else {
             if (elems[1]->ret_type < 4) {
                 fprintf(stderr, "Error: EXPR type mismatch.\n");
-                exit(TYPE_ERROR);
+                safe_exit(TYPE_ERROR);
             }
             new_elem->type = NON_TERM;
             new_elem->ret_type = elems[1]->ret_type - 4;
@@ -409,7 +430,7 @@ static void reduce() {
                         if (!(b->ret_type - 4 == a->ret_type || b->ret_type == nil_type ||
                               a->ret_type == b->ret_type)) {
                             fprintf(stderr, "Error: EXPR type mismatch.\n");
-                            exit(TYPE_ERROR);
+                            safe_exit(TYPE_ERROR);
                         }
                         new_elem->type = NON_TERM;
                         new_elem->ret_type = a->ret_type;
@@ -420,7 +441,7 @@ static void reduce() {
                         fprintf(stderr, "Warning: Right side of ?? operator is never used\n");
                         if (b->ret_type != a->ret_type && a->ret_type != nil_type && b->ret_type != nil_type) {
                             fprintf(stderr, "Error: EXPR type mismatch.\n");
-                            exit(TYPE_ERROR);
+                            safe_exit(TYPE_ERROR);
                         }
                         new_elem->type = NON_TERM;
                         new_elem->ret_type = b->ret_type;
@@ -429,14 +450,15 @@ static void reduce() {
                     }
                     break;
                 default:
-                    break;
+                    fprintf(stderr, "Error: EXPR unknown operator.\n");
+                    safe_exit(SEMANTIC_ERROR_9);
             }
         }
     }
     for (int j = 0; j < i; ++j) {
-        free(elems[j]);
+        safe_free(elems[j]);
     }
-    free(elems);
+    safe_free(elems);
     Stack.push(pushdown_stack, new_elem);
 }
 
@@ -468,13 +490,13 @@ static expr_elem_t *next_token() {
 
     // if is_last_on_line, then prefetch action, if error action, then return DOLLAR
     if (is_last_on_line && !first_flag) {
-        expr_elem_t *a = malloc(sizeof(expr_elem_t));
+        expr_elem_t *a = safe_malloc(sizeof(expr_elem_t));
         a->type = map_token(current);
         expr_elem_t *b = get_top_terminal();
         int action = table[b->type][a->type];
-        free(a);
+        safe_free(a);
         if (action == 4) {
-            expr_elem_t *dollar = malloc(sizeof(expr_elem_t));
+            expr_elem_t *dollar = safe_malloc(sizeof(expr_elem_t));
             dollar->type = DOLLAR;
             dollar->token = NULL;
             dollar->ret_type = 0;
@@ -501,13 +523,13 @@ static expr_elem_t *next_token() {
                 funcData = get_func(current->attribute.identifier);
                 if (!check_func_signature(params, funcData)) {
                     fprintf(stderr, "Error: EXPR function call signature mismatch.\n");
-                    exit(SEMANTIC_ERROR_4);
+                    safe_exit(SEMANTIC_ERROR_4);
                 }
                 gen_line("CALL %s\n", current->attribute.identifier->str);
             }
             local_lookahead = lookahead;
             after_local_lookahead = TokenArray.next();
-            expr_elem_t *elem = malloc(sizeof(expr_elem_t));
+            expr_elem_t *elem = safe_malloc(sizeof(expr_elem_t));
             elem->type = IDENTIFIER;
             elem->token = NULL;
             if (collect_funcs) {
@@ -518,7 +540,7 @@ static expr_elem_t *next_token() {
             return elem;
         }
     }
-    expr_elem_t *elem = malloc(sizeof(expr_elem_t));
+    expr_elem_t *elem = safe_malloc(sizeof(expr_elem_t));
     elem->type = map_token(local_lookahead);
     if (collect_funcs) return elem;
     elem->token = local_lookahead;
@@ -542,7 +564,7 @@ int parse_expr(type_t *ret_type, bool *is_literal) {
     pushdown_stack = NULL;
     tmp_stack = NULL;
     init_stacks();
-    expr_elem_t *dollar = malloc(sizeof(expr_elem_t));
+    expr_elem_t *dollar = safe_malloc(sizeof(expr_elem_t));
     dollar->type = DOLLAR;
     dollar->token = NULL;
     dollar->ret_type = none_type;
@@ -559,7 +581,7 @@ int parse_expr(type_t *ret_type, bool *is_literal) {
     a = next_token();
     first_flag = false;
 
-    expr_elem_t *less = malloc(sizeof(expr_elem_t));
+    expr_elem_t *less = safe_malloc(sizeof(expr_elem_t));
     less->type = LESS;
     less->token = NULL;
     less->ret_type = 0;
@@ -594,12 +616,12 @@ int parse_expr(type_t *ret_type, bool *is_literal) {
     expr_elem_t *result = Stack.top(pushdown_stack);
     *ret_type = result->ret_type;
     *is_literal = result->token != NULL;
-    free(less);
+    safe_free(less);
     if (result != dollar) {
-        free(result);
+        safe_free(result);
     }
-    free(dollar);
-    free(a);
+    safe_free(dollar);
+    safe_free(a);
     destroy_stacks();
     return SUCCESS;
 }

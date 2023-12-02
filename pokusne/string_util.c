@@ -1,8 +1,8 @@
-#include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 
 #include "string_util.h"
+#include "memory.h"
 
 /**
  * @brief This function initializes string.
@@ -10,13 +10,13 @@
  * @return Pointer to string_t structure.
  */
 static string_t *string_ctor() {
-    string_t *string = (string_t *) malloc(sizeof(string_t));
+    string_t *string = (string_t *) safe_malloc(sizeof(string_t));
     if (string == NULL) {
         fprintf(stderr, "Error: Failed to allocate memory for string.\n");
         return NULL;
     }
 
-    string->str = malloc(sizeof(char) * STRING_INIT_SIZE);
+    string->str = safe_malloc(sizeof(char) * STRING_INIT_SIZE);
     if (string->str == NULL) {
         fprintf(stderr, "Error: Failed to allocate memory for string.\n");
         return NULL;
@@ -37,8 +37,8 @@ static string_t *string_ctor() {
 static void string_dtor(string_t *string) {
     if (string == NULL) return;
     if (string->str == NULL) return;
-    free(string->str);
-    free(string);
+    safe_free(string->str);
+    safe_free(string);
     string = NULL;
 }
 
@@ -50,7 +50,7 @@ static void string_dtor(string_t *string) {
  * @return 0 if success, -1 otherwise.
  */
 static int string_extend_memory(string_t *string, int add_size) {
-    char *new_string = realloc(string->str, sizeof(char) * (string->allocated + add_size * 3 / 2));
+    char *new_string = safe_realloc(string->str, sizeof(char) * (string->allocated + add_size * 3 / 2));
     if (new_string == NULL) {
         fprintf(stderr, "Error: Failed to reallocate memory for string.\n");
         return -1;

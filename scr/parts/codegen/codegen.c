@@ -7,10 +7,10 @@
 #include "parser.h"
 #include "lists.h"
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
 #include <stdarg.h>
+#include "memory.h"
 
 static char* registers[] = {
         "GF@$A",
@@ -71,7 +71,7 @@ void gen_register_def() {
 char *gen_unique_label(char *prefix) {
     start NULL;
     static int label = 0;
-    char *str = malloc(sizeof(char) * strlen(prefix) + 10);
+    char *str = safe_malloc(sizeof(char) * strlen(prefix) + 10);
     sprintf(str, "%s$%X", prefix, label);
     label++;
     return str;
@@ -275,7 +275,7 @@ void gen_branch_end() {
 void gen_while_start() {
     // todo
     start;
-    bool *tmp = malloc(sizeof(bool));
+    bool *tmp = safe_malloc(sizeof(bool));
     *tmp = current_loop_is_for;
     Stack.push(cycle_type_stack, tmp);
     current_loop_is_for = false;
@@ -323,7 +323,7 @@ void gen_while_end() {
 void gen_for_start() {
     // todo
     start;
-    bool *tmp = malloc(sizeof(bool));
+    bool *tmp = safe_malloc(sizeof(bool));
     *tmp = current_loop_is_for;
     Stack.push(cycle_type_stack, tmp);
     current_loop_is_for = true;
@@ -418,6 +418,7 @@ void gen_used_vars() {
     for (int i = 0; i < used_vars->size; i++) {
         gen_line("DEFVAR %s\n", (char*)DynamicArray.get(used_vars, i));
     }
+    DynamicArray.dtor(used_vars);
     used_vars = (dynamic_array_t*)Stack.top(array_stack);
     Stack.pop(array_stack);
 }
@@ -431,7 +432,7 @@ void gen_used_global_vars() {
 
 void gen_pop_params(string_t *params) {
     start;
-    char *str = malloc(sizeof(char) * (strlen(params->str) + 1));
+    char *str = safe_malloc(sizeof(char) * (strlen(params->str) + 1));
     strcpy(str, params->str);
 
     char *token = strtok(str, "#:");
@@ -442,7 +443,7 @@ void gen_pop_params(string_t *params) {
 
     while (token != NULL) {
         if (i % 3 == 1) {
-            char *id = malloc(sizeof(char) * (strlen(token) + 1));\
+            char *id = safe_malloc(sizeof(char) * (strlen(token) + 1));\
             strcpy(id, token);
             Stack.push(param_stack, id);
         }
@@ -454,15 +455,15 @@ void gen_pop_params(string_t *params) {
         char *id = (char*)Stack.top(param_stack);
         Stack.pop(param_stack);
         gen_line("POPS LF@%s%c1\n", id, '%');
-        free(id);
+        safe_free(id);
     }
 
-    free(str);
+    safe_free(str);
 }
 
 char *gen_var_name(char *id, int scope) {
     start NULL;
-    char *str = malloc(sizeof(char) * (strlen(id) + 10));
+    char *str = safe_malloc(sizeof(char) * (strlen(id) + 10));
     if (scope == 0) {
         sprintf(str, "GF@%s", id);
         DynamicArray.add_unique_cstr(global_vars, str);

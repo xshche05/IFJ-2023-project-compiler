@@ -3,16 +3,17 @@
 //
 
 #include "stack.h"
+#include "memory.h"
 
 
 stack_t *stack_init() {
-    stack_t *stack = (stack_t *) malloc(sizeof(stack_t));
+    stack_t *stack = (stack_t *) safe_malloc(sizeof(stack_t));
     stack->top = NULL;
     return stack;
 }
 
 void stack_push(stack_t *stack, void *data) {
-    stack_item_t *item = (stack_item_t *) malloc(sizeof(stack_item_t));
+    stack_item_t *item = (stack_item_t *) safe_malloc(sizeof(stack_item_t));
     item->data = data;
     item->down = stack->top;
     stack->top = item;
@@ -24,7 +25,7 @@ void stack_pop(stack_t *stack) {
     }
     stack_item_t *item = stack->top;
     stack->top = item->down;
-    free(item);
+    safe_free(item);
 }
 
 void *stack_top(stack_t *stack) {
@@ -41,7 +42,7 @@ void stack_destroy(stack_t *stack) {
     while (stack->top != NULL) {
         stack_pop(stack);
     }
-    free(stack);
+    safe_free(stack);
 }
 
 stack_interface_t Stack = {

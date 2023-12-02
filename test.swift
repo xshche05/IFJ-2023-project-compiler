@@ -1,10 +1,9 @@
-let a : Int = 5
+func concat(_ x : String, with y : String) -> String {
+    let x = x + y
+    return x + " " + y
+}
 
-if (a)
-{
-    write("a")
-}
-else
-{
-    write("b")
-}
+let a = "ahoj "
+var ct : String
+ct = concat(a, with: "svete")
+write(ct, a)

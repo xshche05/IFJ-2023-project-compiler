@@ -3,6 +3,7 @@
 //
 
 #include "lists.h"
+#include "memory.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -17,9 +18,6 @@ dynamic_array_t *dynamic_array_ctor() {
 void dynamic_array_dtor(dynamic_array_t *array) {
     if (array == NULL) {
         return;
-    }
-    for (int i = 0; i < array->size; i++) {
-        free(array->array[i]);
     }
     free(array->array);
     free(array);
@@ -79,12 +77,25 @@ void dynamic_add_unique_cstr(dynamic_array_t *array, char *item) {
     dynamic_array_add(array, item);
 }
 
+int dynamic_array_del_item(dynamic_array_t *array, void *item) {
+    if (array == NULL) {
+        return -1;
+    }
+    for (int i = 0; i < array->size; i++) {
+        if ((void *) array->array[i] == item) {
+            return dynamic_array_del(array, i);
+        }
+    }
+    return -1;
+}
+
 const struct dynamic_array_interface DynamicArray = {
         .ctor = dynamic_array_ctor,
         .dtor = dynamic_array_dtor,
         .add = dynamic_array_add,
         .add_unique_cstr = dynamic_add_unique_cstr,
         .del = dynamic_array_del,
+        .del_item = dynamic_array_del_item,
         .get = dynamic_array_get
 };
 

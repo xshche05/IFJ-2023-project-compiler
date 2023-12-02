@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "memory.h"
 
 #include "source_file.h"
 
@@ -11,17 +12,9 @@ static int file_init(void) {
         fprintf(stderr, "Error: sourceFile already initialized.\n");
         return -1;
     }
-    sourceFile = malloc(sizeof(file_t));
-    if (sourceFile == NULL) {
-        fprintf(stderr, "Error: malloc failed.\n");
-        return -1;
-    }
+    sourceFile = safe_malloc(sizeof(file_t));
     sourceFile->file_name = NULL;
-    sourceFile->lines = malloc(sizeof(string_t*) * 8);
-    if (sourceFile->lines == NULL) {
-        fprintf(stderr, "Error: malloc failed.\n");
-        return -1;
-    }
+    sourceFile->lines = safe_malloc(sizeof(string_t*) * 8);
     sourceFile->line_allocated = 8;
     sourceFile->line_count = 0;
     sourceFile->current_line = 0;
@@ -36,9 +29,9 @@ static void file_dtor(void) {
     for (int i = 0; i < sourceFile->line_count; i++) {
         String.dtor(sourceFile->lines[i]);
     }
-    free(sourceFile->file_name);
-    free(sourceFile->lines);
-    free(sourceFile);
+    safe_free(sourceFile->file_name);
+    safe_free(sourceFile->lines);
+    safe_free(sourceFile);
     sourceFile = NULL;
 }
 
@@ -47,10 +40,7 @@ static int file_add_line(string_t *line) {
         return -1;
     }
     if (sourceFile->line_count == sourceFile->line_allocated) {
-        void* tmp = realloc(sourceFile->lines, sizeof(string_t) * sourceFile->line_allocated * 2);
-        if (tmp == NULL) {
-            return -1;
-        }
+        void* tmp = safe_realloc(sourceFile->lines, sizeof(string_t) * sourceFile->line_allocated * 2);
         sourceFile->lines = tmp;
         sourceFile->line_allocated *= 2;
     }
@@ -69,9 +59,6 @@ static int file_load_from_file(char *file_name) {
         return -1;
     }
     string_t *line = String.ctor();
-    if (line == NULL) {
-        return -1;
-    }
     int c;
     while ((c = fgetc(f)) != EOF) {
         if (c == '\n') {
@@ -86,7 +73,7 @@ static int file_load_from_file(char *file_name) {
     }
     SourceCode.add_line(line);
     fclose(f);
-    sourceFile->file_name = malloc(sizeof(char) * (strlen(file_name) + 1));
+    sourceFile->file_name = safe_malloc(sizeof(char) * (strlen(file_name) + 1));
     strcpy(sourceFile->file_name, file_name);
     return 0;
 }
@@ -162,7 +149,7 @@ static int load_stdin(void) {
         return -1;
     }
     int c;
-    while ((c = getc(stdin)) != EOF) {
+    while ((c = getchar()) != EOF) {
         if (c == '\n') {
             file_add_line(line);
             line = String.ctor();
@@ -183,7 +170,7 @@ const struct file_interface SourceCode = {
         .add_line = file_add_line,
         .from_file = file_load_from_file,
         .from_stdin = load_stdin,
-        .getc = file_getc,
+        .file_getc = file_getc,
         .back_step = file_back_step,
         .line = file_line,
         .column = file_column,

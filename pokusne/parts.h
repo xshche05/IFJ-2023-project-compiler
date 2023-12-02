@@ -4,6 +4,6 @@
 #include "parser.h"
 #include "scanner.h"
 #include "token.h"
-#include "symtable.h"
+#include "new_symtable.h"
 
 #endif //IFJ_PRJ_PARTS_H

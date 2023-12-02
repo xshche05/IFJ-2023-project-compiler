@@ -3,8 +3,8 @@
 //
 
 #include "token.h"
-#include <stdlib.h>
 #include <stdio.h>
+#include "memory.h"
 
 char *tokens_as_str[] = {
         "TOKEN_IDENTIFIER",
@@ -71,11 +71,7 @@ static token_array_t *tokens;
  * @return pointer to token structure
  */
 static token_t *token_ctor(token_type_t type, token_attribute attribute, bool has_attribute) {
-    token_t *token = malloc(sizeof(token_t));
-    if (token == NULL) {
-        fprintf(stderr, "Error: malloc failed.\n");
-        return NULL;
-    }
+    token_t *token = safe_malloc(sizeof(token_t));
     token->type = type;
     if (has_attribute) token->attribute = attribute;
     return token;
@@ -96,7 +92,7 @@ static void token_dtor(token_t *token) {
     if (token->type == TOKEN_STRING_LITERAL) {
         String.dtor(token->attribute.string);
     }
-    free(token);
+    safe_free(token);
     token = NULL;
 }
 
@@ -143,17 +139,8 @@ static void token_print(token_t *token) {
  * @return pointer to token array structure
  */
 static int token_array_ctor() {
-    tokens = malloc(sizeof(token_array_t));
-    if (tokens == NULL) {
-        fprintf(stderr, "Error: malloc failed.\n");
-        return -1;
-    }
-    tokens->array = malloc(sizeof(token_t *) * 16);
-    if (tokens->array == NULL) {
-        free(tokens);
-        fprintf(stderr, "Error: malloc failed.\n");
-        return -1;
-    }
+    tokens = safe_malloc(sizeof(token_array_t));
+    tokens->array = safe_malloc(sizeof(token_t *) * 16);
     tokens->allocated = 16;
     tokens->length = 0;
     tokens->current = -1;
@@ -172,8 +159,8 @@ static void token_array_dtor() {
     for (int i = 0; i < tokens->length; i++) {
         token_dtor(tokens->array[i]);
     }
-    free(tokens->array);
-    free(tokens);
+    safe_free(tokens->array);
+    safe_free(tokens);
     tokens = NULL;
 }
 
@@ -194,11 +181,7 @@ static int token_array_add(token_t *token) {
         return -1;
     }
     if (tokens->length >= tokens->allocated) {
-        void *tmp = realloc(tokens->array, sizeof(token_t *) * tokens->allocated * 2);
-        if (tmp == NULL) {
-            fprintf(stderr, "Error: realloc failed.\n");
-            return -1;
-        }
+        void *tmp = safe_realloc(tokens->array, sizeof(token_t *) * tokens->allocated * 2);
         tokens->array = tmp;
         tokens->allocated *= 2;
     }

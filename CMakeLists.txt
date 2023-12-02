@@ -9,7 +9,7 @@ include_directories(scr/utils scr/parts src scr/parts/scanner scr/parts/parser s
 
 add_compile_options(-Wall -Wextra -std=c11 -g)
 
-add_executable(IFJ_PRJ
+add_executable(compiler
         scr/main.c
         scr/parts/scanner/scanner.c
         scr/macros.h
@@ -27,4 +27,6 @@ add_executable(IFJ_PRJ
         scr/parts/codegen/codegen.c
         scr/parts/codegen/codegen.h
         scr/parts/parser/new_symtable.c
-        scr/parts/parser/new_symtable.c)
+        scr/parts/parser/new_symtable.c
+        scr/utils/memory.c
+        scr/utils/memory.h)

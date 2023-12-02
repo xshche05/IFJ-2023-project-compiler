@@ -50,7 +50,7 @@ struct file_interface {
     int (*from_stdin)(void);
     int (*line)(void);
     int (*column)(void);
-    char (*getc)(void);
+    char (*file_getc)(void);
     void (*back_step)(void);
     char* (*print_line)(void);
     void (*print)(void);

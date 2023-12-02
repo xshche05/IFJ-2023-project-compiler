@@ -6,7 +6,7 @@
 #define IFJ_PRJ_CODEGEN_H
 
 #include <stdbool.h>
-#include "symtable.h"
+#include "new_symtable.h"
 
 void gen_register_def();
 

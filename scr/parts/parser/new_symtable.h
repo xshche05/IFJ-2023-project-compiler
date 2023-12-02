@@ -71,8 +71,6 @@ void symtable_init();
 
 void symtable_destroy();
 
-void symtable_add(string_t *key, symTableData_t data);
-
 int symtable_find(string_t *key, symTableData_t **data);
 
 void symtable_print();
@@ -97,6 +95,9 @@ void new_frame();
 
 void del_frame();
 
+void update_defines(stack_t *data, int scope);
+
+void get_vars_and_lets_from_all_scopes(stack_t *stack);
 
 
 #endif //IFJ_PRJ_NEW_SYMTABLE_H

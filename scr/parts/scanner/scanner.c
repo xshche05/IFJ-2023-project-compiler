@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include "../macros.h"
 #include "source_file.h"
+#include "memory.h"
 
 // TODO: fix range operator form '..' to '...'
 
@@ -49,7 +50,7 @@ void split_to_lines(string_t *source_code, dynamic_array_t *lines) {
     for (int i = 0; i < source_code->length;i++) {
         for (int j = i; j < source_code->length; j++) {
             if (source_code->str[j] == '\n' || source_code->str[j+1] == '\0') {
-                char *line = malloc(sizeof(char) * (j - i + 1));
+                char *line = safe_malloc(sizeof(char) * (j - i + 1));
                 strncpy(line, source_code->str + i, j - i + 1);
                 strcat(line, "\0");
                 DynamicArray.add(lines, line);
@@ -232,7 +233,7 @@ int source_code_to_tokens() {
     int comment_cnt = 0;
 
     // FSM loop
-    while ((c = SourceCode.getc()) != EOF) {
+    while ((c = SourceCode.file_getc()) != EOF) {
         control_char = c;
         switch (fsm_state) {
             case START_S:

@@ -3,11 +3,11 @@
 
 #include <stdbool.h>
 #include "token.h"
-#include "symtable.h"
+#include "new_symtable.h"
 
-extern token_t *lookahead; // TODO
-extern bool nl_flag;    // new line // TODO
-extern bool collect_funcs; // TODO
+extern token_t *lookahead;
+extern bool nl_flag;
+extern bool collect_funcs;
 
 bool match(token_type_t type);
 
@@ -41,5 +41,4 @@ bool NEXT_CALL_PARAM(string_t *call_params, bool call_after_param, char *func_na
 bool ID_CALL_OR_ASSIGN();
 bool NEXT_ID_CALL_OR_ASSIGN(token_t *id);
 bool TYPE(type_t *type);
-bool EXPR();
 #endif //IFJ_PRJ_PARSER_H

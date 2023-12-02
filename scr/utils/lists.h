@@ -20,6 +20,7 @@ struct dynamic_array_interface {
     void (*add_unique_cstr)(dynamic_array_t *array, char *item);
     int (*del)(dynamic_array_t *array, int index);
     void *(*get)(dynamic_array_t *array, int index);
+    int (*del_item)(dynamic_array_t *array, void *item);
 };
 
 #endif //IFJ_PRJ_LISTS_H

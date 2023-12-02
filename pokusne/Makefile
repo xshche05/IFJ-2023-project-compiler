@@ -5,7 +5,7 @@ SRC_DIR = .
 BUILD_DIR = build
 EXE_NAME = compiler
 
-all: $(EXE_NAME)
+all: $(EXE_NAME) clean
 
 # Get all .c files in the source directory
 SRCS := $(wildcard $(SRC_DIR)/*.c)
@@ -25,13 +25,16 @@ $(BUILD_DIR)/%.o: $(SRC_DIR)/%.c | $(BUILD_DIR)
 $(BUILD_DIR):
 	mkdir -p $(BUILD_DIR)
 
-zip: all
-	zip -r xsalta01.zip *.c *.h Makefile compiler
+zip: dos2unix clean
+	zip -r xsalta01.zip *.c *.h Makefile rozdeleni dokumentace.pdf rozsireni
+
+dos2unix:
+	dos2unix *.c *.h Makefile rozdeleni rozsireni
 
 # Target: clean up
 clean:
-	rm -rf $(BUILD_DIR) $(EXE_NAME)
+	rm -rf $(BUILD_DIR)
 
 # .PHONY rule to prevent conflicts with file names
-.PHONY: clean
+.PHONY: clean dos2unix zip
 
