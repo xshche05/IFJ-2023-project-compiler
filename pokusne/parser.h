@@ -3,7 +3,7 @@
 
 #include <stdbool.h>
 #include "token.h"
-#include "new_symtable.h"
+#include "symtable.h"
 
 extern token_t *lookahead; // TODO
 extern bool nl_flag;    // new line // TODO

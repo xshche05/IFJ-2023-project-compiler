@@ -25,6 +25,9 @@ $(BUILD_DIR)/%.o: $(SRC_DIR)/%.c | $(BUILD_DIR)
 $(BUILD_DIR):
 	mkdir -p $(BUILD_DIR)
 
+zip: all
+	zip -r xsalta01.zip *.c *.h Makefile compiler
+
 # Target: clean up
 clean:
 	rm -rf $(BUILD_DIR) $(EXE_NAME)

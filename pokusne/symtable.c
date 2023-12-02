@@ -3,7 +3,7 @@
 //
 
 #include <string.h>
-#include "new_symtable.h"
+#include "symtable.h"
 #include "parser.h"
 #include "macros.h"
 #include <stdio.h>
