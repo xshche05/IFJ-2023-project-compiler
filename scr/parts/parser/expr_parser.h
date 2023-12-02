@@ -4,7 +4,6 @@
 #include "new_symtable.h"
 #include "parser.h"
 #include "scanner/token.h"
-#include "utils.h"
 
 typedef enum {
     UNWRAP = 0,        //0

@@ -2,6 +2,8 @@
 #include "parser.h"
 #include "expr_parser.h"
 #include "codegen/codegen.h"
+#include <stdio.h>
+#include "../macros.h"
 
 int table[12][12] = {
         {4, 2, 2, 2, 2, 2, 2, 2, 4, 4, 2, 2},
@@ -272,9 +274,13 @@ static void reduce() {
             if (varData == NULL) varData = get_let(elems[0]->token->attribute.identifier);
             if (!varData->isDeclared) {
                 fprintf(stderr, "Error: EXPR undefined variable.\n");
-                exit(SEMANTIC_ERROR_7);
+                exit(SEMANTIC_ERROR_5);
             }
             // TODO push var with frame and scope
+            if (varData->minInitScope > get_scope()) {
+                fprintf(stderr, "Error: variable not initialized in this scope\n");
+                exit(SEMANTIC_ERROR_5);
+            }
             gen_line("PUSHS %s\n", gen_var_name(varData->name->str, varData->scope));
         }
     } else if (i == 2) // E -> !E ; E ->E!
@@ -495,7 +501,7 @@ static expr_elem_t *next_token() {
                 funcData = get_func(current->attribute.identifier);
                 if (!check_func_signature(params, funcData)) {
                     fprintf(stderr, "Error: EXPR function call signature mismatch.\n");
-                    exit(SEMANTIC_ERROR_2);
+                    exit(SEMANTIC_ERROR_4);
                 }
                 gen_line("CALL %s\n", current->attribute.identifier->str);
             }

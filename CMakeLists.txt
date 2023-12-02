@@ -5,7 +5,7 @@ project(IFJ_PRJ C)
 
 set(CMAKE_C_STANDARD 11)
 
-include_directories(scr/utils scr/parts src scr/parts/scanner scr/parts/parser)
+include_directories(scr/utils scr/parts src scr/parts/scanner scr/parts/parser src/parts/codegen)
 
 add_compile_options(-Wall -Wextra -std=c11 -g)
 
@@ -13,7 +13,6 @@ add_executable(IFJ_PRJ
         scr/main.c
         scr/parts/scanner/scanner.c
         scr/macros.h
-        scr/utils/utils.h
         scr/parts/parts.h
         scr/utils/source_file.c
         scr/utils/string_util.c
@@ -26,5 +25,6 @@ add_executable(IFJ_PRJ
         scr/utils/stack.c
         scr/utils/stack.h
         scr/parts/codegen/codegen.c
+        scr/parts/codegen/codegen.h
         scr/parts/parser/new_symtable.c
         scr/parts/parser/new_symtable.c)

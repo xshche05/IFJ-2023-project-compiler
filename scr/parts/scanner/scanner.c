@@ -5,6 +5,9 @@
 #include <string.h>
 #include "lists.h"
 #include "token.h"
+#include <stdio.h>
+#include "../macros.h"
+#include "source_file.h"
 
 // TODO: fix range operator form '..' to '...'
 

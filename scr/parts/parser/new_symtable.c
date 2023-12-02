@@ -5,6 +5,8 @@
 #include <string.h>
 #include "new_symtable.h"
 #include "parser.h"
+#include "../macros.h"
+#include <stdio.h>
 
 node_t *currentScope;
 node_t *functions;
@@ -373,7 +375,7 @@ bool check_func_signature(string_t *params, funcData_t *funcData) {
         char *funcAlias = Stack.top(funcAliasStack);
         if (strcmp(alias, funcAlias) != 0) {
             fprintf(stderr, "Error: function signature mismatch.\n");
-            exit(SEMANTIC_ERROR_2);
+            exit(SEMANTIC_ERROR_4);
         }
         free(alias);
         free(funcAlias);
@@ -382,14 +384,14 @@ bool check_func_signature(string_t *params, funcData_t *funcData) {
     }
     if (Stack.top(aliasStack) || Stack.top(funcAliasStack)) {
         fprintf(stderr, "Error: wrong number of params\n");
-        exit(SEMANTIC_ERROR_2);
+        exit(SEMANTIC_ERROR_4);
     }
     while (Stack.top(typeStack) && Stack.top(funcTypeStack)) {
         char *type = Stack.top(typeStack);
         char *funcType = Stack.top(funcTypeStack);
         if (strcmp(type, funcType) != 0) {
             fprintf(stderr, "Error: function signature mismatch.\n");
-            exit(SEMANTIC_ERROR_2);
+            exit(SEMANTIC_ERROR_4);
         }
         free(type);
         free(funcType);
@@ -398,7 +400,7 @@ bool check_func_signature(string_t *params, funcData_t *funcData) {
     }
     if (Stack.top(typeStack) || Stack.top(funcTypeStack)) {
         fprintf(stderr, "Error: wrong number of params\n");
-        exit(SEMANTIC_ERROR_2);
+        exit(SEMANTIC_ERROR_4);
     }
     Stack.destroy(aliasStack);
     Stack.destroy(funcAliasStack);
@@ -414,7 +416,7 @@ bool add_func(funcData_t *funcData) {
     if (data.funcData->params->length == 0) {
         if (tree_find(&currentScope, funcData->name, NULL, 0) != -1) {
             fprintf(stderr, "Error: function name collision with var.\n");
-            exit(SEMANTIC_ERROR_7);
+            exit(SEMANTIC_ERROR_9);
         }
     }
     if (collect_funcs) {
@@ -431,7 +433,7 @@ bool add_func(funcData_t *funcData) {
                     strcpy(param, token);
                     if (strcmp(alias, param) == 0) {
                         fprintf(stderr, "Error: param name should be diff from its id.\n");
-                        exit(SEMANTIC_ERROR_7);
+                        exit(SEMANTIC_ERROR_9);
                     }
                     free(alias);
                     free(param);
@@ -455,7 +457,7 @@ bool add_var(varData_t *varData) {
     if (tree_find(&functions, varData->name, &funcData, 0) != -1) {
         if (funcData->funcData->params->length == 0) {
             fprintf(stderr, "Error: var name collision with function.\n");
-            exit(SEMANTIC_ERROR_7);
+            exit(SEMANTIC_ERROR_9);
         }
     }
     free(funcData);
@@ -479,7 +481,7 @@ bool add_let(letData_t *letData) {
     if (tree_find(&functions, letData->name, &funcData, 0) != -1) {
         if (funcData->funcData->params->length == 0) {
             fprintf(stderr, "Error: let name collision with function.\n");
-            exit(SEMANTIC_ERROR_7);
+            exit(SEMANTIC_ERROR_9);
         }
     }
     free(funcData);
@@ -508,7 +510,7 @@ funcData_t *get_func(string_t *name) {
     if (found == -1) {
         if (collect_funcs) return NULL;
         fprintf(stderr, "Error: you use undefined func `%s`\n", name->str);
-        exit(SEMANTIC_ERROR_1);
+        exit(SEMANTIC_ERROR_3);
     }
     return data->funcData;
 }
@@ -518,7 +520,7 @@ varData_t *get_var(string_t *name) {
     int found = symtable_find(name, &data);
     if (found == -1) {
         fprintf(stderr, "Error: usage of undefined var\n");
-        exit(SEMANTIC_ERROR_3);
+        exit(SEMANTIC_ERROR_5);
     }
     if (data->type != ndVar) {
         return NULL;
@@ -531,7 +533,7 @@ letData_t *get_let(string_t *name) {
     int found = symtable_find(name, &data);
     if (found == -1) {
         fprintf(stderr, "Error: usage of undefined const\n");
-        exit(SEMANTIC_ERROR_3);
+        exit(SEMANTIC_ERROR_5);
     }
     if (data->type != ndLet) {
         return NULL;
