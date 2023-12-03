@@ -8,6 +8,8 @@
 #include <stdbool.h>
 #include "new_symtable.h"
 
+extern string_t *output;
+
 void gen_register_def();
 
 char *gen_unique_label(char *prefix);

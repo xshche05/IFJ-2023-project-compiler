@@ -1,7 +1,9 @@
 #include "macros.h"
 #include "source_file.h"
 #include "parts.h"
+#include "expr_parser.h"
 #include "memory.h"
+#include "codegen.h"
 
 char error_msg[1000];
 
@@ -29,5 +31,6 @@ int main(void) {
         fprintf(stderr, "Error: %s\n", error_msg);
         safe_exit(SYNTAX_ERROR);
     }
+    printf("%s", output->str);
     safe_exit(SUCCESS);
 }

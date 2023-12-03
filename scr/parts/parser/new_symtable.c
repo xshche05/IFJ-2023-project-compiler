@@ -537,8 +537,46 @@ void update_defines(stack_t *data, int scope) {
     while (Stack.top(data)) {
         varData_t *varData = (varData_t *) Stack.top(data);
         if (varData->minInitScope > scope) {
-            varData->isDeclared = false;
-            varData->minInitScope = INT_MAX;
+            if (varData->initInBranch) {
+                if (varData->minInitBranchNumber == branch_number && varData->isDeclared) {
+                    varData->initInAllBranches = varData->initInAllBranches && true;
+                }
+                else {
+                    varData->initInAllBranches = false;
+                }
+                varData->isDeclared = false;
+            } else {
+                varData->isDeclared = false;
+                varData->minInitScope = INT_MAX;
+            }
+        }
+        Stack.pop(data);
+    }
+}
+
+void update_defines_after_branch(int scope, int branch_blocks) {
+    // if var/let min defined scope is higher than current scope, reset it and swt to undefined
+    if (collect_funcs) return;
+    stack_t *data = Stack.init();
+    get_vars_and_lets_from_all_scopes(data);
+    while (Stack.top(data)) {
+        varData_t *varData = (varData_t *) Stack.top(data);
+        if (varData->minInitScope > scope) {
+            if (varData->initInBranch) {
+                if (varData->initInAllBranches && varData->numberBranchBlocks == branch_blocks) {
+                    varData->isDeclared = true;
+                    varData->minInitScope = varData->minInitScope - 1;
+                    varData->initInBranch = false;
+                }
+                else {
+                    varData->isDeclared = false;
+                    varData->initInBranch = false;
+                    varData->minInitScope = INT_MAX;
+                }
+            } else {
+                varData->isDeclared = false;
+                varData->minInitScope = INT_MAX;
+            }
         }
         Stack.pop(data);
     }

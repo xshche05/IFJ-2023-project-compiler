@@ -8,6 +8,8 @@
 extern token_t *lookahead;
 extern bool nl_flag;
 extern bool collect_funcs;
+extern int branch_number;
+extern int inside_branch;
 
 bool match(token_type_t type);
 
@@ -19,7 +21,7 @@ bool RETURN(funcData_t **funcData);
 bool RET_EXPR(funcData_t **funcData);
 bool VAR_DECL();
 bool VAR_LET_TYPE(type_t *type);
-bool VAR_LET_EXP(token_t *id, type_t *type, bool *is_literal);
+bool VAR_LET_EXP(type_t *type, bool *is_literal);
 bool LET_DECL();
 bool FUNC_DECL();
 bool FUNC_RET_TYPE(type_t *type);
@@ -33,7 +35,7 @@ bool ELSE();
 bool ELSE_IF();
 bool WHILE_LOOP();
 bool FOR_LOOP();
-bool FOR_ID(token_t *id);
+bool FOR_ID(token_t **id);
 bool RANGE();
 bool CALL_PARAM_LIST(string_t *call_params, bool call_after_param, char *func_name);
 bool CALL_PARAM(string_t *call_params, bool call_after_param, char *func_name);

@@ -28,6 +28,8 @@ char *ret_reg = "GF@$RET";
 char *for_counter_reg = "GF@$FOR_COUNTER";
 char *for_max_val = "GF@$FOR_MAX_VAL";
 
+string_t *output = NULL;
+
 stack_t *branch_label_stack;
 stack_t *loop_label_stack;
 stack_t *cycle_type_stack;
@@ -45,6 +47,7 @@ bool current_loop_is_for = false;
 
 void init_codegen() {
     start;
+    output = String.ctor();
     branch_label_stack = Stack.init();
     loop_label_stack = Stack.init();
     cycle_type_stack = Stack.init();
@@ -61,11 +64,13 @@ void gen_header() {
 
 void gen_register_def() {
     start;
-    for (int i = 0; i < 6; i++) {
-        char reg[10];
-        strncpy(reg, registers[i], 10);
+    for (int i = 0; i < 8; i++) {
+        char reg[30];
+        strncpy(reg, registers[i], 30);
         gen_line("DEFVAR %s\n", reg);
     }
+    gen_line("MOVE GF@$FOR_COUNTER int@0\n");
+    gen_line("MOVE GF@$FOR_MAX_VAL int@0\n");
 }
 
 char *gen_unique_label(char *prefix) {
@@ -207,7 +212,10 @@ void gen_line(char *format, ...) {
     start;
     va_list args;
     va_start(args, format);
-    vprintf(format, args);
+    char *str = safe_malloc(sizeof(char) * (strlen(format) + 100) * 2);
+    vsprintf(str, format, args);
+    String.add_cstr(output, str);
+    safe_free(str);
     va_end(args);
 }
 

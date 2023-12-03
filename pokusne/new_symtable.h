@@ -44,7 +44,11 @@ typedef struct {
     bool isDefined;
     bool isDeclared;
     int scope;
+    bool initInBranch;
+    bool initInAllBranches;
+    int numberBranchBlocks;
     int minInitScope;
+    int minInitBranchNumber;
     bool canBeRedefined;
 } varData_t;
 
@@ -98,6 +102,8 @@ void del_frame();
 void update_defines(stack_t *data, int scope);
 
 void get_vars_and_lets_from_all_scopes(stack_t *stack);
+
+void update_defines_after_branch(int scope, int branch_blocks);
 
 
 #endif //IFJ_PRJ_NEW_SYMTABLE_H

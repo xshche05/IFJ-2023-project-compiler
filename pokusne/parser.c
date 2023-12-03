@@ -12,6 +12,8 @@ bool inside_func = false;
 bool has_return = false;
 int inside_loop = 0;
 int inside_branch = 0;
+int branch_number = 0;
+int branch_blocks = 0;
 token_t *lookahead = NULL;
 funcData_t *currentFunc = NULL;
 bool collect_funcs = false;
@@ -307,6 +309,10 @@ bool VAR_DECL() {
     varData->isDeclared = false;
     varData->minInitScope = INT_MAX;
     varData->canBeRedefined = false;
+    varData->minInitBranchNumber = INT_MAX;
+    varData->initInAllBranches = true;
+    varData->initInBranch = false;
+    varData->numberBranchBlocks = 0;
     switch (lookahead->type) {
         case TOKEN_VAR:
             s = match(TOKEN_VAR);
@@ -320,7 +326,7 @@ bool VAR_DECL() {
                 check_decl_type(type, varData);
             }
             bool is_literal;
-            s = s && VAR_LET_EXP(id, &type, &is_literal);
+            s = s && VAR_LET_EXP(&type, &is_literal);
             if (tmp_type == none_type && type == none_type && !collect_funcs) {
                 fprintf(stderr, "Error: variable without type and expression\n");
                 safe_exit(SYNTAX_ERROR);
@@ -349,6 +355,10 @@ bool LET_DECL() {
     letData->isDeclared = false;
     letData->minInitScope = INT_MAX;
     letData->canBeRedefined = false;
+    letData->minInitBranchNumber = INT_MAX;
+    letData->initInAllBranches = true;
+    letData->initInBranch = false;
+    letData->numberBranchBlocks = 0;
     switch (lookahead->type) {
         case TOKEN_LET:
             s = match(TOKEN_LET);
@@ -362,7 +372,7 @@ bool LET_DECL() {
                 check_decl_type(type, letData);
             }
             bool is_literal;
-            s = s && VAR_LET_EXP(id, &type, &is_literal);
+            s = s && VAR_LET_EXP(&type, &is_literal);
             if (tmp_type == none_type && type == none_type && !collect_funcs) {
                 fprintf(stderr, "Error: variable without type and expression\n");
                 safe_exit(SYNTAX_ERROR);
@@ -403,7 +413,7 @@ bool VAR_LET_TYPE(type_t *type) {
     return s;
 }
 
-bool VAR_LET_EXP(token_t *id, type_t *type, bool *is_literal) {
+bool VAR_LET_EXP(type_t *type, bool *is_literal) {
     bool s;
     *type = none_type;
     switch (lookahead->type) {
@@ -622,15 +632,19 @@ bool BRANCH() {
         case TOKEN_IF:
             gen_branch_labels(true);
             s = match(TOKEN_IF);
+            branch_blocks = 1;
             new_frame();
             s = s && BR_EXPR();
             s = s && match(TOKEN_LEFT_BRACE);
+            inside_branch++;
             s = s && CODE();
             s = s && match(TOKEN_RIGHT_BRACE);
             del_frame();
             gen_branch_if_end();
             s = s && ELSE();
             gen_branch_end();
+            inside_branch--;
+            branch_number++;
             break;
         default:
             sprintf(error_msg, "Syntax error [BRANCH]: expected ['TOKEN_IF'], got %s\n", tokens_as_str[lookahead->type]);
@@ -716,6 +730,7 @@ bool ELSE_IF() {
         case TOKEN_IF:
             gen_branch_labels(false);
             s = match(TOKEN_IF);
+            branch_blocks++;
             new_frame();
             s = s && BR_EXPR();
             s = s && match(TOKEN_LEFT_BRACE);
@@ -727,10 +742,12 @@ bool ELSE_IF() {
             break;
         case TOKEN_LEFT_BRACE:
             s = match(TOKEN_LEFT_BRACE);
+            branch_blocks++;
             new_frame();
             s = s && CODE();
             s = s && match(TOKEN_RIGHT_BRACE);
             del_frame();
+            update_defines_after_branch(get_scope(), branch_blocks);
             break;
         default:
             if (nl_flag) return true;
@@ -778,13 +795,27 @@ bool FOR_LOOP() {
     bool s;
     type_t type;
     bool is_literal;
-    token_t for_id;
+    token_t *for_id = safe_malloc(sizeof(token_t));
     switch (lookahead->type) {
         case TOKEN_FOR:
             inside_loop++;
             gen_for_range_save();
             s = match(TOKEN_FOR);
             s = s && FOR_ID(&for_id);
+            new_frame();
+            if (for_id != NULL) {
+                letData_t *letData = safe_malloc(sizeof(letData_t));
+                letData->isDeclared = true;
+                letData->isDefined = true;
+                letData->minInitScope = get_scope();
+                letData->canBeRedefined = false;
+                letData->name = for_id->attribute.identifier;
+                letData->type = int_type;
+                if (!add_let(letData)) {
+                    fprintf(stderr, "Error: constant already defined\n");
+                    safe_exit(SEMANTIC_ERROR_3);
+                }
+            }
             s = s && match(TOKEN_IN);
             s = s && call_expr_parser(&type, &is_literal);
             if (s) {
@@ -798,14 +829,18 @@ bool FOR_LOOP() {
             s = s && RANGE();
             gen_for_start();
             gen_for_cond();
+            if (for_id != NULL) {
+//                gen_line("DEFVAR LF@%s\n", for_id->attribute.identifier->str);
+                gen_line("MOVE %s GF@$FOR_COUNTER\n", gen_var_name(for_id->attribute.identifier->str, get_scope()));
+            }
             s = s && match(TOKEN_LEFT_BRACE);
             new_frame();
-            // TODO add for_id to frame, copy counter to for_id
             s = s && CODE();
             s = s && match(TOKEN_RIGHT_BRACE);
             del_frame();
             gen_for_end();
             gen_for_range_restore();
+            del_frame();
             inside_loop--;
             break;
         default:
@@ -815,15 +850,15 @@ bool FOR_LOOP() {
     return s;
 }
 
-bool FOR_ID(token_t *for_id) {
+bool FOR_ID(token_t **for_id) {
     bool s;
     switch (lookahead->type) {
         case TOKEN_IDENTIFIER:
-            for_id = lookahead;
+            *for_id = lookahead;
             s = match(TOKEN_IDENTIFIER);
             break;
         case TOKEN_UNDERSCORE:
-            for_id = NULL;
+            *for_id = NULL;
             s = match(TOKEN_UNDERSCORE);
             break;
         default:
@@ -1039,6 +1074,11 @@ bool NEXT_ID_CALL_OR_ASSIGN(token_t *id) {
                 }
                 varData->isDeclared = true;
                 varData->minInitScope = min(varData->minInitScope, get_scope());
+                if (varData->minInitScope == get_scope()) {
+                    varData->initInBranch = (bool) inside_branch;
+                    varData->minInitBranchNumber = min(varData->minInitBranchNumber, branch_number);
+                    varData->numberBranchBlocks++;
+                }
                 gen_line("POPS %s\n", gen_var_name(id->attribute.identifier->str, varData->scope));
             }
             break;

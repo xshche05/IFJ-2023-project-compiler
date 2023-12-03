@@ -166,24 +166,24 @@ static void ar_op_check(expr_elem_t *a, expr_elem_t *b, expr_elem_t *new_elem, e
         new_elem->ret_type = double_type;
     } else if (a->ret_type == int_type && b->ret_type == double_type) {
         if (a->token == NULL) {
-            fprintf(stderr, "ERROR: cant retype VAR (a)");
+            fprintf(stderr, "ERROR: cant retype VAR (a)\n");
             safe_exit(TYPE_ERROR);
         }
         new_elem->ret_type = double_type;
-        printf("INT2FLOATS\n");
+        gen_line("INT2FLOATS\n");
     } else if (a->ret_type == double_type && b->ret_type == int_type) {
         if (b->token == NULL) {
-            fprintf(stderr, "ERROR: cant retype VAR (b)");
+            fprintf(stderr, "ERROR: cant retype VAR (b)\n");
             safe_exit(TYPE_ERROR);
         }
         new_elem->ret_type = double_type;
-        printf("POPS GF@$A\n");
-        printf("INT2FLOATS\n");
-        printf("PUSHS GF@$A\n");
+        gen_line("POPS GF@$A\n");
+        gen_line("INT2FLOATS\n");
+        gen_line("PUSHS GF@$A\n");
     } else {
         new_elem->ret_type = elems[0]->ret_type;
     }
-    new_elem->token = (token_t *) ((int) a->token * (int) b->token);
+    new_elem->token = (token_t *) ((size_t) a->token * (size_t) b->token);
 }
 
 static void add_op_check(expr_elem_t *a, expr_elem_t *b) {
@@ -326,6 +326,9 @@ static void reduce() {
         }
     } else if (i == 3) // E -> E op E
     {
+        char *label_end;
+        char *label_false;
+        char *label_true;
         token_t *op = elems[1]->token;
         if (elems[1]->type == NON_TERM) {
             new_elem->type = NON_TERM;
@@ -371,14 +374,36 @@ static void reduce() {
                     new_elem->type = NON_TERM;
                     new_elem->ret_type = bool_type;
                     new_elem->token = NULL;
-                    gen_line("ANDS\n");
+                    label_end = gen_unique_label("and_end");
+                    label_false = gen_unique_label("and_false");
+                    gen_line("POPS GF@$B\n");
+                    gen_line("POPS GF@$A\n");
+                    gen_line("JUMPIFEQ %s GF@$A bool@false\n", label_false);
+                    gen_line("JUMPIFEQ %s GF@$B bool@false\n", label_false);
+                    gen_line("PUSHS bool@true\n");
+                    gen_line("JUMP %s\n", label_end);
+                    gen_line("LABEL %s\n", label_false);
+                    gen_line("PUSHS bool@false\n");
+                    gen_line("LABEL %s\n", label_end);
+//                    gen_line("ANDS\n");
                     break;
                 case TOKEN_LOGICAL_OR:
                     log_op_check(a, b);
                     new_elem->type = NON_TERM;
                     new_elem->ret_type = bool_type;
                     new_elem->token = NULL;
-                    gen_line("ORS\n");
+                    label_end = gen_unique_label("or_end");
+                    label_true = gen_unique_label("or_true");
+                    gen_line("POPS GF@$B\n");
+                    gen_line("POPS GF@$A\n");
+                    gen_line("JUMPIFEQ %s GF@$A bool@true\n", label_true);
+                    gen_line("JUMPIFEQ %s GF@$B bool@true\n", label_true);
+                    gen_line("PUSHS bool@false\n");
+                    gen_line("JUMP %s\n", label_end);
+                    gen_line("LABEL %s\n", label_true);
+                    gen_line("PUSHS bool@true\n");
+                    gen_line("LABEL %s\n", label_end);
+//                    gen_line("ORS\n");
                     break;
                 case TOKEN_LESS_THAN:
                     rel_op_check(a, b);
