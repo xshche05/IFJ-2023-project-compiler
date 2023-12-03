@@ -37,6 +37,9 @@ stack_t *pushdown_stack = NULL;
 stack_t *tmp_stack = NULL;
 
 static int map_token(token_t *token) {
+//    static bool has_nl = false;
+//    bool prev = has_nl;
+//    has_nl = token->has_newline_after;
     switch (token->type) {
         case TOKEN_UNWRAP_NILLABLE:
             return UNWRAP;
@@ -117,7 +120,8 @@ static void transfer_tmp_stack() {
 }
 
 static void rel_op_check(expr_elem_t *a, expr_elem_t *b) {
-    if (a->ret_type != b->ret_type || (a->ret_type > 3 && a->ret_type != nil_type) || a->ret_type == bool_type) {
+    if (a->ret_type != b->ret_type || (a->ret_type > 3 && a->ret_type != nil_type) || a->ret_type == bool_type
+    || a->ret_type == nil_type || b->ret_type == nil_type) {
         if (a->ret_type == double_type) {
             if (b->ret_type == int_type && b->token != NULL) {
                 gen_line("POPS GF@$A\n");
@@ -243,11 +247,11 @@ static void reduce() {
         i++;
     }
     Stack.pop(pushdown_stack);
-    if (collect_funcs) return;
     expr_elem_t *new_elem = safe_malloc(sizeof(expr_elem_t));
+    if (collect_funcs) return;
     if (i == 1) // reduce E -> i
     {
-        if (elems[0]->token == NULL) {
+        if (elems[0]->token == NULL && elems[0]->type == IDENTIFIER) {
             new_elem->type = NON_TERM;
             if (elems[0]->ret_type == void_type) {
                 fprintf(stderr, "Error: EXPR Void type operand.\n");
@@ -303,10 +307,12 @@ static void reduce() {
                 safe_exit(SEMANTIC_ERROR_5);
             }
             gen_line("PUSHS %s\n", gen_var_name(varData->name->str, varData->scope));
+        } else {
+            fprintf(stderr, "Error: EXPR syntax error\n");
+            safe_exit(SYNTAX_ERROR);
         }
-    } else if (i == 2) // E -> !E ; E ->E!
-    {
-        if (elems[1]->type == NOT) {
+    } else if (i == 2) { // E -> !E ; E -> E!
+        if (elems[1]->type == NOT && elems[0]->type == NON_TERM) {
             if (elems[0]->ret_type != bool_type) {
                 fprintf(stderr, "Error: EXPR type mismatch.\n");
                 safe_exit(TYPE_ERROR);
@@ -315,28 +321,37 @@ static void reduce() {
             new_elem->ret_type = bool_type;
             new_elem->token = NULL;
             gen_line("NOTS\n");
-        } else {
+        } else if (elems[1]->type == NON_TERM && elems[0]->type == UNWRAP) {
             if (elems[1]->ret_type < 4) {
-                fprintf(stderr, "Error: EXPR type mismatch.\n");
+                fprintf(stderr, "Error: cant unwrap non-nil\n");
+                safe_exit(TYPE_ERROR);
+            } else if (elems[1]->ret_type == nil_type) {
+                fprintf(stderr, "Error: cant unwrap nil\n");
                 safe_exit(TYPE_ERROR);
             }
             new_elem->type = NON_TERM;
             new_elem->ret_type = elems[1]->ret_type - 4;
             new_elem->token = NULL;
+        } else {
+            fprintf(stderr, "Error: EXPR syntax error\n");
+            safe_exit(SYNTAX_ERROR);
         }
-    } else if (i == 3) // E -> E op E
-    {
+    } else if (i == 3) { // E -> E op E; E -> (E)
         char *label_end;
         char *label_false;
         char *label_true;
         token_t *op = elems[1]->token;
-        if (elems[1]->type == NON_TERM) {
+        if (elems[0]->type == RIGHT_BRACKET && elems[1]->type == NON_TERM && elems[2]->type == LEFT_BRACKET) {
             new_elem->type = NON_TERM;
             new_elem->ret_type = elems[1]->ret_type;
             new_elem->token = elems[1]->token;
         } else {
             expr_elem_t *a = elems[0];
             expr_elem_t *b = elems[2];
+            if (a->type != NON_TERM || b->type != NON_TERM) {
+                fprintf(stderr, "Error: EXPR syntax error\n");
+                safe_exit(SYNTAX_ERROR);
+            }
             switch (op->type) {
                 case TOKEN_ADDITION:
                     ar_op_check(a, b, new_elem, elems);
@@ -454,8 +469,13 @@ static void reduce() {
                     if (b->ret_type > 3) {
                         if (!(b->ret_type - 4 == a->ret_type || b->ret_type == nil_type ||
                               a->ret_type == b->ret_type)) {
-                            fprintf(stderr, "Error: EXPR type mismatch.\n");
-                            safe_exit(TYPE_ERROR);
+                            if ((b->ret_type == double_type || b->ret_type == nil_double_type) && a->ret_type == int_type
+                            && a->token != NULL) {
+                                gen_line("INT2FLOATS\n");
+                            } else {
+                                fprintf(stderr, "Error: EXPR type mismatch.\n");
+                                safe_exit(TYPE_ERROR);
+                            }
                         }
                         new_elem->type = NON_TERM;
                         new_elem->ret_type = a->ret_type;
@@ -479,6 +499,9 @@ static void reduce() {
                     safe_exit(SEMANTIC_ERROR_9);
             }
         }
+    } else {
+        fprintf(stderr, "Error: EXPR syntax error\n");
+        safe_exit(SYNTAX_ERROR);
     }
     for (int j = 0; j < i; ++j) {
         safe_free(elems[j]);
@@ -580,7 +603,7 @@ static expr_elem_t *next_token() {
             }
         }
     } else {
-        elem->ret_type = 0;
+        elem->ret_type = none_type;
     }
     return elem;
 }
@@ -604,6 +627,10 @@ int parse_expr(type_t *ret_type, bool *is_literal) {
 
     first_flag = true;
     a = next_token();
+    if (a->type == DOLLAR) {
+        fprintf(stderr, "Error: EXPR syntax error.\n");
+        return SYNTAX_ERROR;
+    }
     first_flag = false;
 
     expr_elem_t *less = safe_malloc(sizeof(expr_elem_t));

@@ -5,6 +5,8 @@
 #ifndef IFJ_PRJ_LISTS_H
 #define IFJ_PRJ_LISTS_H
 
+#include <stdbool.h>
+
 typedef struct {
     void** array;
     int size;
@@ -21,6 +23,7 @@ struct dynamic_array_interface {
     int (*del)(dynamic_array_t *array, int index);
     void *(*get)(dynamic_array_t *array, int index);
     int (*del_item)(dynamic_array_t *array, void *item);
+    bool (*is_in_array)(dynamic_array_t *array, void *item);
 };
 
 #endif //IFJ_PRJ_LISTS_H

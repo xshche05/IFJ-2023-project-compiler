@@ -51,13 +51,13 @@ static void string_dtor(string_t *string) {
  * @return 0 if success, -1 otherwise.
  */
 static int string_extend_memory(string_t *string, int add_size) {
-    char *new_string = safe_realloc(string->str, sizeof(char) * (string->allocated + add_size * 3 / 2));
+    char *new_string = safe_realloc(string->str, sizeof(char) * (string->allocated + add_size + 100));
     if (new_string == NULL) {
         fprintf(stderr, "Error: Failed to reallocate memory for string.\n");
         return -1;
     }
     string->str = new_string;
-    string->allocated += add_size * 3 / 2;
+    string->allocated += add_size + 100;
     return 0;
 }
 
@@ -172,7 +172,8 @@ static int string_clear(string_t *string) {
  * @return 0 if strings are equal, -1 if first string is "smaller", 1 if first string is "bigger".
  */
 static int string_compare(string_t *string1, string_t *string2) {
-    return strcmp(string1->str, string2->str);
+    int tmp = strcmp(string1->str, string2->str);
+    return tmp;
 }
 
 /**

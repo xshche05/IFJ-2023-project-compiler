@@ -126,7 +126,7 @@ static void file_print(void) {
         return;
     }
     for (int i = 0; i < sourceFile->line_count; i++) {
-        printf("%s\n", sourceFile->lines[i]->str);
+        fprintf(stderr, "%s\n", sourceFile->lines[i]->str);
     }
 }
 

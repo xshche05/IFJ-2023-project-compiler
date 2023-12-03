@@ -4,6 +4,8 @@
 
 #include "memory.h"
 #include "lists.h"
+#include "parser.h"
+#include "../macros.h"
 #include <stdio.h>
 
 dynamic_array_t *allocated_pointers = NULL;
@@ -36,8 +38,10 @@ void safe_free(void *ptr) {
     if (ptr == NULL) {
         return;
     }
-    DynamicArray.del_item(allocated_pointers, ptr);
-    free(ptr);
+    if (DynamicArray.is_in_array(allocated_pointers, ptr) == true) {
+        DynamicArray.del_item(allocated_pointers, ptr);
+        free(ptr);
+    }
 }
 
 void free_all() {

@@ -43,13 +43,9 @@ typedef struct {
     type_t type;
     bool isDefined;
     bool isDeclared;
-    int scope;
-    bool initInBranch;
-    bool initInAllBranches;
-    int numberBranchBlocks;
-    int minInitScope;
-    int minInitBranchNumber;
     bool canBeRedefined;
+    int scope;
+    int minInitScope;
 } varData_t;
 
 typedef varData_t letData_t;

@@ -166,8 +166,7 @@ void gen_std_functions() {
     gen_line("JUMPIFEQ $substring_std_exit_nil LF@exit bool@false\n");
     gen_line("GT LF@exit GF@$C GF@$RET\n"); // exit = j > length(s)
     gen_line("JUMPIFEQ $substring_std_exit_nil LF@exit bool@true\n");
-    gen_line("GETCHAR GF@$RET GF@$A GF@$B\n"); // $RET = s[i]
-    gen_line("ADD GF@$B GF@$B int@1\n"); // i++
+    gen_line("MOVE GF@$RET string@\n"); // $RET = ""
     gen_line("LABEL $substring_std_loop\n");
     gen_line("LT LF@exit GF@$B GF@$C\n"); // continue = i < j
     gen_line("JUMPIFEQ $substring_std_exit LF@exit bool@false\n"); // if continue == false then exit
@@ -187,7 +186,11 @@ void gen_std_functions() {
     // ord
     gen_line("LABEL ord\n");
     gen_line("POPS GF@$A\n");
+    gen_line("PUSHS GF@$A\n");
+    gen_line("CALL length\n");
+    gen_line("JUMPIFEQ $ord_std_exit GF@$RET int@0\n");
     gen_line("STRI2INT GF@$RET GF@$A int@0\n");
+    gen_line("LABEL $ord_std_exit\n");
     gen_line("RETURN\n");
     // chr
     gen_line("LABEL chr\n");
@@ -216,6 +219,7 @@ void gen_line(char *format, ...) {
     vsprintf(str, format, args);
     String.add_cstr(output, str);
     safe_free(str);
+//    vprintf(format, args);
     va_end(args);
 }
 
