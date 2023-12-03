@@ -1,7 +1,7 @@
 #ifndef IFJ_PRJ_EXPR_PARSER_H
 #define IFJ_PRJ_EXPR_PARSER_H
 
-#include "new_symtable.h"
+#include "symtable.h"
 #include "parser.h"
 #include "scanner/token.h"
 

@@ -26,7 +26,7 @@ add_executable(compiler
         scr/utils/stack.h
         scr/parts/codegen/codegen.c
         scr/parts/codegen/codegen.h
-        scr/parts/parser/new_symtable.c
-        scr/parts/parser/new_symtable.c
+        scr/parts/parser/symtable.c
+        scr/parts/parser/symtable.c
         scr/utils/memory.c
         scr/utils/memory.h)

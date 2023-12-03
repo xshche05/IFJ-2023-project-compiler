@@ -1,7 +1,7 @@
 #include <string.h>
 #include "parts.h"
 #include "utils.h"
-#include "new_symtable.h"
+#include "symtable.h"
 #include "codegen/codegen.h"
 
 bool inside_func = false;

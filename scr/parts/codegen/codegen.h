@@ -6,7 +6,7 @@
 #define IFJ_PRJ_CODEGEN_H
 
 #include <stdbool.h>
-#include "new_symtable.h"
+#include "symtable.h"
 
 extern string_t *output;
 

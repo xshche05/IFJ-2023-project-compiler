@@ -2,8 +2,8 @@
 // Created by Spagetik on 08-Nov-23.
 //
 
-#ifndef IFJ_PRJ_NEW_SYMTABLE_H
-#define IFJ_PRJ_NEW_SYMTABLE_H
+#ifndef IFJ_PRJ_SYMTABLE_H
+#define IFJ_PRJ_SYMTABLE_H
 
 #include <stdbool.h>
 #include "string_util.h"
@@ -106,4 +106,4 @@ void get_vars_and_lets_from_all_scopes(stack_t *stack);
 void update_defines_after_branch(int scope, int branch_blocks);
 
 
-#endif //IFJ_PRJ_NEW_SYMTABLE_H
+#endif //IFJ_PRJ_SYMTABLE_H
