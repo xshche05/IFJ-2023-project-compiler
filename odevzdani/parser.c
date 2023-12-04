@@ -12,7 +12,6 @@ bool inside_func = false;
 bool has_return = false;
 int inside_loop = 0;
 int inside_branch = 0;
-int branch_number = 0;
 int branch_blocks = 0;
 token_t *lookahead = NULL;
 funcData_t *currentFunc = NULL;
@@ -195,8 +194,9 @@ bool RETURN(funcData_t **funcData) {
 
 void check_return_type(type_t type, bool is_literal, funcData_t **funcData) {
     if (collect_funcs) return;
-    if (type != (*funcData)->returnType && (*funcData)->returnType - type != nil_int_type-int_type) {
-        if (type == int_type && (*funcData)->returnType == double_type) {
+    if (type != (*funcData)->returnType && (*funcData)->returnType - type != nil_int_type-int_type &&
+            !(type == nil_type && (*funcData)->returnType >= nil_int_type && (*funcData)->returnType <= nil_bool_type)) {
+        if (type == int_type && ((*funcData)->returnType == double_type || (*funcData)->returnType == nil_double_type)) {
             if (!is_literal) {
                 fprintf(stderr, "Error: cant convert non literal value from INT to DOUBLE\n");
                 safe_exit(SEMANTIC_ERROR_4);
@@ -230,12 +230,20 @@ bool RET_EXPR(funcData_t **funcData) {
             }
             gen_return(true);
             break;
+        case TOKEN_FALSE_LITERAL:
+        case TOKEN_TRUE_LITERAL:
+        case TOKEN_NIL_LITERAL:
+        case TOKEN_REAL_LITERAL:
+        case TOKEN_STRING_LITERAL:
+        case TOKEN_INTEGER_LITERAL:
+        case TOKEN_IDENTIFIER:
+        case TOKEN_LEFT_BRACKET:
+        case TOKEN_LOGICAL_NOT:
+            s = call_expr_parser(&type, &is_literal);
+            if (collect_funcs) break;
+            check_return_type(type, is_literal, funcData);
+            break;
         default:
-            if (call_expr_parser(&type, &is_literal)) {
-                if (collect_funcs) return true;
-                check_return_type(type, is_literal, funcData);
-                return true;
-            }
             sprintf(error_msg, "Syntax error [RET_EXPR]: expected ['TOKEN_FALSE_LITERAL', 'TOKEN_LESS_THAN', 'TOKEN_LOGICAL_AND', 'TOKEN_LEFT_BRACKET', 'TOKEN_NIL_LITERAL', 'TOKEN_REAL_LITERAL', 'TOKEN_STRING_LITERAL', 'TOKEN_ADDITION', 'TOKEN_SUBTRACTION', 'TOKEN_LOGICAL_OR', 'TOKEN_IDENTIFIER', 'TOKEN_EQUAL_TO', 'TOKEN_LESS_THAN_OR_EQUAL_TO', 'TOKEN_GREATER_THAN', 'TOKEN_NOT_EQUAL_TO', 'TOKEN_GREATER_THAN_OR_EQUAL_TO', 'TOKEN_TRUE_LITERAL', 'TOKEN_IS_NIL', 'TOKEN_DIVISION', 'TOKEN_MULTIPLICATION', 'TOKEN_LOGICAL_NOT', 'TOKEN_UNWRAP_NILLABLE', 'TOKEN_INTEGER_LITERAL', 'TOKEN_RIGHT_BRACE', 'TOKEN_EOF'], got %s\n", tokens_as_str[lookahead->type]);
             s = false;
     }
@@ -309,10 +317,6 @@ bool VAR_DECL() {
     varData->isDeclared = false;
     varData->minInitScope = INT_MAX;
     varData->canBeRedefined = false;
-    varData->minInitBranchNumber = INT_MAX;
-    varData->initInAllBranches = true;
-    varData->initInBranch = false;
-    varData->numberBranchBlocks = 0;
     switch (lookahead->type) {
         case TOKEN_VAR:
             s = match(TOKEN_VAR);
@@ -355,10 +359,6 @@ bool LET_DECL() {
     letData->isDeclared = false;
     letData->minInitScope = INT_MAX;
     letData->canBeRedefined = false;
-    letData->minInitBranchNumber = INT_MAX;
-    letData->initInAllBranches = true;
-    letData->initInBranch = false;
-    letData->numberBranchBlocks = 0;
     switch (lookahead->type) {
         case TOKEN_LET:
             s = match(TOKEN_LET);
@@ -542,16 +542,23 @@ bool PARAM(funcData_t **funcData) {
     func_param->isDefined = true;
     func_param->isDeclared = true;
     func_param->minInitScope = get_scope();
+    func_param->name = String.ctor();
+    func_param->canBeRedefined = false;
     switch (lookahead->type) {
         case TOKEN_IDENTIFIER:
         case TOKEN_UNDERSCORE:
             s = PARAM_NAME(funcData);
             token_t *id = lookahead;
             s = s && match(TOKEN_IDENTIFIER);
-            func_param->name = id->attribute.identifier;
             if (s) {
+                func_param->name = id->attribute.identifier;
                 string_t *param = id->attribute.identifier;
                 String.add_string((*funcData)->params, param);
+            }
+            if (!s) {
+                s = match(TOKEN_UNDERSCORE);
+                String.add_char(func_param->name, '_');
+                String.add_char((*funcData)->params, '_');
             }
             s = s && match(TOKEN_COLON);
             type_t type;
@@ -566,10 +573,13 @@ bool PARAM(funcData_t **funcData) {
             if (s) {
                 bool flag = add_let(func_param);
                 if (!flag) {
-                    fprintf(stderr, "Error: parameter already defined\n");
-                    safe_exit(SEMANTIC_ERROR_9);
+                    if (String.cmp_cstr(func_param->name, "_") != 0) {
+                        fprintf(stderr, "Error: parameter already defined\n");
+                        safe_exit(SEMANTIC_ERROR_9);
+                    }
                 }
             }
+            gen_var_name(func_param->name->str, get_scope());
             break;
         default:
             sprintf(error_msg, "Syntax error [PARAM]: expected ['TOKEN_UNDERSCORE', 'TOKEN_IDENTIFIER'], got %s\n", tokens_as_str[lookahead->type]);
@@ -644,7 +654,6 @@ bool BRANCH() {
             s = s && ELSE();
             gen_branch_end();
             inside_branch--;
-            branch_number++;
             break;
         default:
             sprintf(error_msg, "Syntax error [BRANCH]: expected ['TOKEN_IF'], got %s\n", tokens_as_str[lookahead->type]);
@@ -691,18 +700,25 @@ bool BR_EXPR() {
                 gen_branch_if_start(true);
             }
             break;
-        default:
-            if (call_expr_parser(&type, &is_literal))
-            {
-                if (!collect_funcs) {
-                    if (type != bool_type) {
-                        fprintf(stderr, "Error: if condition expr must return BOOL\n");
-                        safe_exit(SEMANTIC_ERROR_7);
-                    }
-                    gen_branch_if_start(false);
+        case TOKEN_FALSE_LITERAL:
+        case TOKEN_TRUE_LITERAL:
+        case TOKEN_NIL_LITERAL:
+        case TOKEN_REAL_LITERAL:
+        case TOKEN_STRING_LITERAL:
+        case TOKEN_INTEGER_LITERAL:
+        case TOKEN_IDENTIFIER:
+        case TOKEN_LEFT_BRACKET:
+        case TOKEN_LOGICAL_NOT:
+            s = call_expr_parser(&type, &is_literal);
+            if (s && !collect_funcs) {
+                if (type != bool_type) {
+                    fprintf(stderr, "Error: if condition expr must return BOOL\n");
+                    safe_exit(SEMANTIC_ERROR_7);
                 }
-                return true;
+                gen_branch_if_start(false);
             }
+            break;
+        default:
             sprintf(error_msg, "Syntax error [BR_EXPR]: expected ['TOKEN_FALSE_LITERAL', 'TOKEN_LESS_THAN', 'TOKEN_LOGICAL_AND', 'TOKEN_LEFT_BRACKET', 'TOKEN_NIL_LITERAL', 'TOKEN_REAL_LITERAL', 'TOKEN_STRING_LITERAL', 'TOKEN_ADDITION', 'TOKEN_SUBTRACTION', 'TOKEN_LOGICAL_OR', 'TOKEN_IDENTIFIER', 'TOKEN_EQUAL_TO', 'TOKEN_LESS_THAN_OR_EQUAL_TO', 'TOKEN_GREATER_THAN', 'TOKEN_NOT_EQUAL_TO', 'TOKEN_GREATER_THAN_OR_EQUAL_TO', 'TOKEN_TRUE_LITERAL', 'TOKEN_IS_NIL', 'TOKEN_DIVISION', 'TOKEN_MULTIPLICATION', 'TOKEN_LOGICAL_NOT', 'TOKEN_UNWRAP_NILLABLE', 'TOKEN_INTEGER_LITERAL', 'TOKEN_LET'], got %s\n", tokens_as_str[lookahead->type]);
             s = false;
     }
@@ -747,7 +763,7 @@ bool ELSE_IF() {
             s = s && CODE();
             s = s && match(TOKEN_RIGHT_BRACE);
             del_frame();
-            update_defines_after_branch(get_scope(), branch_blocks);
+//            update_defines_after_branch(get_scope(), branch_blocks);
             break;
         default:
             if (nl_flag) return true;
@@ -771,7 +787,7 @@ bool WHILE_LOOP() {
                 if (!collect_funcs) {
                     if (type != bool_type) {
                         fprintf(stderr, "Error: while condition expr must return BOOL\n");
-                        safe_exit(SEMANTIC_ERROR_9);
+                        safe_exit(SEMANTIC_ERROR_7);
                     }
                 }
             }
@@ -927,7 +943,7 @@ bool CALL_PARAM_LIST(string_t *call_params, bool call_after_param, char *func_na
             s = true;
             break;
         default:
-            if (call_expr_parser(&type, &is_literal)) return true;
+//            if (call_expr_parser(&type, &is_literal)) return true; // TODO check if this is correct
             sprintf(error_msg, "Syntax error [CALL_PARAM_LIST]: expected ['TOKEN_FALSE_LITERAL', 'TOKEN_COLON', 'TOKEN_LESS_THAN', 'TOKEN_LOGICAL_AND', 'TOKEN_LEFT_BRACKET', 'TOKEN_NIL_LITERAL', 'TOKEN_REAL_LITERAL', 'TOKEN_STRING_LITERAL', 'TOKEN_ADDITION', 'TOKEN_SUBTRACTION', 'TOKEN_LOGICAL_OR', 'TOKEN_IDENTIFIER', 'TOKEN_UNWRAP_NILLABLE', 'TOKEN_EQUAL_TO', 'TOKEN_LESS_THAN_OR_EQUAL_TO', 'TOKEN_GREATER_THAN', 'TOKEN_NOT_EQUAL_TO', 'TOKEN_GREATER_THAN_OR_EQUAL_TO', 'TOKEN_TRUE_LITERAL', 'TOKEN_IS_NIL', 'TOKEN_DIVISION', 'TOKEN_MULTIPLICATION', 'TOKEN_LOGICAL_NOT', 'TOKEN_INTEGER_LITERAL', 'TOKEN_RIGHT_BRACKET'], got %s\n", tokens_as_str[lookahead->type]);
             s = false;
     }
@@ -961,16 +977,27 @@ bool CALL_PARAM(string_t *call_params, bool call_after_param, char *func_name) {
                 }
             }
             break;
-        default:
-            if (call_expr_parser(&type, &is_literal)) {
+        case TOKEN_FALSE_LITERAL:
+        case TOKEN_TRUE_LITERAL:
+        case TOKEN_NIL_LITERAL:
+        case TOKEN_INTEGER_LITERAL:
+        case TOKEN_REAL_LITERAL:
+        case TOKEN_STRING_LITERAL:
+        case TOKEN_LEFT_BRACKET:
+        case TOKEN_LOGICAL_NOT:
+            s = call_expr_parser(&type, &is_literal);
+            if (s) {
                 String.add_char(call_params, '_');
                 String.add_char(call_params, ':');
                 String.add_char(call_params, type + '0');
+            }
+            if (s) {
                 if (call_after_param) {
                     gen_line("CALL %s\n", func_name);
                 }
-                return true;
             }
+            break;
+        default:
             sprintf(error_msg, "Syntax error [CALL_PARAM_VALUE]: expected ['TOKEN_FALSE_LITERAL', 'TOKEN_LESS_THAN', 'TOKEN_LOGICAL_AND', 'TOKEN_LEFT_BRACKET', 'TOKEN_NIL_LITERAL', 'TOKEN_REAL_LITERAL', 'TOKEN_STRING_LITERAL', 'TOKEN_ADDITION', 'TOKEN_SUBTRACTION', 'TOKEN_LOGICAL_OR', 'TOKEN_IDENTIFIER', 'TOKEN_EQUAL_TO', 'TOKEN_LESS_THAN_OR_EQUAL_TO', 'TOKEN_GREATER_THAN', 'TOKEN_NOT_EQUAL_TO', 'TOKEN_GREATER_THAN_OR_EQUAL_TO', 'TOKEN_TRUE_LITERAL', 'TOKEN_IS_NIL', 'TOKEN_DIVISION', 'TOKEN_MULTIPLICATION', 'TOKEN_LOGICAL_NOT', 'TOKEN_UNWRAP_NILLABLE', 'TOKEN_INTEGER_LITERAL'], got %s\n", tokens_as_str[lookahead->type]);
             s = false;
     }
@@ -1074,11 +1101,6 @@ bool NEXT_ID_CALL_OR_ASSIGN(token_t *id) {
                 }
                 varData->isDeclared = true;
                 varData->minInitScope = min(varData->minInitScope, get_scope());
-                if (varData->minInitScope == get_scope()) {
-                    varData->initInBranch = (bool) inside_branch;
-                    varData->minInitBranchNumber = min(varData->minInitBranchNumber, branch_number);
-                    varData->numberBranchBlocks++;
-                }
                 gen_line("POPS %s\n", gen_var_name(id->attribute.identifier->str, varData->scope));
             }
             break;

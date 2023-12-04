@@ -2,7 +2,7 @@
 #include "parts.h"
 #include "utils.h"
 #include "symtable.h"
-#include "codegen/codegen.h"
+#include "../../../../pokusne/codegen.h"
 
 bool inside_func = false;
 bool inside_loop = false;

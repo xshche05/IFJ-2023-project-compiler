@@ -3,6 +3,7 @@
 //
 
 #include "token.h"
+#include <stdlib.h>
 #include <stdio.h>
 #include "memory.h"
 
@@ -105,15 +106,15 @@ static void token_print(token_t *token) {
     if (token == NULL) {
         return;
     }
-    printf("Token: %32s", tokens_as_str[token->type]);
+    fprintf(stderr, "Token: %32s", tokens_as_str[token->type]);
     if (token->type == TOKEN_IDENTIFIER) {
-        printf(",   ID:   %s", token->attribute.identifier->str);
+        fprintf(stderr, ",   ID:   %s", token->attribute.identifier->str);
     } else if (token->type == TOKEN_INTEGER_LITERAL) {
-        printf(",   INT:  %d", token->attribute.integer);
+        fprintf(stderr, ",   INT:  %d", token->attribute.integer);
     } else if (token->type == TOKEN_REAL_LITERAL) {
-        printf(",   REAL: %a", token->attribute.real);
+        fprintf(stderr, ",   REAL: %a", token->attribute.real);
     } else if (token->type == TOKEN_STRING_LITERAL) {
-        printf(",   STR:  %s", token->attribute.string->str);
+        fprintf(stderr, ",   STR:  %s", token->attribute.string->str);
     }
     switch (token->type)
     {
@@ -121,16 +122,16 @@ static void token_print(token_t *token) {
         case TOKEN_DOUBLE_TYPE:
         case TOKEN_INT_TYPE:
         case TOKEN_STRING_TYPE:
-            if (token->attribute.nillable) printf(",   NILABLE");
-            else printf(",   NON-NILABLE");
+            if (token->attribute.nillable) fprintf(stderr, ",   NILABLE");
+            else fprintf(stderr, ",   NON-NILABLE");
             break;
         default:
             break;
     }
     if (token->has_newline_after) {
-        printf(",   NL");
+        fprintf(stderr, ",   NL");
     }
-    printf("\n");
+    fprintf(stderr, "\n");
 }
 
 /**

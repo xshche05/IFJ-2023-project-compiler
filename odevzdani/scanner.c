@@ -10,8 +10,6 @@
 #include "source_file.h"
 #include "memory.h"
 
-// TODO: fix range operator form '..' to '...'
-
 char control_char = ' ';
 
 token_array_t *tokens = NULL;

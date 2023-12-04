@@ -1,5 +1,5 @@
 #include <string.h>
-#include "../codegen/codegen.h"
+#include "codegen/codegen.h"
 #include "expr_parser.h"
 #include "parser.h"
 #include "token.h"
@@ -943,7 +943,7 @@ bool CALL_PARAM_LIST(string_t *call_params, bool call_after_param, char *func_na
             s = true;
             break;
         default:
-//            if (call_expr_parser(&type, &is_literal)) return true; // TODO check if this is correct
+            if (call_expr_parser(&type, &is_literal)) return true; // TODO check if this is correct
             sprintf(error_msg, "Syntax error [CALL_PARAM_LIST]: expected ['TOKEN_FALSE_LITERAL', 'TOKEN_COLON', 'TOKEN_LESS_THAN', 'TOKEN_LOGICAL_AND', 'TOKEN_LEFT_BRACKET', 'TOKEN_NIL_LITERAL', 'TOKEN_REAL_LITERAL', 'TOKEN_STRING_LITERAL', 'TOKEN_ADDITION', 'TOKEN_SUBTRACTION', 'TOKEN_LOGICAL_OR', 'TOKEN_IDENTIFIER', 'TOKEN_UNWRAP_NILLABLE', 'TOKEN_EQUAL_TO', 'TOKEN_LESS_THAN_OR_EQUAL_TO', 'TOKEN_GREATER_THAN', 'TOKEN_NOT_EQUAL_TO', 'TOKEN_GREATER_THAN_OR_EQUAL_TO', 'TOKEN_TRUE_LITERAL', 'TOKEN_IS_NIL', 'TOKEN_DIVISION', 'TOKEN_MULTIPLICATION', 'TOKEN_LOGICAL_NOT', 'TOKEN_INTEGER_LITERAL', 'TOKEN_RIGHT_BRACKET'], got %s\n", tokens_as_str[lookahead->type]);
             s = false;
     }

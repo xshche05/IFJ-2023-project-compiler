@@ -44,7 +44,6 @@ bool current_loop_is_for = false;
 
 #define start if (collect_funcs) return
 
-
 void init_codegen() {
     start;
     output = String.ctor();
@@ -84,25 +83,6 @@ char *gen_unique_label(char *prefix) {
 
 void gen_std_functions() {
     start;
-    /*
-     * readString
-     * readInt
-     * readDouble
-     *
-     * write
-     *
-     * Int2Double
-     * Double2Int
-     *
-     * length
-     *
-     * substring
-     *
-     * ord
-     *
-     * chr
-     */
-
     // readString
     gen_line("LABEL readString\n");
     gen_line("READ GF@$RET string\n");
@@ -119,14 +99,12 @@ void gen_std_functions() {
     gen_line("LABEL readBool\n");
     gen_line("READ GF@$RET bool\n");
     gen_line("RETURN\n");
-
     // write
     gen_line("LABEL write\n");
     // while $C != 0 do pop and print decremented $C
     gen_line("POPS GF@$A\n");
     gen_line("WRITE GF@$A\n");
     gen_line("RETURN\n");
-
     // Int2Double
     gen_line("LABEL Int2Double\n");
     gen_line("POPS GF@$A\n");
@@ -177,12 +155,10 @@ void gen_std_functions() {
     gen_line("LABEL $substring_std_exit\n"); // exit loop
     gen_line("POPFRAME\n"); // pop frame
     gen_line("RETURN\n"); // return
-
     gen_line("LABEL $substring_std_exit_nil\n"); // exit nil
     gen_line("MOVE GF@$RET nil@nil\n"); // $RET = nil
     gen_line("POPFRAME\n"); // pop frame
     gen_line("RETURN\n"); // return
-
     // ord
     gen_line("LABEL ord\n");
     gen_line("POPS GF@$A\n");
@@ -207,7 +183,7 @@ void gen_std_functions() {
     gen_line("MOVE GF@$RET GF@$B\n");
     gen_line("LABEL $??op_skip\n");
     gen_line("RETURN\n");
-
+    // Start of main
     gen_line("LABEL $$main\n");
 }
 
@@ -215,11 +191,11 @@ void gen_line(char *format, ...) {
     start;
     va_list args;
     va_start(args, format);
-    char *str = safe_malloc(sizeof(char) * (strlen(format) + 100) * 2);
-    vsprintf(str, format, args);
-    String.add_cstr(output, str);
-    safe_free(str);
-//    vprintf(format, args);
+//    char *str = safe_malloc(sizeof(char) * (strlen(format) + 100) * 2);
+//    vsprintf(str, format, args);
+//    String.add_cstr(output, str);
+//    safe_free(str);
+    vprintf(format, args);
     va_end(args);
 }
 

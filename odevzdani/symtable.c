@@ -3,7 +3,7 @@
 //
 
 #include <string.h>
-#include "new_symtable.h"
+#include "symtable.h"
 #include "parser.h"
 #include "macros.h"
 #include <stdio.h>
@@ -269,10 +269,16 @@ int tree_find(node_t **root, string_t *key, symTableData_t **data, int depth) {
         } else if (cmp > 0) {
             return tree_find(&(*root)->right, key, data, depth);
         } else {
-            if (data != NULL) *data = (*root)->data;
-            return depth;
+            if (data != NULL)
+            {
+                *data = (*root)->data;
+                return depth;
+            } else {
+                return -1;
+            }
         }
     }
+    return -1;
 }
 
 int get_scope() {
@@ -305,20 +311,20 @@ void tree_print(node_t **root) {
     // if (root == NULL) return;
     if (*root != NULL) {
         tree_print(&(*root)->left);
-        printf("%s\n", (*root)->key->str);
+        fprintf(stderr, "%s\n", (*root)->key->str);
         tree_print(&(*root)->right);
     }
 }
 
 void symtable_print() {
     int depth = scopeDepth;
-    if (depth == 0) printf("GLOBAL SCOPE:\n");
-    else printf("Scope depth: %d\n", depth);
+    if (depth == 0) fprintf(stderr, "GLOBAL SCOPE:\n");
+    else fprintf(stderr, "Scope depth: %d\n", depth);
     tree_print(&currentScope);
     while (depth > 0) {
         depth--;
-        if (depth == 0) printf("GLOBAL SCOPE:\n");
-        else printf("Scope depth: %d\n", depth);
+        if (depth == 0) fprintf(stderr, "GLOBAL SCOPE:\n");
+        else fprintf(stderr, "Scope depth: %d\n", depth);
         node_t *tmp = Stack.top(scopeStack);
         tree_print(&tmp);
         Stack.push(tmpScopeStack, tmp);
@@ -337,8 +343,6 @@ bool check_func_signature(string_t *params, funcData_t *funcData) {
     char *funcParamsStr = safe_malloc(sizeof(char) * (funcData->params->length + 1));
     strcpy(funcParamsStr, funcData->params->str);
     if (strcmp(funcParamsStr, "*") == 0) {
-        safe_free(funcParamsStr);
-        safe_free(paramsStr);
         return true;
     }
     char *token = strtok(paramsStr, "#:");
@@ -391,8 +395,12 @@ bool check_func_signature(string_t *params, funcData_t *funcData) {
         char *type = Stack.top(typeStack);
         char *funcType = Stack.top(funcTypeStack);
         if (strcmp(type, funcType) != 0) {
-            fprintf(stderr, "Error: function signature mismatch.\n");
-            safe_exit(SEMANTIC_ERROR_4);
+            int type_1 = strtol(type, NULL, 10);
+            int type_2 = strtol(funcType, NULL, 10);
+            if (!(type_2-type_1 == nil_int_type - int_type || (type_2 > 3 && type_1 == nil_type) )){
+                fprintf(stderr, "Error: function signature mismatch.\n");
+                safe_exit(SEMANTIC_ERROR_4);
+            }
         }
         safe_free(type);
         safe_free(funcType);
@@ -433,8 +441,10 @@ bool add_func(funcData_t *funcData) {
                     char *param = safe_malloc(sizeof(char) * (strlen(token) + 1));
                     strcpy(param, token);
                     if (strcmp(alias, param) == 0) {
-                        fprintf(stderr, "Error: param name should be diff from its id.\n");
-                        safe_exit(SEMANTIC_ERROR_9);
+                        if (!(strcmp(alias, "_") == 0 && strcmp(param, "_") == 0)) {
+                            fprintf(stderr, "Error: param name should be diff from its id.\n");
+                            safe_exit(SEMANTIC_ERROR_9);
+                        }
                     }
                     safe_free(alias);
                     safe_free(param);
@@ -442,7 +452,6 @@ bool add_func(funcData_t *funcData) {
                     token = strtok(NULL, "#:");
                 }
             }
-            safe_free(paramsStr);
         }
         return tree_add(&functions, funcData->name, data);
     }
@@ -461,7 +470,6 @@ bool add_var(varData_t *varData) {
             safe_exit(SEMANTIC_ERROR_9);
         }
     }
-    safe_free(funcData);
     bool s = tree_add(&currentScope, varData->name, data);
     if (!s) {
         symTableData_t *data2 = safe_malloc(sizeof(symTableData_t));
@@ -485,7 +493,6 @@ bool add_let(letData_t *letData) {
             safe_exit(SEMANTIC_ERROR_9);
         }
     }
-    safe_free(funcData);
     bool s = tree_add(&currentScope, letData->name, data);
     if (!s) {
         symTableData_t *data2 = safe_malloc(sizeof(symTableData_t));
@@ -537,50 +544,52 @@ void update_defines(stack_t *data, int scope) {
     while (Stack.top(data)) {
         varData_t *varData = (varData_t *) Stack.top(data);
         if (varData->minInitScope > scope) {
-            if (varData->initInBranch) {
-                if (varData->minInitBranchNumber == branch_number && varData->isDeclared) {
-                    varData->initInAllBranches = varData->initInAllBranches && true;
-                }
-                else {
-                    varData->initInAllBranches = false;
-                }
-                varData->isDeclared = false;
-            } else {
-                varData->isDeclared = false;
-                varData->minInitScope = INT_MAX;
-            }
+            varData->isDeclared = false;
+            varData->minInitScope = INT_MAX;
         }
+//            if (varData->initInBranch) {
+//                if (varData->minInitBranchNumber == inside_branch && varData->isDeclared) {
+//                    varData->initInAllBranches = varData->initInAllBranches && true;
+//                }
+//                else {
+//                    varData->initInAllBranches = false;
+//                }
+//                varData->isDeclared = false;
+//            } else {
+//                varData->isDeclared = false;
+//                varData->minInitScope = INT_MAX;
+//            }
         Stack.pop(data);
     }
 }
 
-void update_defines_after_branch(int scope, int branch_blocks) {
-    // if var/let min defined scope is higher than current scope, reset it and swt to undefined
-    if (collect_funcs) return;
-    stack_t *data = Stack.init();
-    get_vars_and_lets_from_all_scopes(data);
-    while (Stack.top(data)) {
-        varData_t *varData = (varData_t *) Stack.top(data);
-        if (varData->minInitScope > scope) {
-            if (varData->initInBranch) {
-                if (varData->initInAllBranches && varData->numberBranchBlocks == branch_blocks) {
-                    varData->isDeclared = true;
-                    varData->minInitScope = varData->minInitScope - 1;
-                    varData->initInBranch = false;
-                }
-                else {
-                    varData->isDeclared = false;
-                    varData->initInBranch = false;
-                    varData->minInitScope = INT_MAX;
-                }
-            } else {
-                varData->isDeclared = false;
-                varData->minInitScope = INT_MAX;
-            }
-        }
-        Stack.pop(data);
-    }
-}
+//void update_defines_after_branch(int scope, int branch_blocks) {
+//    // if var/let min defined scope is higher than current scope, reset it and swt to undefined
+//    if (collect_funcs) return;
+//    stack_t *data = Stack.init();
+//    get_vars_and_lets_from_all_scopes(data);
+//    while (Stack.top(data)) {
+//        varData_t *varData = (varData_t *) Stack.top(data);
+//        if (varData->minInitScope > scope) {
+//            if (varData->initInBranch) {
+//                if (varData->initInAllBranches && varData->numberBranchBlocks == branch_blocks) {
+//                    varData->isDeclared = true;
+//                    varData->minInitScope = varData->minInitScope - 1;
+//                    varData->initInBranch = false;
+//                }
+//                else {
+//                    varData->isDeclared = false;
+//                    varData->initInBranch = false;
+//                    varData->minInitScope = INT_MAX;
+//                }
+//            } else {
+//                varData->isDeclared = false;
+//                varData->minInitScope = INT_MAX;
+//            }
+//        }
+//        Stack.pop(data);
+//    }
+//}
 
 funcData_t *get_func(string_t *name) {
     symTableData_t *data = safe_malloc(sizeof(symTableData_t));

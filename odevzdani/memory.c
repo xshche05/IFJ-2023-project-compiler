@@ -36,8 +36,10 @@ void safe_free(void *ptr) {
     if (ptr == NULL) {
         return;
     }
-    DynamicArray.del_item(allocated_pointers, ptr);
-    free(ptr);
+    if (DynamicArray.is_in_array(allocated_pointers, ptr) == true) {
+        DynamicArray.del_item(allocated_pointers, ptr);
+        free(ptr);
+    }
 }
 
 void free_all() {
