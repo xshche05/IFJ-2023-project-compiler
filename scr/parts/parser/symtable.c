@@ -316,13 +316,13 @@ void symtable_print() {
     }
 }
 
-void new_frame() {
+void increase_scope() {
     Stack.push(scopeStack, currentScope);
     tree_init(&currentScope);
     scopeDepth++;
 }
 
-void del_frame() {
+void decrease_scope() {
     currentScope = Stack.top(scopeStack);
     Stack.pop(scopeStack);
     scopeDepth--;

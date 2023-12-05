@@ -1,6 +1,8 @@
-//
-// Created by Spagetik on 22.10.2023.
-//
+/*
+ * IFJ Project 2023
+ * Implementation of stack abstract data type
+ * Author: Kirill Shchetiniuk (xshche05)
+ */
 
 #ifndef IFJ_PRJ_STACK_H
 #define IFJ_PRJ_STACK_H

@@ -32,7 +32,6 @@ typedef enum {
     BRACKET_L_S,      // (
     BRACKET_R_S,      // )
     COLON_S,          // :
-    SEMICOLON_S,      // ;
     COMMA_S,          // ,
     INTEGER_S,        // 0-9
     ID_S,             // a-zA-Z_

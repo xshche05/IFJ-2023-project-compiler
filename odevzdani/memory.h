@@ -1,6 +1,8 @@
-//
-// Created by Spagetik on 02-Dec-23.
-//
+/*
+ * IFJ Project 2023
+ * Implementation of module for safe memory management
+ * Author: Kirill Shchetiniuk (xshche05)
+ */
 
 #ifndef IFJ_PRJ_MEMORY_H
 #define IFJ_PRJ_MEMORY_H

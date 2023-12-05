@@ -1,1 +1,0 @@
-Double2Int("Hello")

@@ -1,7 +1,0 @@
-func foo() {
-
-}
-
-func foo() {
-
-}

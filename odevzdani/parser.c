@@ -1,3 +1,9 @@
+/*
+ * IFJ Project 2023
+ * Implementation of main parser
+ * Author: Kirill Shchetiniuk (xshche05)
+ */
+
 #include <string.h>
 #include "codegen.h"
 #include "expr_parser.h"
@@ -12,7 +18,6 @@ bool inside_func = false;
 bool has_return = false;
 int inside_loop = 0;
 int inside_branch = 0;
-int branch_blocks = 0;
 token_t *lookahead = NULL;
 funcData_t *currentFunc = NULL;
 bool collect_funcs = false;
@@ -192,7 +197,7 @@ bool RETURN(funcData_t **funcData) {
     return s;
 }
 
-void check_return_type(type_t type, bool is_literal, funcData_t **funcData) {
+static void check_return_type(type_t type, bool is_literal, funcData_t **funcData) {
     if (collect_funcs) return;
     if (type != (*funcData)->returnType && (*funcData)->returnType - type != nil_int_type-int_type &&
             !(type == nil_type && (*funcData)->returnType >= nil_int_type && (*funcData)->returnType <= nil_bool_type)) {
@@ -210,7 +215,7 @@ void check_return_type(type_t type, bool is_literal, funcData_t **funcData) {
     }
     if (type == void_type && (*funcData)->returnType == void_type) {
         fprintf(stderr, "Error: smth after return\n");
-        safe_exit(9);
+        safe_exit(SEMANTIC_ERROR_9);
     }
     gen_return(false);
 }
@@ -251,12 +256,12 @@ bool RET_EXPR(funcData_t **funcData) {
     return s;
 }
 
-void check_decl_type(type_t type, varData_t *varData) {
+static void check_decl_type(type_t type, varData_t *varData) {
     if (collect_funcs) return;
     if (type != none_type) {
         varData->type = type;
-        if (type > 3) {
-            varData->isDeclared = true;
+        if (type > 3) { // If nillable type
+            varData->isInited = true;
             varData->minInitScope = min(get_scope(), varData->minInitScope);
             gen_line("MOVE %s nil@nil\n", gen_var_name(varData->name->str, get_scope()));
         }
@@ -265,10 +270,10 @@ void check_decl_type(type_t type, varData_t *varData) {
     }
 }
 
-void check_decl_expr(type_t type, bool is_literal, varData_t *varData) {
+static void check_decl_expr(type_t type, bool is_literal, varData_t *varData) {
     if (collect_funcs) return;
     if (type != none_type) {
-        varData->isDeclared = true;
+        varData->isInited = true;
         varData->minInitScope = min(get_scope(), varData->minInitScope);
         if (varData->type == none_type) {
             if (type == nil_type) {
@@ -299,7 +304,7 @@ void check_decl_expr(type_t type, bool is_literal, varData_t *varData) {
     }
 }
 
-void check_if_none(type_t type, varData_t *varData) {
+static void check_if_none(type_t type, varData_t *varData) {
     if (collect_funcs) return;
     if (varData->type == none_type) {
         fprintf(stderr, "Error: variable without type\n");
@@ -314,7 +319,7 @@ bool VAR_DECL() {
     bool s;
     varData_t *varData = safe_malloc(sizeof(varData_t));
     type_t type = none_type;
-    varData->isDeclared = false;
+    varData->isInited = false;
     varData->minInitScope = INT_MAX;
     varData->canBeRedefined = false;
     switch (lookahead->type) {
@@ -356,7 +361,7 @@ bool LET_DECL() {
     bool s;
     type_t type = none_type;
     letData_t *letData = safe_malloc(sizeof(letData_t));
-    letData->isDeclared = false;
+    letData->isInited = false;
     letData->minInitScope = INT_MAX;
     letData->canBeRedefined = false;
     switch (lookahead->type) {
@@ -451,7 +456,7 @@ bool FUNC_DECL() {
             char *defvar_label = gen_unique_label("defvar");
             char *defvar_label_back = gen_unique_label("defvar_back");
             s = s && match(TOKEN_LEFT_BRACKET);
-            new_frame();
+            increase_scope();
             gen_new_frame();
             gen_push_frame();
             gen_line("JUMP %s\n", defvar_label);
@@ -465,7 +470,7 @@ bool FUNC_DECL() {
                     }
                 }
             }
-            new_frame();
+            increase_scope();
             gen_pop_params(funcData->params);
             s = s && match(TOKEN_RIGHT_BRACKET);
             s = s && FUNC_RET_TYPE(&funcData->returnType);
@@ -489,8 +494,8 @@ bool FUNC_DECL() {
             }
             s = s && match(TOKEN_RIGHT_BRACE);
             inside_func = false;
-            del_frame();
-            del_frame();
+            decrease_scope();
+            decrease_scope();
             gen_line("LABEL %s\n", skip_label);
             break;
         default:
@@ -540,7 +545,7 @@ bool PARAM(funcData_t **funcData) {
     bool s;
     letData_t *func_param = safe_malloc(sizeof(varData_t));
     func_param->isDefined = true;
-    func_param->isDeclared = true;
+    func_param->isInited = true;
     func_param->minInitScope = get_scope();
     func_param->name = String.ctor();
     func_param->canBeRedefined = false;
@@ -642,14 +647,13 @@ bool BRANCH() {
         case TOKEN_IF:
             gen_branch_labels(true);
             s = match(TOKEN_IF);
-            branch_blocks = 1;
-            new_frame();
+            increase_scope();
             s = s && BR_EXPR();
             s = s && match(TOKEN_LEFT_BRACE);
             inside_branch++;
             s = s && CODE();
             s = s && match(TOKEN_RIGHT_BRACE);
-            del_frame();
+            decrease_scope();
             gen_branch_if_end();
             s = s && ELSE();
             gen_branch_end();
@@ -672,28 +676,29 @@ bool BR_EXPR() {
             token_t *id = lookahead;
             s = s && match(TOKEN_IDENTIFIER);
             if (s && !collect_funcs) {
-                varData_t *varData = get_var(id->attribute.identifier);
-                if (varData == NULL) {
-                    varData = get_let(id->attribute.identifier);
+                letData_t *letData = get_let(id->attribute.identifier);
+                if (letData == NULL) {
+                    fprintf(stderr, "Error: if let construction accept only constants\n"); // Podle zadani, ale swift akceptuje aj vary
+                    safe_exit(SEMANTIC_ERROR_9);
                 }
-                if (varData->type < 4) {
+                if (letData->type < 4) {
                     fprintf(stderr, "Var type should be nillable\n");
                     safe_exit(SEMANTIC_ERROR_9);
                 }
-                if (varData->minInitScope > get_scope()) {
+                if (letData->minInitScope > get_scope()) {
                     fprintf(stderr, "Error: variable not initialized in this scope\n");
                     safe_exit(SEMANTIC_ERROR_5);
                 }
-                gen_line("PUSHS %s\n", gen_var_name(varData->name->str, varData->scope));
-                letData_t *letData = safe_malloc(sizeof(letData_t));
-                letData->name = id->attribute.identifier;
-                letData->isDefined = true;
-                letData->isDeclared = true;
-                letData->minInitScope = get_scope();
-                letData->canBeRedefined = true;
-                letData->type = varData->type - (nil_int_type - int_type);
-                gen_line("MOVE %s %s\n", gen_var_name(letData->name->str, get_scope()), gen_var_name(varData->name->str, varData->scope));
-                if (!add_let(letData)) {
+                gen_line("PUSHS %s\n", gen_var_name(letData->name->str, letData->scope));
+                letData_t *newLetData = safe_malloc(sizeof(letData_t));
+                newLetData->name = id->attribute.identifier;
+                newLetData->isDefined = true;
+                newLetData->isInited = true;
+                newLetData->minInitScope = get_scope();
+                newLetData->canBeRedefined = true;
+                newLetData->type = letData->type - (nil_int_type - int_type);
+                gen_line("MOVE %s %s\n", gen_var_name(newLetData->name->str, get_scope()), gen_var_name(letData->name->str, letData->scope));
+                if (!add_let(newLetData)) {
                     fprintf(stderr, "Error: constant already defined\n");
                     safe_exit(SEMANTIC_ERROR_3);
                 }
@@ -746,24 +751,21 @@ bool ELSE_IF() {
         case TOKEN_IF:
             gen_branch_labels(false);
             s = match(TOKEN_IF);
-            branch_blocks++;
-            new_frame();
+            increase_scope();
             s = s && BR_EXPR();
             s = s && match(TOKEN_LEFT_BRACE);
             s = s && CODE();
             s = s && match(TOKEN_RIGHT_BRACE);
-            del_frame();
+            decrease_scope();
             gen_branch_if_end();
             s = s && ELSE();
             break;
         case TOKEN_LEFT_BRACE:
             s = match(TOKEN_LEFT_BRACE);
-            branch_blocks++;
-            new_frame();
+            increase_scope();
             s = s && CODE();
             s = s && match(TOKEN_RIGHT_BRACE);
-            del_frame();
-//            update_defines_after_branch(get_scope(), branch_blocks);
+            decrease_scope();
             break;
         default:
             if (nl_flag) return true;
@@ -793,10 +795,10 @@ bool WHILE_LOOP() {
             }
             gen_while_cond();
             s = s && match(TOKEN_LEFT_BRACE);
-            new_frame();
+            increase_scope();
             s = s && CODE();
             s = s && match(TOKEN_RIGHT_BRACE);
-            del_frame();
+            decrease_scope();
             gen_while_end();
             inside_loop--;
             break;
@@ -818,10 +820,10 @@ bool FOR_LOOP() {
             gen_for_range_save();
             s = match(TOKEN_FOR);
             s = s && FOR_ID(&for_id);
-            new_frame();
+            increase_scope();
             if (for_id != NULL) {
                 letData_t *letData = safe_malloc(sizeof(letData_t));
-                letData->isDeclared = true;
+                letData->isInited = true;
                 letData->isDefined = true;
                 letData->minInitScope = get_scope();
                 letData->canBeRedefined = false;
@@ -850,13 +852,13 @@ bool FOR_LOOP() {
                 gen_line("MOVE %s GF@$FOR_COUNTER\n", gen_var_name(for_id->attribute.identifier->str, get_scope()));
             }
             s = s && match(TOKEN_LEFT_BRACE);
-            new_frame();
+            increase_scope();
             s = s && CODE();
             s = s && match(TOKEN_RIGHT_BRACE);
-            del_frame();
+            decrease_scope();
             gen_for_end();
             gen_for_range_restore();
-            del_frame();
+            decrease_scope();
             inside_loop--;
             break;
         default:
@@ -865,7 +867,6 @@ bool FOR_LOOP() {
     }
     return s;
 }
-
 bool FOR_ID(token_t **for_id) {
     bool s;
     switch (lookahead->type) {
@@ -916,16 +917,33 @@ bool RANGE() {
             gen_for_range(true);
             break;
         default:
-            sprintf(error_msg, "Syntax error [RANGE]: expected ['TOKEN_CLOSED_RANGE', 'TOKEN_HALF_OPEN_RANGE'], got %s\n", tokens_as_str[lookahead->type]);
+            sprintf(error_msg,
+                    "Syntax error [RANGE]: expected ['TOKEN_CLOSED_RANGE', 'TOKEN_HALF_OPEN_RANGE'], got %s\n",
+                    tokens_as_str[lookahead->type]);
             s = false;
     }
     return s;
 }
 
-bool CALL_PARAM_LIST(string_t *call_params, bool call_after_param, char *func_name) {
+static void check_param_number(char *func_name, int call_param_num) {
+    string_t *name = String.ctor();
+    String.assign_cstr(name, func_name);
+    funcData_t *funcData = get_func(name);
+    if (String.cmp_cstr(funcData->params, "*") != 0) {
+        int required_number_of_params = String.count(funcData->params, '#') + 1;
+        if (String.count(funcData->params, ':') == 0) {
+            required_number_of_params = 0;
+        }
+        if (required_number_of_params != call_param_num) {
+            fprintf(stderr, "Error: wrong number of parameters\n");
+            safe_exit(SEMANTIC_ERROR_4);
+        }
+    }
+}
+
+bool CALL_PARAM_LIST(bool call_after_param, char *func_name) {
     bool s;
-    type_t type;
-    bool is_literal;
+    int call_param_num = 0;
     switch (lookahead->type) {
         case TOKEN_IDENTIFIER:
         case TOKEN_FALSE_LITERAL:
@@ -936,11 +954,17 @@ bool CALL_PARAM_LIST(string_t *call_params, bool call_after_param, char *func_na
         case TOKEN_STRING_LITERAL:
         case TOKEN_LEFT_BRACKET:
         case TOKEN_LOGICAL_NOT:
-            s = CALL_PARAM(call_params, call_after_param, func_name);
-            s = s && NEXT_CALL_PARAM(call_params, call_after_param, func_name);
+            s = CALL_PARAM(call_after_param, func_name, &call_param_num);
+            s = s && NEXT_CALL_PARAM(call_after_param, func_name, &call_param_num);
+            if (s && !collect_funcs) {
+                check_param_number(func_name, call_param_num);
+            }
             break;
         case TOKEN_RIGHT_BRACKET:
             s = true;
+            if (s && !collect_funcs) {
+                check_param_number(func_name, call_param_num);
+            }
             break;
         default:
 //            if (call_expr_parser(&type, &is_literal)) return true; // TODO check if this is correct
@@ -951,31 +975,38 @@ bool CALL_PARAM_LIST(string_t *call_params, bool call_after_param, char *func_na
     return s;
 }
 
-bool CALL_PARAM(string_t *call_params, bool call_after_param, char *func_name) {
+bool CALL_PARAM(bool call_after_param, char *func_name, int *call_param_num) {
     bool s;
     type_t type;
     bool is_literal;
     token_t *id;
+    string_t *param = String.ctor();
     switch (lookahead->type) {
         case TOKEN_IDENTIFIER:
             id = lookahead;
             s = match(TOKEN_IDENTIFIER);
             if (!match(TOKEN_COLON)) {
                 lookahead = TokenArray.prev();
-                String.add_char(call_params, '_');
+                String.add_char(param, '_');
             } else {
-                String.add_string(call_params, id->attribute.identifier);
+                String.add_string(param, id->attribute.identifier);
             }
             s = s && call_expr_parser(&type, &is_literal);
             if (s) {
-                String.add_char(call_params, ':');
-                String.add_char(call_params, type + '0');
+                String.add_char(param, ':');
+                String.add_char(param, type + '0');
+                String.add_char(param, ':');
+                String.add_char(param, (int) is_literal + '0');
             }
             if (s) {
                 if (call_after_param) {
                     gen_line("CALL %s\n", func_name);
                 }
             }
+            if (!collect_funcs) {
+                check_func_param(param, func_name, *call_param_num);
+            }
+            (*call_param_num)++;
             break;
         case TOKEN_FALSE_LITERAL:
         case TOKEN_TRUE_LITERAL:
@@ -987,15 +1018,21 @@ bool CALL_PARAM(string_t *call_params, bool call_after_param, char *func_name) {
         case TOKEN_LOGICAL_NOT:
             s = call_expr_parser(&type, &is_literal);
             if (s) {
-                String.add_char(call_params, '_');
-                String.add_char(call_params, ':');
-                String.add_char(call_params, type + '0');
+                String.add_char(param, '_');
+                String.add_char(param, ':');
+                String.add_char(param, type + '0');
+                String.add_char(param, ':');
+                String.add_char(param, (int) is_literal + '0');
             }
             if (s) {
                 if (call_after_param) {
                     gen_line("CALL %s\n", func_name);
                 }
             }
+            if (!collect_funcs) {
+                check_func_param(param, func_name, *call_param_num);
+            }
+            (*call_param_num)++;
             break;
         default:
             sprintf(error_msg, "Syntax error [CALL_PARAM_VALUE]: expected ['TOKEN_FALSE_LITERAL', 'TOKEN_LESS_THAN', 'TOKEN_LOGICAL_AND', 'TOKEN_LEFT_BRACKET', 'TOKEN_NIL_LITERAL', 'TOKEN_REAL_LITERAL', 'TOKEN_STRING_LITERAL', 'TOKEN_ADDITION', 'TOKEN_SUBTRACTION', 'TOKEN_LOGICAL_OR', 'TOKEN_IDENTIFIER', 'TOKEN_EQUAL_TO', 'TOKEN_LESS_THAN_OR_EQUAL_TO', 'TOKEN_GREATER_THAN', 'TOKEN_NOT_EQUAL_TO', 'TOKEN_GREATER_THAN_OR_EQUAL_TO', 'TOKEN_TRUE_LITERAL', 'TOKEN_IS_NIL', 'TOKEN_DIVISION', 'TOKEN_MULTIPLICATION', 'TOKEN_LOGICAL_NOT', 'TOKEN_UNWRAP_NILLABLE', 'TOKEN_INTEGER_LITERAL'], got %s\n", tokens_as_str[lookahead->type]);
@@ -1004,14 +1041,13 @@ bool CALL_PARAM(string_t *call_params, bool call_after_param, char *func_name) {
     return s;
 }
 
-bool NEXT_CALL_PARAM(string_t *call_params, bool call_after_param, char *func_name) {
+bool NEXT_CALL_PARAM(bool call_after_param, char *func_name, int *call_param_num) {
     bool s;
     switch (lookahead->type) {
         case TOKEN_COMMA:
             s = match(TOKEN_COMMA);
-            if (s) String.add_char(call_params, '#');
-            s = s && CALL_PARAM(call_params, call_after_param, func_name);
-            s = s && NEXT_CALL_PARAM(call_params, call_after_param, func_name);
+            s = s && CALL_PARAM(call_after_param, func_name, call_param_num);
+            s = s && NEXT_CALL_PARAM(call_after_param, func_name, call_param_num);
             break;
         case TOKEN_RIGHT_BRACKET:
             s = true;
@@ -1043,7 +1079,6 @@ bool NEXT_ID_CALL_OR_ASSIGN(token_t *id) {
     bool s;
     type_t type;
     bool is_literal;
-    string_t *params = String.ctor();
     switch (lookahead->type) {
         case TOKEN_LEFT_BRACKET:
             s = match(TOKEN_LEFT_BRACKET);
@@ -1053,21 +1088,15 @@ bool NEXT_ID_CALL_OR_ASSIGN(token_t *id) {
             if (!collect_funcs) {
                 funcData = get_func(id->attribute.identifier);
                 call_after_param = strcmp(funcData->params->str, "*") == 0;
-                s = s && CALL_PARAM_LIST(params, call_after_param, funcData->name->str);
+                s = s && CALL_PARAM_LIST(call_after_param, funcData->name->str);
             } else {
-                s = s && CALL_PARAM_LIST(params, call_after_param, NULL);
+                s = s && CALL_PARAM_LIST(call_after_param, NULL);
             }
             s = s && match(TOKEN_RIGHT_BRACKET);
             // TODO check if params match
             if (s && !collect_funcs) {
                 if (!call_after_param) {
                     gen_line("CALL %s\n", funcData->name->str);
-                }
-                if (!collect_funcs) {
-                    if (!check_func_signature(params, funcData)) {
-                        fprintf(stderr, "Error: function signature mismatch\n");
-                        safe_exit(SEMANTIC_ERROR_4);
-                    }
                 }
             }
             ignore_right_bracket = false;
@@ -1080,8 +1109,8 @@ bool NEXT_ID_CALL_OR_ASSIGN(token_t *id) {
                 letData_t *letData = get_let(id->attribute.identifier);
                 if (varData == NULL && letData != NULL) {
                     varData = letData;
-                    if (letData->isDeclared) {
-                        fprintf(stderr, "Error: const redeclaration\n");
+                    if (letData->isInited) {
+                        fprintf(stderr, "Error: const redefinition\n");
                         safe_exit(SEMANTIC_ERROR_9);
                     }
                 }
@@ -1099,7 +1128,7 @@ bool NEXT_ID_CALL_OR_ASSIGN(token_t *id) {
                         safe_exit(SEMANTIC_ERROR_7);
                     }
                 }
-                varData->isDeclared = true;
+                varData->isInited = true;
                 varData->minInitScope = min(varData->minInitScope, get_scope());
                 gen_line("POPS %s\n", gen_var_name(id->attribute.identifier->str, varData->scope));
             }
@@ -1110,7 +1139,6 @@ bool NEXT_ID_CALL_OR_ASSIGN(token_t *id) {
     }
     return s;
 }
-
 
 bool TYPE(type_t *type) {
     bool s;

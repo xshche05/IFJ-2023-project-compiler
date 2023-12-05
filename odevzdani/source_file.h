@@ -1,3 +1,10 @@
+/*
+ * IFJ Project 2023
+ * Implementation of source file module for reading source code
+ * Author: Kirill Shchetiniuk (xshche05)
+ */
+
+
 #ifndef IFJ_PRJ_SOURCE_FILE_H
 #define IFJ_PRJ_SOURCE_FILE_H
 

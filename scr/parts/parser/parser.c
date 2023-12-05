@@ -255,7 +255,7 @@ static void check_decl_type(type_t type, varData_t *varData) {
     if (type != none_type) {
         varData->type = type;
         if (type > 3) { // If nillable type
-            varData->isDeclared = true;
+            varData->isInited = true;
             varData->minInitScope = min(get_scope(), varData->minInitScope);
             gen_line("MOVE %s nil@nil\n", gen_var_name(varData->name->str, get_scope()));
         }
@@ -267,7 +267,7 @@ static void check_decl_type(type_t type, varData_t *varData) {
 static void check_decl_expr(type_t type, bool is_literal, varData_t *varData) {
     if (collect_funcs) return;
     if (type != none_type) {
-        varData->isDeclared = true;
+        varData->isInited = true;
         varData->minInitScope = min(get_scope(), varData->minInitScope);
         if (varData->type == none_type) {
             if (type == nil_type) {
@@ -313,7 +313,7 @@ bool VAR_DECL() {
     bool s;
     varData_t *varData = safe_malloc(sizeof(varData_t));
     type_t type = none_type;
-    varData->isDeclared = false;
+    varData->isInited = false;
     varData->minInitScope = INT_MAX;
     varData->canBeRedefined = false;
     switch (lookahead->type) {
@@ -355,7 +355,7 @@ bool LET_DECL() {
     bool s;
     type_t type = none_type;
     letData_t *letData = safe_malloc(sizeof(letData_t));
-    letData->isDeclared = false;
+    letData->isInited = false;
     letData->minInitScope = INT_MAX;
     letData->canBeRedefined = false;
     switch (lookahead->type) {
@@ -450,7 +450,7 @@ bool FUNC_DECL() {
             char *defvar_label = gen_unique_label("defvar");
             char *defvar_label_back = gen_unique_label("defvar_back");
             s = s && match(TOKEN_LEFT_BRACKET);
-            new_frame();
+            increase_scope();
             gen_new_frame();
             gen_push_frame();
             gen_line("JUMP %s\n", defvar_label);
@@ -464,7 +464,7 @@ bool FUNC_DECL() {
                     }
                 }
             }
-            new_frame();
+            increase_scope();
             gen_pop_params(funcData->params);
             s = s && match(TOKEN_RIGHT_BRACKET);
             s = s && FUNC_RET_TYPE(&funcData->returnType);
@@ -488,8 +488,8 @@ bool FUNC_DECL() {
             }
             s = s && match(TOKEN_RIGHT_BRACE);
             inside_func = false;
-            del_frame();
-            del_frame();
+            decrease_scope();
+            decrease_scope();
             gen_line("LABEL %s\n", skip_label);
             break;
         default:
@@ -539,7 +539,7 @@ bool PARAM(funcData_t **funcData) {
     bool s;
     letData_t *func_param = safe_malloc(sizeof(varData_t));
     func_param->isDefined = true;
-    func_param->isDeclared = true;
+    func_param->isInited = true;
     func_param->minInitScope = get_scope();
     func_param->name = String.ctor();
     func_param->canBeRedefined = false;
@@ -641,13 +641,13 @@ bool BRANCH() {
         case TOKEN_IF:
             gen_branch_labels(true);
             s = match(TOKEN_IF);
-            new_frame();
+            increase_scope();
             s = s && BR_EXPR();
             s = s && match(TOKEN_LEFT_BRACE);
             inside_branch++;
             s = s && CODE();
             s = s && match(TOKEN_RIGHT_BRACE);
-            del_frame();
+            decrease_scope();
             gen_branch_if_end();
             s = s && ELSE();
             gen_branch_end();
@@ -670,28 +670,29 @@ bool BR_EXPR() {
             token_t *id = lookahead;
             s = s && match(TOKEN_IDENTIFIER);
             if (s && !collect_funcs) {
-                varData_t *varData = get_var(id->attribute.identifier);
-                if (varData == NULL) {
-                    varData = get_let(id->attribute.identifier);
+                letData_t *letData = get_let(id->attribute.identifier);
+                if (letData == NULL) {
+                    fprintf(stderr, "Error: if let construction accept only constants\n"); // Podle zadani, ale swift akceptuje aj vary
+                    safe_exit(SEMANTIC_ERROR_9);
                 }
-                if (varData->type < 4) {
+                if (letData->type < 4) {
                     fprintf(stderr, "Var type should be nillable\n");
                     safe_exit(SEMANTIC_ERROR_9);
                 }
-                if (varData->minInitScope > get_scope()) {
+                if (letData->minInitScope > get_scope()) {
                     fprintf(stderr, "Error: variable not initialized in this scope\n");
                     safe_exit(SEMANTIC_ERROR_5);
                 }
-                gen_line("PUSHS %s\n", gen_var_name(varData->name->str, varData->scope));
-                letData_t *letData = safe_malloc(sizeof(letData_t));
-                letData->name = id->attribute.identifier;
-                letData->isDefined = true;
-                letData->isDeclared = true;
-                letData->minInitScope = get_scope();
-                letData->canBeRedefined = true;
-                letData->type = varData->type - (nil_int_type - int_type);
-                gen_line("MOVE %s %s\n", gen_var_name(letData->name->str, get_scope()), gen_var_name(varData->name->str, varData->scope));
-                if (!add_let(letData)) {
+                gen_line("PUSHS %s\n", gen_var_name(letData->name->str, letData->scope));
+                letData_t *newLetData = safe_malloc(sizeof(letData_t));
+                newLetData->name = id->attribute.identifier;
+                newLetData->isDefined = true;
+                newLetData->isInited = true;
+                newLetData->minInitScope = get_scope();
+                newLetData->canBeRedefined = true;
+                newLetData->type = letData->type - (nil_int_type - int_type);
+                gen_line("MOVE %s %s\n", gen_var_name(newLetData->name->str, get_scope()), gen_var_name(letData->name->str, letData->scope));
+                if (!add_let(newLetData)) {
                     fprintf(stderr, "Error: constant already defined\n");
                     safe_exit(SEMANTIC_ERROR_3);
                 }
@@ -744,21 +745,21 @@ bool ELSE_IF() {
         case TOKEN_IF:
             gen_branch_labels(false);
             s = match(TOKEN_IF);
-            new_frame();
+            increase_scope();
             s = s && BR_EXPR();
             s = s && match(TOKEN_LEFT_BRACE);
             s = s && CODE();
             s = s && match(TOKEN_RIGHT_BRACE);
-            del_frame();
+            decrease_scope();
             gen_branch_if_end();
             s = s && ELSE();
             break;
         case TOKEN_LEFT_BRACE:
             s = match(TOKEN_LEFT_BRACE);
-            new_frame();
+            increase_scope();
             s = s && CODE();
             s = s && match(TOKEN_RIGHT_BRACE);
-            del_frame();
+            decrease_scope();
             break;
         default:
             if (nl_flag) return true;
@@ -788,10 +789,10 @@ bool WHILE_LOOP() {
             }
             gen_while_cond();
             s = s && match(TOKEN_LEFT_BRACE);
-            new_frame();
+            increase_scope();
             s = s && CODE();
             s = s && match(TOKEN_RIGHT_BRACE);
-            del_frame();
+            decrease_scope();
             gen_while_end();
             inside_loop--;
             break;
@@ -813,10 +814,10 @@ bool FOR_LOOP() {
             gen_for_range_save();
             s = match(TOKEN_FOR);
             s = s && FOR_ID(&for_id);
-            new_frame();
+            increase_scope();
             if (for_id != NULL) {
                 letData_t *letData = safe_malloc(sizeof(letData_t));
-                letData->isDeclared = true;
+                letData->isInited = true;
                 letData->isDefined = true;
                 letData->minInitScope = get_scope();
                 letData->canBeRedefined = false;
@@ -845,13 +846,13 @@ bool FOR_LOOP() {
                 gen_line("MOVE %s GF@$FOR_COUNTER\n", gen_var_name(for_id->attribute.identifier->str, get_scope()));
             }
             s = s && match(TOKEN_LEFT_BRACE);
-            new_frame();
+            increase_scope();
             s = s && CODE();
             s = s && match(TOKEN_RIGHT_BRACE);
-            del_frame();
+            decrease_scope();
             gen_for_end();
             gen_for_range_restore();
-            del_frame();
+            decrease_scope();
             inside_loop--;
             break;
         default:
@@ -936,8 +937,6 @@ static void check_param_number(char *func_name, int call_param_num) {
 
 bool CALL_PARAM_LIST(bool call_after_param, char *func_name) {
     bool s;
-    type_t type;
-    bool is_literal;
     int call_param_num = 0;
     switch (lookahead->type) {
         case TOKEN_IDENTIFIER:
@@ -1104,8 +1103,8 @@ bool NEXT_ID_CALL_OR_ASSIGN(token_t *id) {
                 letData_t *letData = get_let(id->attribute.identifier);
                 if (varData == NULL && letData != NULL) {
                     varData = letData;
-                    if (letData->isDeclared) {
-                        fprintf(stderr, "Error: const redeclaration\n");
+                    if (letData->isInited) {
+                        fprintf(stderr, "Error: const redefinition\n");
                         safe_exit(SEMANTIC_ERROR_9);
                     }
                 }
@@ -1123,7 +1122,7 @@ bool NEXT_ID_CALL_OR_ASSIGN(token_t *id) {
                         safe_exit(SEMANTIC_ERROR_7);
                     }
                 }
-                varData->isDeclared = true;
+                varData->isInited = true;
                 varData->minInitScope = min(varData->minInitScope, get_scope());
                 gen_line("POPS %s\n", gen_var_name(id->attribute.identifier->str, varData->scope));
             }

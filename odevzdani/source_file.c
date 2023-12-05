@@ -1,8 +1,12 @@
+/*
+ * IFJ Project 2023
+ * Implementation of source file module for reading source code
+ * Author: Kirill Shchetiniuk (xshche05)
+ */
+
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 #include "memory.h"
-
 #include "source_file.h"
 
 file_t *sourceFile = NULL;

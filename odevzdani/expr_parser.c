@@ -1,12 +1,19 @@
+/*
+ * IFJ Project 2023
+ * Implementation of expression parser
+ * Author: Kirill Shchetiniuk (xshche05)
+ */
+
 #include "token.h"
 #include "parser.h"
 #include "expr_parser.h"
 #include "codegen.h"
 #include <stdio.h>
+#include <string.h>
 #include "macros.h"
 #include "memory.h"
 
-int table[12][12] = {
+int prec_table[12][12] = {
         {4, 2, 2, 2, 2, 2, 2, 2, 4, 4, 2, 2},
         {1, 1, 2, 2, 2, 2, 2, 2, 1, 1, 2, 2},
         {1, 1, 2, 2, 2, 2, 2, 2, 1, 1, 2, 2},
@@ -23,8 +30,6 @@ int table[12][12] = {
 
 #define TYPE_ERROR 7
 
-int bracket_count = 0;
-
 bool ignore_right_bracket = false;
 
 token_t *local_lookahead;
@@ -36,10 +41,7 @@ bool first_flag = false;
 stack_t *pushdown_stack = NULL;
 stack_t *tmp_stack = NULL;
 
-static int map_token(token_t *token) {
-//    static bool has_nl = false;
-//    bool prev = has_nl;
-//    has_nl = token->has_newline_after;
+static int map_token(token_t *token, int *bracket_count) {
     switch (token->type) {
         case TOKEN_UNWRAP_NILLABLE:
             return UNWRAP;
@@ -65,9 +67,7 @@ static int map_token(token_t *token) {
         case TOKEN_LOGICAL_OR:
             return OR;
         case TOKEN_LEFT_BRACKET:
-            if (ignore_right_bracket) {
-                bracket_count++;
-            }
+            (*bracket_count)++;
             return LEFT_BRACKET;
         case TOKEN_IDENTIFIER:
         case TOKEN_INTEGER_LITERAL:
@@ -79,10 +79,11 @@ static int map_token(token_t *token) {
             return IDENTIFIER;
         case TOKEN_RIGHT_BRACKET:
             if (!ignore_right_bracket) {
+                (*bracket_count)--;
                 return RIGHT_BRACKET;
             } else {
-                if (bracket_count > 0) {
-                    bracket_count--;
+                if (*bracket_count > 0) {
+                    (*bracket_count)--;
                     return RIGHT_BRACKET;
                 } else {
                     return DOLLAR;
@@ -248,7 +249,13 @@ static void reduce() {
     }
     Stack.pop(pushdown_stack);
     expr_elem_t *new_elem = safe_malloc(sizeof(expr_elem_t));
-    if (collect_funcs) return;
+    if (collect_funcs) {
+        new_elem->type = NON_TERM;
+        new_elem->ret_type = void_type;
+        new_elem->token = NULL;
+        Stack.push(pushdown_stack, new_elem);
+        return;
+    }
     if (i == 1) // reduce E -> i
     {
         if (elems[0]->token == NULL && elems[0]->type == IDENTIFIER) {
@@ -297,7 +304,7 @@ static void reduce() {
             // check if var is defined
             varData_t *varData = get_var(elems[0]->token->attribute.identifier);
             if (varData == NULL) varData = get_let(elems[0]->token->attribute.identifier);
-            if (!varData->isDeclared) {
+            if (!varData->isInited) {
                 fprintf(stderr, "Error: EXPR undefined variable.\n");
                 safe_exit(SEMANTIC_ERROR_5);
             }
@@ -468,7 +475,7 @@ static void reduce() {
                 case TOKEN_IS_NIL:
                     if (b->ret_type > 3) {
                         if (!(b->ret_type - 4 == a->ret_type || b->ret_type == nil_type ||
-                              a->ret_type == b->ret_type)) {
+                              a->ret_type == b->ret_type) || a->ret_type > 3) {
                             if ((b->ret_type == double_type || b->ret_type == nil_double_type) && a->ret_type == int_type
                             && a->token != NULL) {
                                 gen_line("INT2FLOATS\n");
@@ -524,7 +531,7 @@ static expr_elem_t *get_top_terminal() {
     return top;
 }
 
-static expr_elem_t *next_token() {
+static expr_elem_t *next_token(int *bracket_count) {
     bool is_last_on_line = false;
     if (local_lookahead != NULL) {
         is_last_on_line = local_lookahead->has_newline_after;
@@ -539,10 +546,9 @@ static expr_elem_t *next_token() {
     // if is_last_on_line, then prefetch action, if error action, then return DOLLAR
     if (is_last_on_line && !first_flag) {
         expr_elem_t *a = safe_malloc(sizeof(expr_elem_t));
-        a->type = map_token(current);
+        a->type = map_token(current, bracket_count);
         expr_elem_t *b = get_top_terminal();
-        int action = table[b->type][a->type];
-        safe_free(a);
+        int action = prec_table[b->type][a->type];
         if (action == 4) {
             expr_elem_t *dollar = safe_malloc(sizeof(expr_elem_t));
             dollar->type = DOLLAR;
@@ -550,6 +556,13 @@ static expr_elem_t *next_token() {
             dollar->ret_type = 0;
             return dollar;
         }
+        if (a->type == LEFT_BRACKET) {
+            (*bracket_count)--;
+        }
+        if (a->type == RIGHT_BRACKET) {
+            (*bracket_count)++;
+        }
+        safe_free(a);
     }
 
     if (current->type == TOKEN_IDENTIFIER) {
@@ -560,8 +573,7 @@ static expr_elem_t *next_token() {
             ignore_right_bracket = true;
             stack_t *tmp_1 = pushdown_stack;
             stack_t *tmp_2 = tmp_stack;
-            string_t *params = String.ctor();
-            CALL_PARAM_LIST(params, false, NULL);
+            CALL_PARAM_LIST(false, current->attribute.identifier->str);
             pushdown_stack = tmp_1;
             tmp_stack = tmp_2;
             ignore_right_bracket = tmp;
@@ -569,10 +581,6 @@ static expr_elem_t *next_token() {
             funcData_t *funcData;
             if (!collect_funcs) {
                 funcData = get_func(current->attribute.identifier);
-                if (!check_func_signature(params, funcData)) {
-                    fprintf(stderr, "Error: EXPR function call signature mismatch.\n");
-                    safe_exit(SEMANTIC_ERROR_4);
-                }
                 gen_line("CALL %s\n", current->attribute.identifier->str);
             }
             local_lookahead = lookahead;
@@ -581,7 +589,7 @@ static expr_elem_t *next_token() {
             elem->type = IDENTIFIER;
             elem->token = NULL;
             if (collect_funcs) {
-                elem->ret_type = -10;
+                elem->ret_type = none_type;
             } else {
                 elem->ret_type = funcData->returnType;
             }
@@ -589,7 +597,7 @@ static expr_elem_t *next_token() {
         }
     }
     expr_elem_t *elem = safe_malloc(sizeof(expr_elem_t));
-    elem->type = map_token(local_lookahead);
+    elem->type = map_token(local_lookahead, bracket_count);
     if (collect_funcs) return elem;
     elem->token = local_lookahead;
     if (elem->type == IDENTIFIER) {
@@ -608,10 +616,77 @@ static expr_elem_t *next_token() {
     return elem;
 }
 
+#ifdef DEBUG
+static void DEBUG_print_push_down_stack() {
+    stack_t *temp = Stack.init();
+    expr_elem_t *elem = Stack.top(pushdown_stack);
+    while (elem != NULL) {
+        Stack.push(temp, elem);
+        Stack.pop(pushdown_stack);
+        switch (elem->type) {
+            case NON_TERM:
+                DEBUG_PRINT("NON_TERM ");
+                break;
+            case LESS:
+                DEBUG_PRINT("LESS ");
+                break;
+            case DOLLAR:
+                DEBUG_PRINT("DOLLAR ");
+                break;
+            case UNWRAP:
+                DEBUG_PRINT("UNWRAP ");
+                break;
+            case NOT:
+                DEBUG_PRINT("NOT ");
+                break;
+            case ADD_SUB:
+                DEBUG_PRINT("ADD_SUB ");
+                break;
+            case MUL_DIV:
+                DEBUG_PRINT("MUL_DIV ");
+                break;
+            case NIL_COL:
+                DEBUG_PRINT("NIL_COL ");
+                break;
+            case REL_OP:
+                DEBUG_PRINT("REL_OP ");
+                break;
+            case AND:
+                DEBUG_PRINT("AND ");
+                break;
+            case OR:
+                DEBUG_PRINT("OR ");
+                break;
+            case LEFT_BRACKET:
+                DEBUG_PRINT("LEFT_BRACKET ");
+                break;
+            case IDENTIFIER:
+                DEBUG_PRINT("IDENTIFIER ");
+                break;
+            case RIGHT_BRACKET:
+                DEBUG_PRINT("RIGHT_BRACKET ");
+                break;
+            default:
+                break;
+        }
+        elem = Stack.top(pushdown_stack);
+    }
+
+    while (Stack.top(temp) != NULL) {
+        Stack.push(pushdown_stack, Stack.top(temp));
+        Stack.pop(temp);
+    }
+
+    DEBUG_PRINT("\n")
+}
+#endif
+
 int parse_expr(type_t *ret_type, bool *is_literal) {
     pushdown_stack = NULL;
     tmp_stack = NULL;
+    int bracket_count = 0;
     init_stacks();
+    DEBUG_PRINT("EXPR\n");
     expr_elem_t *dollar = safe_malloc(sizeof(expr_elem_t));
     dollar->type = DOLLAR;
     dollar->token = NULL;
@@ -626,7 +701,7 @@ int parse_expr(type_t *ret_type, bool *is_literal) {
     expr_elem_t *b;
 
     first_flag = true;
-    a = next_token();
+    a = next_token(&bracket_count);
     if (a->type == DOLLAR) {
         fprintf(stderr, "Error: EXPR syntax error.\n");
         return SYNTAX_ERROR;
@@ -639,25 +714,28 @@ int parse_expr(type_t *ret_type, bool *is_literal) {
     less->ret_type = 0;
 
     while (true) {
+        #ifdef DEBUG
+        DEBUG_print_push_down_stack();
+        #endif
         b = get_top_terminal();
         if (a->type == DOLLAR && b->type == DOLLAR) {
             break;
         }
-        int action = table[b->type][a->type];
+        int action = prec_table[b->type][a->type];
         switch (action) {
             case 1:
                 clear_until_top_terminal();
                 Stack.push(pushdown_stack, less);
                 transfer_tmp_stack();
                 Stack.push(pushdown_stack, a);
-                a = next_token();
+                a = next_token(&bracket_count);
                 break;
             case 2:
                 reduce();
                 break;
             case 3:
                 Stack.push(pushdown_stack, a);
-                a = next_token();
+                a = next_token(&bracket_count);
                 break;
             default:
                 fprintf(stderr, "Error: EXPR syntax error.\n");
@@ -675,5 +753,6 @@ int parse_expr(type_t *ret_type, bool *is_literal) {
     safe_free(dollar);
     safe_free(a);
     destroy_stacks();
+    DEBUG_PRINT("EXPR END\n")
     return SUCCESS;
 }

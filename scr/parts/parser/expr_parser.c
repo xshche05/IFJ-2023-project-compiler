@@ -298,7 +298,7 @@ static void reduce() {
             // check if var is defined
             varData_t *varData = get_var(elems[0]->token->attribute.identifier);
             if (varData == NULL) varData = get_let(elems[0]->token->attribute.identifier);
-            if (!varData->isDeclared) {
+            if (!varData->isInited) {
                 fprintf(stderr, "Error: EXPR undefined variable.\n");
                 safe_exit(SEMANTIC_ERROR_5);
             }

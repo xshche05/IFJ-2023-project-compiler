@@ -1,6 +1,8 @@
-//
-// Created by Spagetik on 14.10.2023.
-//
+/*
+ * IFJ Project 2023
+ * Implementation of token and token array types
+ * Author: Kirill Shchetiniuk (xshche05)
+ */
 
 #include "token.h"
 #include <stdlib.h>
@@ -55,7 +57,6 @@ char *tokens_as_str[] = {
         "TOKEN_RIGHT_BRACE",
         "TOKEN_COMMA",
         "TOKEN_COLON",
-        "TOKEN_SEMICOLON",
         "TOKEN_ARROW",
         "TOKEN_NEWLINE",
         "TOKEN_EOF"

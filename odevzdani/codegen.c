@@ -1,6 +1,8 @@
-//
-// Created by Spagetik on 16-Nov-23.
-//
+/*
+ * IFJ Project 2023
+ * Implementation of code generator
+ * Author: Kirill Shchetiniuk (xshche05)
+ */
 
 #include "codegen.h"
 #include "stack.h"
@@ -28,7 +30,7 @@ char *ret_reg = "GF@$RET";
 char *for_counter_reg = "GF@$FOR_COUNTER";
 char *for_max_val = "GF@$FOR_MAX_VAL";
 
-string_t *output = NULL;
+//string_t *output = NULL;
 
 stack_t *branch_label_stack;
 stack_t *loop_label_stack;
@@ -44,10 +46,9 @@ bool current_loop_is_for = false;
 
 #define start if (collect_funcs) return
 
-
 void init_codegen() {
     start;
-    output = String.ctor();
+//    output = String.ctor();
     branch_label_stack = Stack.init();
     loop_label_stack = Stack.init();
     cycle_type_stack = Stack.init();
@@ -84,25 +85,6 @@ char *gen_unique_label(char *prefix) {
 
 void gen_std_functions() {
     start;
-    /*
-     * readString
-     * readInt
-     * readDouble
-     *
-     * write
-     *
-     * Int2Double
-     * Double2Int
-     *
-     * length
-     *
-     * substring
-     *
-     * ord
-     *
-     * chr
-     */
-
     // readString
     gen_line("LABEL readString\n");
     gen_line("READ GF@$RET string\n");
@@ -119,14 +101,12 @@ void gen_std_functions() {
     gen_line("LABEL readBool\n");
     gen_line("READ GF@$RET bool\n");
     gen_line("RETURN\n");
-
     // write
     gen_line("LABEL write\n");
     // while $C != 0 do pop and print decremented $C
     gen_line("POPS GF@$A\n");
     gen_line("WRITE GF@$A\n");
     gen_line("RETURN\n");
-
     // Int2Double
     gen_line("LABEL Int2Double\n");
     gen_line("POPS GF@$A\n");
@@ -177,12 +157,10 @@ void gen_std_functions() {
     gen_line("LABEL $substring_std_exit\n"); // exit loop
     gen_line("POPFRAME\n"); // pop frame
     gen_line("RETURN\n"); // return
-
     gen_line("LABEL $substring_std_exit_nil\n"); // exit nil
     gen_line("MOVE GF@$RET nil@nil\n"); // $RET = nil
     gen_line("POPFRAME\n"); // pop frame
     gen_line("RETURN\n"); // return
-
     // ord
     gen_line("LABEL ord\n");
     gen_line("POPS GF@$A\n");
@@ -207,7 +185,7 @@ void gen_std_functions() {
     gen_line("MOVE GF@$RET GF@$B\n");
     gen_line("LABEL $??op_skip\n");
     gen_line("RETURN\n");
-
+    // Start of main
     gen_line("LABEL $$main\n");
 }
 
@@ -215,11 +193,11 @@ void gen_line(char *format, ...) {
     start;
     va_list args;
     va_start(args, format);
-    char *str = safe_malloc(sizeof(char) * (strlen(format) + 100) * 2);
-    vsprintf(str, format, args);
-    String.add_cstr(output, str);
-    safe_free(str);
-//    vprintf(format, args);
+//    char *str = safe_malloc(sizeof(char) * (strlen(format) + 100) * 2);
+//    vsprintf(str, format, args);
+//    String.add_cstr(output, str);
+//    safe_free(str);
+    vprintf(format, args);
     va_end(args);
 }
 
@@ -260,8 +238,7 @@ void gen_branch_if_start(bool let) {
     char *label_skip = (char*)Stack.top(branch_label_stack);
     if (let) {
         gen_line("POPS %s\n", cond_reg);
-        gen_line("TYPE %s %s\n", cond_reg, cond_reg);
-        gen_line("JUMPIFEQ %s %s string@nil\n", label_skip, cond_reg);
+        gen_line("JUMPIFEQ %s %s nil@nil\n", label_skip, cond_reg);
     } else {
         gen_line("PUSHS bool@true\n");
         gen_line("JUMPIFNEQS %s\n", label_skip);
@@ -285,7 +262,6 @@ void gen_branch_end() {
 }
 
 void gen_while_start() {
-    // todo
     start;
     bool *tmp = safe_malloc(sizeof(bool));
     *tmp = current_loop_is_for;
@@ -333,7 +309,6 @@ void gen_while_end() {
 }
 
 void gen_for_start() {
-    // todo
     start;
     bool *tmp = safe_malloc(sizeof(bool));
     *tmp = current_loop_is_for;
@@ -365,7 +340,6 @@ void gen_for_range_restore() {
     gen_line("POPS %s\n", for_max_val);
     gen_line("POPS %s\n", for_counter_reg);
 }
-
 
 void gen_for_range(bool open) {
     start;
@@ -440,6 +414,7 @@ void gen_used_global_vars() {
     for (int i = 0; i < global_vars->size; i++) {
         gen_line("DEFVAR %s\n", (char*)DynamicArray.get(global_vars, i));
     }
+    DynamicArray.dtor(global_vars);
 }
 
 void gen_pop_params(string_t *params) {

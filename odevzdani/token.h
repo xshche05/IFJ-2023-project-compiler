@@ -1,3 +1,9 @@
+/*
+ * IFJ Project 2023
+ * Implementation of token and token array types
+ * Author: Kirill Shchetiniuk (xshche05)
+ */
+
 #ifndef IFJ_PRJ_TOKEN_H
 #define IFJ_PRJ_TOKEN_H
 #include <stdbool.h>
@@ -56,7 +62,6 @@ typedef enum {
     TOKEN_RIGHT_BRACE,
     TOKEN_COMMA,
     TOKEN_COLON,
-    TOKEN_SEMICOLON,
     TOKEN_ARROW,
     TOKEN_EOF
 } token_type_t;

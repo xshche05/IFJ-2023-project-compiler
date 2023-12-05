@@ -1,6 +1,8 @@
-//
-// Created by Spagetik on 08-Nov-23.
-//
+/*
+ * IFJ Project 2023
+ * Implementation of symtable
+ * Author: Kirill Shchetiniuk (xshche05)
+ */
 
 #ifndef IFJ_PRJ_SYMTABLE_H
 #define IFJ_PRJ_SYMTABLE_H
@@ -42,7 +44,7 @@ typedef struct {
     string_t *name;
     type_t type;
     bool isDefined;
-    bool isDeclared;
+    bool isInited;
     bool canBeRedefined;
     int scope;
     int minInitScope;
@@ -71,13 +73,11 @@ void symtable_init();
 
 void symtable_destroy();
 
-int symtable_find(string_t *key, symTableData_t **data);
-
 void symtable_print();
 
 int get_scope();
 
-bool check_func_signature(string_t *params, funcData_t *funcData);
+bool check_func_param(string_t *param, char *funcName, int param_number);
 
 bool add_func(funcData_t *funcData);
 
@@ -91,15 +91,8 @@ varData_t *get_var(string_t *key);
 
 letData_t *get_let(string_t *key);
 
-void new_frame();
+void increase_scope();
 
-void del_frame();
-
-void update_defines(stack_t *data, int scope);
-
-void get_vars_and_lets_from_all_scopes(stack_t *stack);
-
-void update_defines_after_branch(int scope, int branch_blocks);
-
+void decrease_scope();
 
 #endif //IFJ_PRJ_SYMTABLE_H

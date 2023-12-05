@@ -42,7 +42,7 @@ typedef struct {
     string_t *name;
     type_t type;
     bool isDefined;
-    bool isDeclared;
+    bool isInited;
     bool canBeRedefined;
     int scope;
     int minInitScope;
@@ -89,8 +89,8 @@ varData_t *get_var(string_t *key);
 
 letData_t *get_let(string_t *key);
 
-void new_frame();
+void increase_scope();
 
-void del_frame();
+void decrease_scope();
 
 #endif //IFJ_PRJ_SYMTABLE_H

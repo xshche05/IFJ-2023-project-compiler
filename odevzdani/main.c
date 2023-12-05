@@ -1,9 +1,14 @@
+/*
+ * IFJ Project 2023
+ * Implementation of module for safe memory management
+ * Author: Kirill Shchetiniuk (xshche05)
+ */
+
 #include "macros.h"
 #include "source_file.h"
 #include "parts.h"
 #include "expr_parser.h"
 #include "memory.h"
-#include "codegen.h"
 
 char error_msg[1000];
 
@@ -18,12 +23,14 @@ int main(void) {
         fprintf(stderr, "Error: source code to tokens failed.\n");
         safe_exit(LEXICAL_ERROR);
     }
+
     code = S();
     if (code != SUCCESS) {
         fprintf(stderr, "Error: Parsing failed.\n");
         fprintf(stderr, "Error: %s\n", error_msg);
         safe_exit(SYNTAX_ERROR);
     }
+
     TokenArray.reset();
     code = S();
     if (code != SUCCESS) {
@@ -31,6 +38,6 @@ int main(void) {
         fprintf(stderr, "Error: %s\n", error_msg);
         safe_exit(SYNTAX_ERROR);
     }
-    printf("%s", output->str);
+
     safe_exit(SUCCESS);
 }

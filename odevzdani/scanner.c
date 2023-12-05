@@ -1,3 +1,9 @@
+/*
+ * IFJ Project 2023
+ * Implementation of lexical analyzer
+ * Author: Kirill Shchetiniuk (xshche05)
+ */
+
 #include "scanner.h"
 #include <stdlib.h>
 #include <stdbool.h>
@@ -44,7 +50,7 @@ static int is_keyword(string_t *lexeme) {
     return -1;
 }
 
-void split_to_lines(string_t *source_code, dynamic_array_t *lines) {
+static void split_to_lines(string_t *source_code, dynamic_array_t *lines) {
     for (int i = 0; i < source_code->length;i++) {
         for (int j = i; j < source_code->length; j++) {
             if (source_code->str[j] == '\n' || source_code->str[j+1] == '\0') {
@@ -59,7 +65,7 @@ void split_to_lines(string_t *source_code, dynamic_array_t *lines) {
     }
 }
 
-bool has_only_spaces(char *str, int length) {
+static bool has_only_spaces(char *str, int length) {
     for (int i = 0; i < length; i++) {
         if (!isspace(str[i])) return false;
     }
@@ -302,9 +308,6 @@ int source_code_to_tokens() {
                     case ':':
                         fsm_state = COLON_S;
                         break;
-//                    case ';':
-//                        fsm_state = SEMICOLON_S;
-//                        break;
                     case ',':
                         fsm_state = COMMA_S;
                         break;
@@ -323,8 +326,7 @@ int source_code_to_tokens() {
                         // Other
                     default:
                         //fprintf(stderr, "Error: Unknown character '%c' (0x%02x).\n", c, c);
-                    ERROR(stderr, "Unknown character '%c' (0x%02x)", c, c)
-
+                        ERROR(stderr, "Unknown character '%c' (0x%02x)", c, c)
                         return LEXICAL_ERROR;
                 }
                 break;
@@ -449,11 +451,6 @@ int source_code_to_tokens() {
                 add_token(type, attribute, false);
                 fsm_state = START_S;
                 break;
-            case SEMICOLON_S:
-                type = TOKEN_SEMICOLON;
-                add_token(type, attribute, false);
-                fsm_state = START_S;
-                break;
             case COMMA_S:
                 type = TOKEN_COMMA;
                 add_token(type, attribute, false);
@@ -528,9 +525,18 @@ int source_code_to_tokens() {
                     fsm_state = REAL_NUM_S;
                     String.add_char(lexeme, c);
                 } else {
-                    //fprintf(stderr, "Error: Unknown character '%c' (0x%02x). Expected decimal digit\n", c, c);
-                    ERROR(stderr, "Unknown character '%c' (0x%02x). Expected decimal digit", c, c)
-                    return LEXICAL_ERROR;
+                    if (c == '.') {
+                        String.del_last_char(lexeme);
+                        type = TOKEN_INTEGER_LITERAL;
+                        attribute.integer = strtol(lexeme->str, NULL, 10);
+                        add_token(type, attribute, true);
+                        String.clear(lexeme);
+                        fsm_state = RANGE_START_S;
+                    } else {
+                        //fprintf(stderr, "Error: Unknown character '%c' (0x%02x). Expected decimal digit\n", c, c);
+                        ERROR(stderr, "Unknown character '%c' (0x%02x). Expected decimal digit", c, c)
+                        return LEXICAL_ERROR;
+                    }
                 }
                 break;
             case REAL_NUM_S:

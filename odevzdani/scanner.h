@@ -1,3 +1,9 @@
+/*
+ * IFJ Project 2023
+ * Implementation of lexical analyzer
+ * Author: Kirill Shchetiniuk (xshche05)
+ */
+
 #ifndef IFJ_PRJ_SCANNER_H
 #define IFJ_PRJ_SCANNER_H
 
@@ -32,7 +38,6 @@ typedef enum {
     BRACKET_L_S,      // (
     BRACKET_R_S,      // )
     COLON_S,          // :
-    SEMICOLON_S,      // ;
     COMMA_S,          // ,
     INTEGER_S,        // 0-9
     ID_S,             // a-zA-Z_

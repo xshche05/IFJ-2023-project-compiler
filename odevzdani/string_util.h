@@ -1,3 +1,9 @@
+/*
+ * IFJ Project 2023
+ * Implementation of dynamic string abstract data type
+ * Author: Kirill Shchetiniuk (xshche05)
+ */
+
 #ifndef IFJ_PRJ_STRING_UTIL_H
 #define IFJ_PRJ_STRING_UTIL_H
 
@@ -46,6 +52,7 @@ struct string_interface {
     int (*assign_cstr)(string_t *dest, char *source);
     int (*del_last_char)(string_t *string);
     string_t *(*create)(char *source);
+    int (*count)(string_t *string, char c);
 };
 
 #endif //IFJ_PRJ_STRING_UTIL_H

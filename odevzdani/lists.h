@@ -1,6 +1,8 @@
-//
-// Created by Spagetik on 11.10.2023.
-//
+/*
+ * IFJ Project 2023
+ * Implementation of dynamic array
+ * Author: Kirill Shchetiniuk (xshche05)
+ */
 
 #ifndef IFJ_PRJ_LISTS_H
 #define IFJ_PRJ_LISTS_H
