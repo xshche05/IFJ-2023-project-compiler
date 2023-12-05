@@ -209,7 +209,7 @@ static void check_return_type(type_t type, bool is_literal, funcData_t **funcDat
     }
     if (type == void_type && (*funcData)->returnType == void_type) {
         fprintf(stderr, "Error: smth after return\n");
-        safe_exit(9);
+        safe_exit(SEMANTIC_ERROR_9);
     }
     gen_return(false);
 }
@@ -254,7 +254,7 @@ static void check_decl_type(type_t type, varData_t *varData) {
     if (collect_funcs) return;
     if (type != none_type) {
         varData->type = type;
-        if (type > 3) {
+        if (type > 3) { // If nillable type
             varData->isDeclared = true;
             varData->minInitScope = min(get_scope(), varData->minInitScope);
             gen_line("MOVE %s nil@nil\n", gen_var_name(varData->name->str, get_scope()));
@@ -962,7 +962,7 @@ bool CALL_PARAM_LIST(bool call_after_param, char *func_name) {
             }
             break;
         default:
-            if (call_expr_parser(&type, &is_literal)) return true; // TODO check if this is correct
+//            if (call_expr_parser(&type, &is_literal)) return true; // TODO check if this is correct
             sprintf(error_msg, "Syntax error [CALL_PARAM_LIST]: expected ['TOKEN_FALSE_LITERAL', 'TOKEN_COLON', 'TOKEN_LESS_THAN', 'TOKEN_LOGICAL_AND', 'TOKEN_LEFT_BRACKET', 'TOKEN_NIL_LITERAL', 'TOKEN_REAL_LITERAL', 'TOKEN_STRING_LITERAL', 'TOKEN_ADDITION', 'TOKEN_SUBTRACTION', 'TOKEN_LOGICAL_OR', 'TOKEN_IDENTIFIER', 'TOKEN_UNWRAP_NILLABLE', 'TOKEN_EQUAL_TO', 'TOKEN_LESS_THAN_OR_EQUAL_TO', 'TOKEN_GREATER_THAN', 'TOKEN_NOT_EQUAL_TO', 'TOKEN_GREATER_THAN_OR_EQUAL_TO', 'TOKEN_TRUE_LITERAL', 'TOKEN_IS_NIL', 'TOKEN_DIVISION', 'TOKEN_MULTIPLICATION', 'TOKEN_LOGICAL_NOT', 'TOKEN_INTEGER_LITERAL', 'TOKEN_RIGHT_BRACKET'], got %s\n", tokens_as_str[lookahead->type]);
             s = false;
     }
