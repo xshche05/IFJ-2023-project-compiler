@@ -12,7 +12,6 @@ bool inside_func = false;
 bool has_return = false;
 int inside_loop = 0;
 int inside_branch = 0;
-int branch_blocks = 0;
 token_t *lookahead = NULL;
 funcData_t *currentFunc = NULL;
 bool collect_funcs = false;
@@ -192,7 +191,7 @@ bool RETURN(funcData_t **funcData) {
     return s;
 }
 
-void check_return_type(type_t type, bool is_literal, funcData_t **funcData) {
+static void check_return_type(type_t type, bool is_literal, funcData_t **funcData) {
     if (collect_funcs) return;
     if (type != (*funcData)->returnType && (*funcData)->returnType - type != nil_int_type-int_type &&
             !(type == nil_type && (*funcData)->returnType >= nil_int_type && (*funcData)->returnType <= nil_bool_type)) {
@@ -251,7 +250,7 @@ bool RET_EXPR(funcData_t **funcData) {
     return s;
 }
 
-void check_decl_type(type_t type, varData_t *varData) {
+static void check_decl_type(type_t type, varData_t *varData) {
     if (collect_funcs) return;
     if (type != none_type) {
         varData->type = type;
@@ -265,7 +264,7 @@ void check_decl_type(type_t type, varData_t *varData) {
     }
 }
 
-void check_decl_expr(type_t type, bool is_literal, varData_t *varData) {
+static void check_decl_expr(type_t type, bool is_literal, varData_t *varData) {
     if (collect_funcs) return;
     if (type != none_type) {
         varData->isDeclared = true;
@@ -299,7 +298,7 @@ void check_decl_expr(type_t type, bool is_literal, varData_t *varData) {
     }
 }
 
-void check_if_none(type_t type, varData_t *varData) {
+static void check_if_none(type_t type, varData_t *varData) {
     if (collect_funcs) return;
     if (varData->type == none_type) {
         fprintf(stderr, "Error: variable without type\n");
@@ -642,7 +641,6 @@ bool BRANCH() {
         case TOKEN_IF:
             gen_branch_labels(true);
             s = match(TOKEN_IF);
-            branch_blocks = 1;
             new_frame();
             s = s && BR_EXPR();
             s = s && match(TOKEN_LEFT_BRACE);
@@ -746,7 +744,6 @@ bool ELSE_IF() {
         case TOKEN_IF:
             gen_branch_labels(false);
             s = match(TOKEN_IF);
-            branch_blocks++;
             new_frame();
             s = s && BR_EXPR();
             s = s && match(TOKEN_LEFT_BRACE);
@@ -758,12 +755,10 @@ bool ELSE_IF() {
             break;
         case TOKEN_LEFT_BRACE:
             s = match(TOKEN_LEFT_BRACE);
-            branch_blocks++;
             new_frame();
             s = s && CODE();
             s = s && match(TOKEN_RIGHT_BRACE);
             del_frame();
-//            update_defines_after_branch(get_scope(), branch_blocks);
             break;
         default:
             if (nl_flag) return true;
@@ -865,7 +860,6 @@ bool FOR_LOOP() {
     }
     return s;
 }
-
 bool FOR_ID(token_t **for_id) {
     bool s;
     switch (lookahead->type) {
@@ -922,10 +916,11 @@ bool RANGE() {
     return s;
 }
 
-bool CALL_PARAM_LIST(string_t *call_params, bool call_after_param, char *func_name) {
+bool CALL_PARAM_LIST(bool call_after_param, char *func_name) {
     bool s;
     type_t type;
     bool is_literal;
+    int call_param_num = 0;
     switch (lookahead->type) {
         case TOKEN_IDENTIFIER:
         case TOKEN_FALSE_LITERAL:
@@ -936,8 +931,8 @@ bool CALL_PARAM_LIST(string_t *call_params, bool call_after_param, char *func_na
         case TOKEN_STRING_LITERAL:
         case TOKEN_LEFT_BRACKET:
         case TOKEN_LOGICAL_NOT:
-            s = CALL_PARAM(call_params, call_after_param, func_name);
-            s = s && NEXT_CALL_PARAM(call_params, call_after_param, func_name);
+            s = CALL_PARAM(call_after_param, func_name, &call_param_num);
+            s = s && NEXT_CALL_PARAM(call_after_param, func_name, &call_param_num);
             break;
         case TOKEN_RIGHT_BRACKET:
             s = true;
@@ -951,31 +946,38 @@ bool CALL_PARAM_LIST(string_t *call_params, bool call_after_param, char *func_na
     return s;
 }
 
-bool CALL_PARAM(string_t *call_params, bool call_after_param, char *func_name) {
+bool CALL_PARAM(bool call_after_param, char *func_name, int *call_param_num) {
     bool s;
     type_t type;
     bool is_literal;
     token_t *id;
+    string_t *param = String.ctor();
     switch (lookahead->type) {
         case TOKEN_IDENTIFIER:
             id = lookahead;
             s = match(TOKEN_IDENTIFIER);
             if (!match(TOKEN_COLON)) {
                 lookahead = TokenArray.prev();
-                String.add_char(call_params, '_');
+                String.add_char(param, '_');
             } else {
-                String.add_string(call_params, id->attribute.identifier);
+                String.add_string(param, id->attribute.identifier);
             }
             s = s && call_expr_parser(&type, &is_literal);
             if (s) {
-                String.add_char(call_params, ':');
-                String.add_char(call_params, type + '0');
+                String.add_char(param, ':');
+                String.add_char(param, type + '0');
+                String.add_char(param, ':');
+                String.add_char(param, (int) is_literal + '0');
             }
             if (s) {
                 if (call_after_param) {
                     gen_line("CALL %s\n", func_name);
                 }
             }
+            if (!collect_funcs) {
+                check_func_param(param, func_name, *call_param_num);
+            }
+            (*call_param_num)++;
             break;
         case TOKEN_FALSE_LITERAL:
         case TOKEN_TRUE_LITERAL:
@@ -987,15 +989,21 @@ bool CALL_PARAM(string_t *call_params, bool call_after_param, char *func_name) {
         case TOKEN_LOGICAL_NOT:
             s = call_expr_parser(&type, &is_literal);
             if (s) {
-                String.add_char(call_params, '_');
-                String.add_char(call_params, ':');
-                String.add_char(call_params, type + '0');
+                String.add_char(param, '_');
+                String.add_char(param, ':');
+                String.add_char(param, type + '0');
+                String.add_char(param, ':');
+                String.add_char(param, (int) is_literal + '0');
             }
             if (s) {
                 if (call_after_param) {
                     gen_line("CALL %s\n", func_name);
                 }
             }
+            if (!collect_funcs) {
+                check_func_param(param, func_name, *call_param_num);
+            }
+            (*call_param_num)++;
             break;
         default:
             sprintf(error_msg, "Syntax error [CALL_PARAM_VALUE]: expected ['TOKEN_FALSE_LITERAL', 'TOKEN_LESS_THAN', 'TOKEN_LOGICAL_AND', 'TOKEN_LEFT_BRACKET', 'TOKEN_NIL_LITERAL', 'TOKEN_REAL_LITERAL', 'TOKEN_STRING_LITERAL', 'TOKEN_ADDITION', 'TOKEN_SUBTRACTION', 'TOKEN_LOGICAL_OR', 'TOKEN_IDENTIFIER', 'TOKEN_EQUAL_TO', 'TOKEN_LESS_THAN_OR_EQUAL_TO', 'TOKEN_GREATER_THAN', 'TOKEN_NOT_EQUAL_TO', 'TOKEN_GREATER_THAN_OR_EQUAL_TO', 'TOKEN_TRUE_LITERAL', 'TOKEN_IS_NIL', 'TOKEN_DIVISION', 'TOKEN_MULTIPLICATION', 'TOKEN_LOGICAL_NOT', 'TOKEN_UNWRAP_NILLABLE', 'TOKEN_INTEGER_LITERAL'], got %s\n", tokens_as_str[lookahead->type]);
@@ -1004,14 +1012,13 @@ bool CALL_PARAM(string_t *call_params, bool call_after_param, char *func_name) {
     return s;
 }
 
-bool NEXT_CALL_PARAM(string_t *call_params, bool call_after_param, char *func_name) {
+bool NEXT_CALL_PARAM(bool call_after_param, char *func_name, int *call_param_num) {
     bool s;
     switch (lookahead->type) {
         case TOKEN_COMMA:
             s = match(TOKEN_COMMA);
-            if (s) String.add_char(call_params, '#');
-            s = s && CALL_PARAM(call_params, call_after_param, func_name);
-            s = s && NEXT_CALL_PARAM(call_params, call_after_param, func_name);
+            s = s && CALL_PARAM(call_after_param, func_name, call_param_num);
+            s = s && NEXT_CALL_PARAM(call_after_param, func_name, call_param_num);
             break;
         case TOKEN_RIGHT_BRACKET:
             s = true;
@@ -1043,7 +1050,6 @@ bool NEXT_ID_CALL_OR_ASSIGN(token_t *id) {
     bool s;
     type_t type;
     bool is_literal;
-    string_t *params = String.ctor();
     switch (lookahead->type) {
         case TOKEN_LEFT_BRACKET:
             s = match(TOKEN_LEFT_BRACKET);
@@ -1053,21 +1059,15 @@ bool NEXT_ID_CALL_OR_ASSIGN(token_t *id) {
             if (!collect_funcs) {
                 funcData = get_func(id->attribute.identifier);
                 call_after_param = strcmp(funcData->params->str, "*") == 0;
-                s = s && CALL_PARAM_LIST(params, call_after_param, funcData->name->str);
+                s = s && CALL_PARAM_LIST(call_after_param, funcData->name->str);
             } else {
-                s = s && CALL_PARAM_LIST(params, call_after_param, NULL);
+                s = s && CALL_PARAM_LIST(call_after_param, NULL);
             }
             s = s && match(TOKEN_RIGHT_BRACKET);
             // TODO check if params match
             if (s && !collect_funcs) {
                 if (!call_after_param) {
                     gen_line("CALL %s\n", funcData->name->str);
-                }
-                if (!collect_funcs) {
-                    if (!check_func_signature(params, funcData)) {
-                        fprintf(stderr, "Error: function signature mismatch\n");
-                        safe_exit(SEMANTIC_ERROR_4);
-                    }
                 }
             }
             ignore_right_bracket = false;
@@ -1110,7 +1110,6 @@ bool NEXT_ID_CALL_OR_ASSIGN(token_t *id) {
     }
     return s;
 }
-
 
 bool TYPE(type_t *type) {
     bool s;

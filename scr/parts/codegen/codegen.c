@@ -28,7 +28,7 @@ char *ret_reg = "GF@$RET";
 char *for_counter_reg = "GF@$FOR_COUNTER";
 char *for_max_val = "GF@$FOR_MAX_VAL";
 
-string_t *output = NULL;
+//string_t *output = NULL;
 
 stack_t *branch_label_stack;
 stack_t *loop_label_stack;
@@ -46,7 +46,7 @@ bool current_loop_is_for = false;
 
 void init_codegen() {
     start;
-    output = String.ctor();
+//    output = String.ctor();
     branch_label_stack = Stack.init();
     loop_label_stack = Stack.init();
     cycle_type_stack = Stack.init();
@@ -261,7 +261,6 @@ void gen_branch_end() {
 }
 
 void gen_while_start() {
-    // todo
     start;
     bool *tmp = safe_malloc(sizeof(bool));
     *tmp = current_loop_is_for;
@@ -309,7 +308,6 @@ void gen_while_end() {
 }
 
 void gen_for_start() {
-    // todo
     start;
     bool *tmp = safe_malloc(sizeof(bool));
     *tmp = current_loop_is_for;
@@ -341,7 +339,6 @@ void gen_for_range_restore() {
     gen_line("POPS %s\n", for_max_val);
     gen_line("POPS %s\n", for_counter_reg);
 }
-
 
 void gen_for_range(bool open) {
     start;
@@ -416,6 +413,7 @@ void gen_used_global_vars() {
     for (int i = 0; i < global_vars->size; i++) {
         gen_line("DEFVAR %s\n", (char*)DynamicArray.get(global_vars, i));
     }
+    DynamicArray.dtor(global_vars);
 }
 
 void gen_pop_params(string_t *params) {

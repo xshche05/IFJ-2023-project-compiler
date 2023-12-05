@@ -8,7 +8,7 @@
 #include <stdbool.h>
 #include "symtable.h"
 
-extern string_t *output;
+//extern string_t *output;
 
 void gen_register_def();
 

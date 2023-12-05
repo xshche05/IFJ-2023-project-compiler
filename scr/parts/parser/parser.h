@@ -8,7 +8,6 @@
 extern token_t *lookahead;
 extern bool nl_flag;
 extern bool collect_funcs;
-extern int branch_number;
 extern int inside_branch;
 
 bool match(token_type_t type);
@@ -37,9 +36,9 @@ bool WHILE_LOOP();
 bool FOR_LOOP();
 bool FOR_ID(token_t **id);
 bool RANGE();
-bool CALL_PARAM_LIST(string_t *call_params, bool call_after_param, char *func_name);
-bool CALL_PARAM(string_t *call_params, bool call_after_param, char *func_name);
-bool NEXT_CALL_PARAM(string_t *call_params, bool call_after_param, char *func_name);
+bool CALL_PARAM_LIST(bool call_after_param, char *func_name);
+bool CALL_PARAM(bool call_after_param, char *func_name, int *call_param_num);
+bool NEXT_CALL_PARAM(bool call_after_param, char *func_name, int *call_param_num);
 bool ID_CALL_OR_ASSIGN();
 bool NEXT_ID_CALL_OR_ASSIGN(token_t *id);
 bool TYPE(type_t *type);

@@ -71,13 +71,11 @@ void symtable_init();
 
 void symtable_destroy();
 
-int symtable_find(string_t *key, symTableData_t **data);
-
 void symtable_print();
 
 int get_scope();
 
-bool check_func_signature(string_t *params, funcData_t *funcData);
+bool check_func_param(string_t *param, char *funcName, int param_number);
 
 bool add_func(funcData_t *funcData);
 
@@ -94,12 +92,5 @@ letData_t *get_let(string_t *key);
 void new_frame();
 
 void del_frame();
-
-void update_defines(stack_t *data, int scope);
-
-void get_vars_and_lets_from_all_scopes(stack_t *stack);
-
-void update_defines_after_branch(int scope, int branch_blocks);
-
 
 #endif //IFJ_PRJ_SYMTABLE_H

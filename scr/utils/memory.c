@@ -4,8 +4,6 @@
 
 #include "memory.h"
 #include "lists.h"
-#include "parser.h"
-#include "../macros.h"
 #include <stdio.h>
 
 dynamic_array_t *allocated_pointers = NULL;
