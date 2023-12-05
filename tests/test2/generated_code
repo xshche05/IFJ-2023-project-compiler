@@ -1,0 +1,112 @@
+.IFJcode23
+DEFVAR GF@$A
+DEFVAR GF@$B
+DEFVAR GF@$C
+DEFVAR GF@$D
+DEFVAR GF@$RET
+DEFVAR GF@$COND
+DEFVAR GF@$FOR_COUNTER
+DEFVAR GF@$FOR_MAX_VAL
+MOVE GF@$FOR_COUNTER int@0
+MOVE GF@$FOR_MAX_VAL int@0
+JUMP $$main
+LABEL readString
+READ GF@$RET string
+RETURN
+LABEL readInt
+READ GF@$RET int
+RETURN
+LABEL readDouble
+READ GF@$RET float
+RETURN
+LABEL readBool
+READ GF@$RET bool
+RETURN
+LABEL write
+POPS GF@$A
+WRITE GF@$A
+RETURN
+LABEL Int2Double
+POPS GF@$A
+INT2FLOAT GF@$RET GF@$A
+RETURN
+LABEL Double2Int
+POPS GF@$A
+FLOAT2INT GF@$RET GF@$A
+RETURN
+LABEL length
+POPS GF@$A
+STRLEN GF@$RET GF@$A
+RETURN
+LABEL substring
+CREATEFRAME
+PUSHFRAME
+POPS GF@$C
+POPS GF@$B
+POPS GF@$A
+DEFVAR LF@exit
+LT LF@exit GF@$B int@0
+JUMPIFEQ $substring_std_exit_nil LF@exit bool@true
+LT LF@exit GF@$C int@0
+JUMPIFEQ $substring_std_exit_nil LF@exit bool@true
+GT LF@exit GF@$B GF@$C
+JUMPIFEQ $substring_std_exit_nil LF@exit bool@true
+PUSHS GF@$A
+CALL length
+LT LF@exit GF@$B GF@$RET
+JUMPIFEQ $substring_std_exit_nil LF@exit bool@false
+GT LF@exit GF@$C GF@$RET
+JUMPIFEQ $substring_std_exit_nil LF@exit bool@true
+MOVE GF@$RET string@
+LABEL $substring_std_loop
+LT LF@exit GF@$B GF@$C
+JUMPIFEQ $substring_std_exit LF@exit bool@false
+GETCHAR GF@$D GF@$A GF@$B
+CONCAT GF@$RET GF@$RET GF@$D
+ADD GF@$B GF@$B int@1
+JUMP $substring_std_loop
+LABEL $substring_std_exit
+POPFRAME
+RETURN
+LABEL $substring_std_exit_nil
+MOVE GF@$RET nil@nil
+POPFRAME
+RETURN
+LABEL ord
+POPS GF@$A
+PUSHS GF@$A
+CALL length
+JUMPIFEQ $ord_std_exit GF@$RET int@0
+STRI2INT GF@$RET GF@$A int@0
+LABEL $ord_std_exit
+RETURN
+LABEL chr
+POPS GF@$A
+INT2CHAR GF@$RET GF@$A
+RETURN
+LABEL $??op
+POPS GF@$B
+POPS GF@$A
+TYPE GF@$C GF@$A
+MOVE GF@$RET GF@$A
+JUMPIFNEQ $??op_skip GF@$C string@nil
+MOVE GF@$RET GF@$B
+LABEL $??op_skip
+RETURN
+LABEL $$main
+CREATEFRAME
+PUSHFRAME
+JUMP main_defvar$0
+LABEL main_defvar_back$1
+PUSHS int@127
+CALL chr
+PUSHS GF@$RET
+POPS GF@result
+PUSHS GF@result
+CALL write
+POPFRAME
+JUMP main_def_skip$2
+LABEL main_defvar$0
+DEFVAR GF@result
+JUMP main_defvar_back$1
+LABEL main_def_skip$2

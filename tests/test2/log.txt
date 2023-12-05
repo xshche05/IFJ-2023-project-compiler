@@ -1,0 +1,18 @@
+
+[31;1mError: compiler return code expected: ErrorType.error_call got: ErrorType.error_other_semantic[0m
+[33m  File "/mnt/c/Users/Spagetik/Desktop/IFJ_PRJ/test2/ifj23-tests-master/backend_tests.py", line 868, in test_all[0m
+[31mcompiler stdin:[0m
+
+    func a() -> Int? {
+        let a: String? = nil
+        return a
+    }
+    let b = a()
+    write(a)
+    
+[31mcompiler stderr:[0m
+Error: let name collision with function.
+
+[31mcompiler returned error code ErrorType.error_other_semantic (9)[0m
+
+1 tests failed
