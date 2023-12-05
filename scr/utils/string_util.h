@@ -46,6 +46,7 @@ struct string_interface {
     int (*assign_cstr)(string_t *dest, char *source);
     int (*del_last_char)(string_t *string);
     string_t *(*create)(char *source);
+    int (*count)(string_t *string, char c);
 };
 
 #endif //IFJ_PRJ_STRING_UTIL_H

@@ -469,7 +469,7 @@ static void reduce() {
                 case TOKEN_IS_NIL:
                     if (b->ret_type > 3) {
                         if (!(b->ret_type - 4 == a->ret_type || b->ret_type == nil_type ||
-                              a->ret_type == b->ret_type)) {
+                              a->ret_type == b->ret_type) || a->ret_type > 3) {
                             if ((b->ret_type == double_type || b->ret_type == nil_double_type) && a->ret_type == int_type
                             && a->token != NULL) {
                                 gen_line("INT2FLOATS\n");

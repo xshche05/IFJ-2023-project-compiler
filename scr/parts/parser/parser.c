@@ -910,10 +910,28 @@ bool RANGE() {
             gen_for_range(true);
             break;
         default:
-            sprintf(error_msg, "Syntax error [RANGE]: expected ['TOKEN_CLOSED_RANGE', 'TOKEN_HALF_OPEN_RANGE'], got %s\n", tokens_as_str[lookahead->type]);
+            sprintf(error_msg,
+                    "Syntax error [RANGE]: expected ['TOKEN_CLOSED_RANGE', 'TOKEN_HALF_OPEN_RANGE'], got %s\n",
+                    tokens_as_str[lookahead->type]);
             s = false;
     }
     return s;
+}
+
+static void check_param_number(char *func_name, int call_param_num) {
+    string_t *name = String.ctor();
+    String.assign_cstr(name, func_name);
+    funcData_t *funcData = get_func(name);
+    if (String.cmp_cstr(funcData->params, "*") != 0) {
+        int required_number_of_params = String.count(funcData->params, '#') + 1;
+        if (String.count(funcData->params, ':') == 0) {
+            required_number_of_params = 0;
+        }
+        if (required_number_of_params != call_param_num) {
+            fprintf(stderr, "Error: wrong number of parameters\n");
+            safe_exit(SEMANTIC_ERROR_4);
+        }
+    }
 }
 
 bool CALL_PARAM_LIST(bool call_after_param, char *func_name) {
@@ -933,9 +951,15 @@ bool CALL_PARAM_LIST(bool call_after_param, char *func_name) {
         case TOKEN_LOGICAL_NOT:
             s = CALL_PARAM(call_after_param, func_name, &call_param_num);
             s = s && NEXT_CALL_PARAM(call_after_param, func_name, &call_param_num);
+            if (s && !collect_funcs) {
+                check_param_number(func_name, call_param_num);
+            }
             break;
         case TOKEN_RIGHT_BRACKET:
             s = true;
+            if (s && !collect_funcs) {
+                check_param_number(func_name, call_param_num);
+            }
             break;
         default:
             if (call_expr_parser(&type, &is_literal)) return true; // TODO check if this is correct

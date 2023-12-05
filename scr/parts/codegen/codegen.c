@@ -236,8 +236,7 @@ void gen_branch_if_start(bool let) {
     char *label_skip = (char*)Stack.top(branch_label_stack);
     if (let) {
         gen_line("POPS %s\n", cond_reg);
-        gen_line("TYPE %s %s\n", cond_reg, cond_reg);
-        gen_line("JUMPIFEQ %s %s string@nil\n", label_skip, cond_reg);
+        gen_line("JUMPIFEQ %s %s nil@nil\n", label_skip, cond_reg);
     } else {
         gen_line("PUSHS bool@true\n");
         gen_line("JUMPIFNEQS %s\n", label_skip);

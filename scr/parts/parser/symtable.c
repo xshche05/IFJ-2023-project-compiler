@@ -340,6 +340,10 @@ bool check_func_param(string_t *param, char *funcName, int param_number) {
     if (strcmp(funcParamsStr, "*") == 0) {
         return true;
     }
+    if (String.count(funcData->params, '#') < param_number) {
+        fprintf(stderr, "Error: function signature mismatch. Too much params\n");
+        safe_exit(SEMANTIC_ERROR_4);
+    }
     char *token = strtok(funcParamsStr, "#");
     // get param by param_number
     for (int i = 0; i < param_number; i++) {

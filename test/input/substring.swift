@@ -23,9 +23,8 @@ else { }
 
 if let b5
 {
-    write("WRONG5!\n")
 }
-else { }
+else { write("WRONG5!\n") }
 
 if let b6
 {

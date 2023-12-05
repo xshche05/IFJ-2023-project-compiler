@@ -230,6 +230,16 @@ static int string_del_last_char(string_t *string) {
     return 0;
 }
 
+static int string_count(string_t *string, char c) {
+    int count = 0;
+    for (int i = 0; i < string->length; i++) {
+        if (string->str[i] == c) {
+            count++;
+        }
+    }
+    return count;
+}
+
 const struct string_interface String = {
         .ctor = string_ctor,
         .copy = string_copy,
@@ -244,4 +254,5 @@ const struct string_interface String = {
         .assign = string_assign,
         .assign_cstr = string_assign_cstr,
         .create = string_create,
+        .count = string_count,
 };
