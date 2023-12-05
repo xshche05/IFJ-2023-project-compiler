@@ -326,7 +326,6 @@ void del_frame() {
     currentScope = Stack.top(scopeStack);
     Stack.pop(scopeStack);
     scopeDepth--;
-    if (collect_funcs) return;
 }
 
 bool check_func_param(string_t *param, char *funcName, int param_number) {

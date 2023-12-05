@@ -56,7 +56,6 @@ typedef enum {
     TOKEN_RIGHT_BRACE,
     TOKEN_COMMA,
     TOKEN_COLON,
-    TOKEN_SEMICOLON,
     TOKEN_ARROW,
     TOKEN_EOF
 } token_type_t;

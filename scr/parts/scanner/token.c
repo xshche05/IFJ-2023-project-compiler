@@ -55,7 +55,6 @@ char *tokens_as_str[] = {
         "TOKEN_RIGHT_BRACE",
         "TOKEN_COMMA",
         "TOKEN_COLON",
-        "TOKEN_SEMICOLON",
         "TOKEN_ARROW",
         "TOKEN_NEWLINE",
         "TOKEN_EOF"
