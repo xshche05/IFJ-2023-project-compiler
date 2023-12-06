@@ -86,10 +86,8 @@ INT2CHAR GF@$RET GF@$A
 RETURN
 LABEL $??op
 POPS GF@$B
-POPS GF@$A
-TYPE GF@$C GF@$A
-MOVE GF@$RET GF@$A
-JUMPIFNEQ $??op_skip GF@$C string@nil
+POPS GF@$RET
+JUMPIFNEQ $??op_skip GF@$RET nil@nil
 MOVE GF@$RET GF@$B
 LABEL $??op_skip
 RETURN

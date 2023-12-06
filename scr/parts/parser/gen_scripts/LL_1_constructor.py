@@ -160,11 +160,19 @@ for rule_num in rules.keys():
         if left not in rule_dict_2.keys():
             rule_dict_2[left] = dict()
         if rule_dict_2[left].get(val) is None:
-            rule_dict_2[left][val] = rule_num
+            rule_dict_2[left][val] = [rule_num]
         else:
             print(rule_dict_2[left].get(val))
             print(rule_num)
             print("LL(1) Conflict!")
+            rule_dict_2[left][val].append(rule_num)
+
+for left in rule_dict_2.keys():
+    i = 0
+    for predict_value in rule_dict_2[left].keys():
+        i += 1
+        print(f"{left}#{predict_value}#{rule_dict_2[left][predict_value]}")
+    # print(i)
 
 
 def gen_func_header(name: str):
@@ -425,15 +433,15 @@ bool call_expr_parser();\n
         h_file += f"bool {non_terminal}();\n"
     h_file += "#endif //IFJ_PRJ_PARSER_H\n"
 
-gen_h_file()
-gen_c_file()
+# gen_h_file()
+# gen_c_file()
 
 
-with open("__parser.c", "w") as file:
-    file.write(c_file)
-
-with open("__parser.h", "w") as file:
-    file.write(h_file)
+# with open("__parser.c", "w") as file:
+#     file.write(c_file)
+#
+# with open("__parser.h", "w") as file:
+#     file.write(h_file)
 
 # print rules
 # for rule in rules.values():

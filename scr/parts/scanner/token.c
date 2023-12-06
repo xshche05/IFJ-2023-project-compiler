@@ -1,6 +1,8 @@
-//
-// Created by Spagetik on 14.10.2023.
-//
+/*
+ * IFJ Project 2023
+ * Implementation of token and token array
+ * Author: Kirill Shchetiniuk (xshche05)
+ */
 
 #include "token.h"
 #include <stdlib.h>

@@ -1,6 +1,8 @@
-//
-// Created by Spagetik on 16-Nov-23.
-//
+/*
+ * IFJ Project 2023
+ * Implementation of code generator
+ * Author: Kirill Shchetiniuk (xshche05)
+ */
 
 #ifndef IFJ_PRJ_CODEGEN_H
 #define IFJ_PRJ_CODEGEN_H

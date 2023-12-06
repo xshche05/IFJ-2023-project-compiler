@@ -1,7 +1,7 @@
 #include "macros.h"
 #include "source_file.h"
-#include "parts.h"
-#include "expr_parser.h"
+#include "parser.h"
+#include "scanner.h"
 #include "memory.h"
 
 char error_msg[1000];

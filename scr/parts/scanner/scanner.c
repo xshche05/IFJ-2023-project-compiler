@@ -1,3 +1,8 @@
+/*
+ * IFJ Project 2023
+ * Implementation of lexical analyzer
+ * Author: Kirill Shchetiniuk (xshche05)
+ */
 #include "scanner.h"
 #include <stdlib.h>
 #include <stdbool.h>

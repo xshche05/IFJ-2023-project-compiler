@@ -1,3 +1,8 @@
+/*
+ * IFJ Project 2023
+ * Implementation of token and token array
+ * Author: Kirill Shchetiniuk (xshche05)
+ */
 #ifndef IFJ_PRJ_TOKEN_H
 #define IFJ_PRJ_TOKEN_H
 #include <stdbool.h>

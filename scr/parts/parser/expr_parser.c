@@ -1,3 +1,9 @@
+/*
+ * IFJ Project 2023
+ * Implementation of expression parser
+ * Author: Kirill Shchetiniuk (xshche05)
+ */
+
 #include "token.h"
 #include "parser.h"
 #include "expr_parser.h"
@@ -24,17 +30,23 @@ int prec_table[12][12] = {
 
 #define TYPE_ERROR 7
 
-bool ignore_right_bracket = false;
+bool ignore_right_bracket = false; // if we work with function call, we ignore last right bracket
 
 token_t *local_lookahead;
 token_t *after_local_lookahead;
 
 bool nl_flag = false;
-bool first_flag = false;
+bool first_flag = false; // if we curently parse first token in expression
 
-stack_t *pushdown_stack = NULL;
-stack_t *tmp_stack = NULL;
+stack_t *pushdown_stack = NULL; // current pushdown stack
+stack_t *tmp_stack = NULL; // temporary stack for operations
 
+/**
+ * @brief maps token to number in precedence table
+ * @param token token to be mapped
+ * @param bracket_count number of left brackets in expression
+ * @return index of token in precedence table
+ */
 static int map_token(token_t *token, int *bracket_count) {
     switch (token->type) {
         case TOKEN_UNWRAP_NILLABLE:
@@ -88,16 +100,25 @@ static int map_token(token_t *token, int *bracket_count) {
     }
 }
 
+/**
+ * @brief initializes stacks
+ */
 static void init_stacks() {
     pushdown_stack = Stack.init();
     tmp_stack = Stack.init();
 }
 
+/**
+ * @brief destroys stacks
+ */
 static void destroy_stacks() {
     Stack.destroy(pushdown_stack);
     Stack.destroy(tmp_stack);
 }
 
+/**
+ * @brief pop all non-terminals from stack and push them to tmp_stack
+ */
 static void clear_until_top_terminal() {
     expr_elem_t *top = Stack.top(pushdown_stack);
     while (top->type == NON_TERM || top->type == LESS) {
@@ -107,6 +128,9 @@ static void clear_until_top_terminal() {
     }
 }
 
+/**
+ * @brief pop all elements from tmp_stack and push them to pushdown_stack
+ */
 static void transfer_tmp_stack() {
     while (Stack.top(tmp_stack) != NULL) {
         Stack.push(pushdown_stack, Stack.top(tmp_stack));
@@ -114,6 +138,11 @@ static void transfer_tmp_stack() {
     }
 }
 
+/**
+ * @brief semantic check of relational operators
+ * @param a first operand
+ * @param b second operand
+ */
 static void rel_op_check(expr_elem_t *a, expr_elem_t *b) {
     if (a->ret_type != b->ret_type || (a->ret_type > 3 && a->ret_type != nil_type) || a->ret_type == bool_type
     || a->ret_type == nil_type || b->ret_type == nil_type) {
@@ -140,6 +169,11 @@ static void rel_op_check(expr_elem_t *a, expr_elem_t *b) {
     }
 }
 
+/**
+ * @brief semantic check of logical operators
+ * @param a first operand
+ * @param b second operand
+ */
 static void log_op_check(expr_elem_t *a, expr_elem_t *b) {
     if (a->ret_type != bool_type || a->ret_type != b->ret_type) {
         fprintf(stderr, "Error: EXPR type mismatch.\n");
@@ -151,6 +185,13 @@ static void log_op_check(expr_elem_t *a, expr_elem_t *b) {
     }
 }
 
+/**
+ * @brief semantic check of arithmetic operators
+ * @param a first operand
+ * @param b second operand
+ * @param new_elem new element to be pushed to stack
+ * @param elems array of elements to be reduced
+ */
 static void ar_op_check(expr_elem_t *a, expr_elem_t *b, expr_elem_t *new_elem, expr_elem_t **elems) {
     if (a->ret_type != b->ret_type
         && !(a->ret_type == int_type && b->ret_type == double_type)
@@ -185,6 +226,11 @@ static void ar_op_check(expr_elem_t *a, expr_elem_t *b, expr_elem_t *new_elem, e
     new_elem->token = (token_t *) ((size_t) a->token * (size_t) b->token);
 }
 
+/**
+ * @brief semantic check of addition operator
+ * @param a first operand
+ * @param b second operand
+ */
 static void add_op_check(expr_elem_t *a, expr_elem_t *b) {
     if (a->ret_type == bool_type) {
         fprintf(stderr, "Error: EXPR type mismatch.\n");
@@ -196,6 +242,11 @@ static void add_op_check(expr_elem_t *a, expr_elem_t *b) {
     }
 }
 
+/**
+ * @brief semantic check of all other arithmetic operators, except addition
+ * @param a first operand
+ * @param b second operand
+ */
 static void other_ar_op_check(expr_elem_t *a, expr_elem_t *b) {
     if (a->ret_type == string_type || a->ret_type == bool_type) {
         fprintf(stderr, "Error: EXPR type mismatch.\n");
@@ -207,6 +258,11 @@ static void other_ar_op_check(expr_elem_t *a, expr_elem_t *b) {
     }
 }
 
+/**
+ * @brief semantic check of equality operator
+ * @param a first operand
+ * @param b second operand
+ */
 static void eq_op_check(expr_elem_t *a, expr_elem_t *b) {
     if (!(a->ret_type == b->ret_type || a->ret_type == nil_type || b->ret_type == nil_type ||
           a->ret_type - 4 == b->ret_type || b->ret_type - 4 == a->ret_type)) {
@@ -231,6 +287,9 @@ static void eq_op_check(expr_elem_t *a, expr_elem_t *b) {
     }
 }
 
+/**
+ * @brief reduce action, pop elements from stack, reduce with rules and push new element
+ */
 static void reduce() {
     expr_elem_t *elem = Stack.top(pushdown_stack);
     expr_elem_t **elems = safe_malloc(sizeof(expr_elem_t *) * 3);
@@ -252,6 +311,10 @@ static void reduce() {
     }
     if (i == 1) // reduce E -> i
     {
+        if (elems[0]->type != IDENTIFIER) {
+            fprintf(stderr, "Error: EXPR syntax error, cant reduce by E -> i\n");
+            safe_exit(SYNTAX_ERROR);
+        }
         if (elems[0]->token == NULL && elems[0]->type == IDENTIFIER) {
             new_elem->type = NON_TERM;
             if (elems[0]->ret_type == void_type) {
@@ -511,6 +574,10 @@ static void reduce() {
     Stack.push(pushdown_stack, new_elem);
 }
 
+/**
+ * @brief get top terminal from stack
+ * @return top terminal in pushdown_stack
+ */
 static expr_elem_t *get_top_terminal() {
     expr_elem_t *top = Stack.top(pushdown_stack);
     while (top->type == NON_TERM || top->type == LESS) {
@@ -525,6 +592,11 @@ static expr_elem_t *get_top_terminal() {
     return top;
 }
 
+/**
+ * @brief get next token from input
+ * @param bracket_count number of left brackets in expression
+ * @return next token
+ */
 static expr_elem_t *next_token(int *bracket_count) {
     bool is_last_on_line = false;
     if (local_lookahead != NULL) {
@@ -559,6 +631,7 @@ static expr_elem_t *next_token(int *bracket_count) {
         safe_free(a);
     }
 
+    // is a function call
     if (current->type == TOKEN_IDENTIFIER) {
         if (next->type == TOKEN_LEFT_BRACKET) {
             lookahead = TokenArray.next();
@@ -675,6 +748,12 @@ static void DEBUG_print_push_down_stack() {
 }
 #endif
 
+/**
+ * @brief main function of expression parser
+ * @param ret_type return type of expression
+ * @param is_literal true if expression is literal
+ * @return SUCCESS or error code
+ */
 int parse_expr(type_t *ret_type, bool *is_literal) {
     pushdown_stack = NULL;
     tmp_stack = NULL;

@@ -1,6 +1,8 @@
-//
-// Created by Spagetik on 08-Nov-23.
-//
+/*
+ * IFJ Project 2023
+ * Implementation of vv-BVS symtable
+ * Author: Kirill Shchetiniuk (xshche05)
+ */
 
 #ifndef IFJ_PRJ_SYMTABLE_H
 #define IFJ_PRJ_SYMTABLE_H

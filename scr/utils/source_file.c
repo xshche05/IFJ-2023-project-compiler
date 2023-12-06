@@ -1,5 +1,9 @@
+/*
+ * IFJ Project 2023
+ * Implementation of source file interface
+ * Author: Kirill Shchetiniuk (xshche05)
+ */
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 #include "memory.h"
 

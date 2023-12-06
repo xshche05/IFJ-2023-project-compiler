@@ -1,4 +1,8 @@
-#include <stdlib.h>
+/*
+ * IFJ Project 2023
+ * Implementation of dynamic string
+ * Author: Kirill Shchetiniuk (xshche05)
+ */
 #include <stdio.h>
 #include <string.h>
 

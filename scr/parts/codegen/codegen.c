@@ -1,6 +1,8 @@
-//
-// Created by Spagetik on 16-Nov-23.
-//
+/*
+ * IFJ Project 2023
+ * Implementation of code generator
+ * Author: Kirill Shchetiniuk (xshche05)
+ */
 
 #include "codegen.h"
 #include "stack.h"
@@ -54,6 +56,9 @@ void init_codegen() {
     global_vars = DynamicArray.ctor();
 }
 
+/**
+ * @brief Generates header of the code for IFJcode23 interpreter. In first cycle of parser does nothing.
+ */
 void gen_header() {
     start;
     gen_line(".IFJcode23\n");
@@ -61,6 +66,9 @@ void gen_header() {
     gen_line("JUMP $$main\n");
 }
 
+/**
+ * @brief Generate definition of all general purpose "registers". In first cycle of parser does nothing.
+ */
 void gen_register_def() {
     start;
     for (int i = 0; i < 8; i++) {
@@ -72,6 +80,11 @@ void gen_register_def() {
     gen_line("MOVE GF@$FOR_MAX_VAL int@0\n");
 }
 
+/**
+ * @brief Generates definition of all general purpose "registers". In first cycle of parser does nothing.
+ * @param prefix Prefix of the label
+ * @return Pointer to generated label
+ */
 char *gen_unique_label(char *prefix) {
     start NULL;
     static int label = 0;
@@ -81,6 +94,9 @@ char *gen_unique_label(char *prefix) {
     return str;
 }
 
+/**
+ * @brief Generates definition of all standard functions of IFJ23 language. In first cycle of parser does nothing.
+ */
 void gen_std_functions() {
     start;
     // readString
@@ -176,10 +192,8 @@ void gen_std_functions() {
     // ??
     gen_line("LABEL $??op\n");
     gen_line("POPS GF@$B\n");
-    gen_line("POPS GF@$A\n");
-    gen_line("TYPE GF@$C GF@$A\n");
-    gen_line("MOVE GF@$RET GF@$A\n");
-    gen_line("JUMPIFNEQ $??op_skip GF@$C string@nil\n");
+    gen_line("POPS GF@$RET\n");
+    gen_line("JUMPIFNEQ $??op_skip GF@$RET nil@nil\n");
     gen_line("MOVE GF@$RET GF@$B\n");
     gen_line("LABEL $??op_skip\n");
     gen_line("RETURN\n");
@@ -187,6 +201,11 @@ void gen_std_functions() {
     gen_line("LABEL $$main\n");
 }
 
+/**
+ * @brief Generates line of code. Wrapper for printf. In first cycle of parser does nothing.
+ * @param format Format of the line
+ * @param ... Arguments for the format
+ */
 void gen_line(char *format, ...) {
     start;
     va_list args;
@@ -199,11 +218,18 @@ void gen_line(char *format, ...) {
     va_end(args);
 }
 
+/**
+ * @brief Generates break jump for current loop. In first cycle of parser does nothing.
+ */
 void gen_break() {
     start;
     gen_line("JUMP %s\n", current_loop_end_label);
 }
 
+/**
+ * @brief Generates continue jump for current loop, in case of for loop increase counter.
+ * In first cycle of parser does nothing.
+ */
 void gen_continue() {
     start;
     if (current_loop_is_for) {
@@ -212,6 +238,10 @@ void gen_continue() {
     gen_line("JUMP %s\n", current_loop_start_label);
 }
 
+/**
+ * @brief Generates return for current function. In first cycle of parser does nothing.
+ * @param void_return True if function should returns void, false otherwise
+ */
 void gen_return(bool void_return) {
     start;
     if (!void_return) {
@@ -221,6 +251,10 @@ void gen_return(bool void_return) {
     gen_line("RETURN\n");
 }
 
+/**
+ * @brief Generates labels for branch. In first cycle of parser does nothing.
+ * @param gen_end True if should generate end label, false otherwise
+ */
 void gen_branch_labels(bool gen_end) {
     start;
     if (gen_end) {
@@ -231,6 +265,10 @@ void gen_branch_labels(bool gen_end) {
     Stack.push(branch_label_stack, label_skip);
 }
 
+/**
+ * @brief Generates start of one branch condition. In first cycle of parser does nothing.
+ * @param let True if branch has let id condition, false otherwise
+ */
 void gen_branch_if_start(bool let) {
     start;
     char *label_skip = (char*)Stack.top(branch_label_stack);
@@ -243,6 +281,10 @@ void gen_branch_if_start(bool let) {
     }
 }
 
+/**
+ * @brief Generates end of one branch condition. Generates jump to the end of current branch.
+ * In first cycle of parser does nothing.
+ */
 void gen_branch_if_end() {
     start;
     char *label_skip = (char*)Stack.top(branch_label_stack);
@@ -252,6 +294,9 @@ void gen_branch_if_end() {
     gen_line("LABEL %s\n", label_skip);
 }
 
+/**
+ * @brief Generates end of current branch. In first cycle of parser does nothing.
+ */
 void gen_branch_end() {
     start;
     char *label_end = (char*)Stack.top(branch_label_stack);
@@ -259,6 +304,9 @@ void gen_branch_end() {
     gen_line("LABEL %s\n", label_end);
 }
 
+/**
+ * @brief Generates start of while loop. In first cycle of parser does nothing.
+ */
 void gen_while_start() {
     start;
     bool *tmp = safe_malloc(sizeof(bool));
@@ -280,12 +328,18 @@ void gen_while_start() {
     gen_line("LABEL %s\n", current_loop_start_label);
 }
 
+/**
+ * @brief Generates condition of while loop. In first cycle of parser does nothing.
+ */
 void gen_while_cond() {
     start;
     gen_line("PUSHS bool@true\n");
     gen_line("JUMPIFNEQS %s\n", current_loop_end_label);
 }
 
+/**
+ * @brief Generates end of while loop. In first cycle of parser does nothing.
+ */
 void gen_while_end() {
     start;
     gen_line("JUMP %s\n", current_loop_start_label);
@@ -306,6 +360,9 @@ void gen_while_end() {
     Stack.pop(cycle_type_stack);
 }
 
+/**
+ * @brief Generates start of for loop. In first cycle of parser does nothing.
+ */
 void gen_for_start() {
     start;
     bool *tmp = safe_malloc(sizeof(bool));
@@ -327,18 +384,28 @@ void gen_for_start() {
     gen_line("LABEL %s\n", label_start);
 }
 
+/**
+ * @brief Generates save of previous for loop range. In first cycle of parser does nothing.
+ */
 void gen_for_range_save() {
     start;
     gen_line("PUSHS %s\n", for_counter_reg);
     gen_line("PUSHS %s\n", for_max_val);
 }
 
+/**
+ * @brief Generates restore of previous for loop range. In first cycle of parser does nothing.
+ */
 void gen_for_range_restore() {
     start;
     gen_line("POPS %s\n", for_max_val);
     gen_line("POPS %s\n", for_counter_reg);
 }
 
+/**
+ * @brief Generates range of for loop. In first cycle of parser does nothing.
+ * @param open True if range is open, false otherwise
+ */
 void gen_for_range(bool open) {
     start;
     if (!open) {
@@ -349,11 +416,17 @@ void gen_for_range(bool open) {
     gen_line("POPS %s\n", for_counter_reg);
 }
 
+/**
+ * @brief Generates condition of for loop. In first cycle of parser does nothing.
+ */
 void gen_for_cond() {
     start;
     gen_line("JUMPIFEQ %s %s %s\n", current_loop_end_label, for_counter_reg, for_max_val);
 }
 
+/**
+ * @brief Generates end of for loop. In first cycle of parser does nothing.
+ */
 void gen_for_end() {
     start;
     gen_line("ADD %s %s int@1\n", for_counter_reg, for_counter_reg);
@@ -375,16 +448,26 @@ void gen_for_end() {
     Stack.pop(cycle_type_stack);
 }
 
+/**
+ * @brief Generates function label. In first cycle of parser does nothing.
+ * @param func_name Name of the function
+ */
 void gen_func_label(char *func_name) {
     start;
     gen_line("LABEL %s\n", func_name);
 }
 
+/**
+ * @brief Generates new frame creation. In first cycle of parser does nothing.
+ */
 void gen_new_frame() {
     start;
     gen_line("CREATEFRAME\n");
 }
 
+/**
+ * @brief Generates push frame. In first cycle of parser does nothing.
+ */
 void gen_push_frame() {
     start;
     gen_line("PUSHFRAME\n");
@@ -392,11 +475,17 @@ void gen_push_frame() {
     used_vars = DynamicArray.ctor();
 }
 
+/**
+ * @brief Generates pop frame. In first cycle of parser does nothing.
+ */
 void gen_pop_frame() {
     start;
     gen_line("POPFRAME\n");
 }
 
+/**
+ * @brief Generates definition of used variables in current frame. In first cycle of parser does nothing.
+ */
 void gen_used_vars() {
     start;
     for (int i = 0; i < used_vars->size; i++) {
@@ -407,6 +496,9 @@ void gen_used_vars() {
     Stack.pop(array_stack);
 }
 
+/**
+ * @brief Generates definition of used global variables. In first cycle of parser does nothing.
+ */
 void gen_used_global_vars() {
     start;
     for (int i = 0; i < global_vars->size; i++) {
@@ -415,6 +507,10 @@ void gen_used_global_vars() {
     DynamicArray.dtor(global_vars);
 }
 
+/**
+ * @brief Generates pop of func parameters from stack. In first cycle of parser does nothing.
+ * @param params Parameters of function
+ */
 void gen_pop_params(string_t *params) {
     start;
     char *str = safe_malloc(sizeof(char) * (strlen(params->str) + 1));
@@ -446,6 +542,13 @@ void gen_pop_params(string_t *params) {
     safe_free(str);
 }
 
+/**
+ * @brief Generates name of variable. Save generated name to array of used vars in this frame.
+ * In first cycle of parser does nothing.
+ * @param id Name of variable
+ * @param scope Scope of variable
+ * @return Pointer to generated name
+ */
 char *gen_var_name(char *id, int scope) {
     start NULL;
     char *str = safe_malloc(sizeof(char) * (strlen(id) + 10));

@@ -1,3 +1,8 @@
+/*
+ * IFJ Project 2023
+ * Implementation of expression parser
+ * Author: Kirill Shchetiniuk (xshche05)
+ */
 #include <string.h>
 #include "codegen/codegen.h"
 #include "expr_parser.h"
@@ -16,40 +21,50 @@ token_t *lookahead = NULL;
 funcData_t *currentFunc = NULL;
 bool collect_funcs = false;
 
-
+/**
+ * @brief Check if lookahead is the same as expected type
+ * @param type Expected type
+ * @return True if lookahead is the same as expected type, false otherwise
+ */
 bool match(token_type_t type) {
-    if (type == TOKEN_RETURN) {
+    if (type == TOKEN_RETURN) { // Check if return is inside function
         if (!inside_func) {
             sprintf(error_msg, "Syntax error: TOKEN_RETURN outside of function\n");
             return false;
         }
     }
-    if (type == TOKEN_BREAK || type == TOKEN_CONTINUE) {
+    if (type == TOKEN_BREAK || type == TOKEN_CONTINUE) { // Check if break or continue is inside loop
         if (!inside_loop) {
             sprintf(error_msg, "Syntax error: %s outside of loop\n", tokens_as_str[type]);
             return false;
         }
     }
-    if (type == TOKEN_FUNC) {
+    if (type == TOKEN_FUNC) { // Check if function is inside global scope
         if (get_scope() != 0 || inside_loop || inside_branch) {
             sprintf(error_msg, "Syntax error: function declaration outside of global scope\n");
             return false;
         }
     }
-    if (lookahead->type == type) {
+    if (lookahead->type == type) { // If lookahead is the same as expected type
         nl_flag = lookahead->has_newline_after;
-        lookahead = TokenArray.next();
+        lookahead = TokenArray.next(); // Get next token
         return true;
     }
     sprintf(error_msg, "Syntax error: expected %s, got %s\n", tokens_as_str[type], tokens_as_str[lookahead->type]);
     return false;
 }
 
+/**
+ * @brief Pass heading to expr parser
+ * @param type Return type of expr
+ * @param is_literal True if expr is literal, false otherwise
+ * @return true if expr parser was successful, false otherwise
+ */
 bool call_expr_parser(type_t *type, bool *is_literal) {
-    if (parse_expr(type, is_literal) == SUCCESS) {
-        lookahead = TokenArray.prev();
-        nl_flag = lookahead->has_newline_after;
-        lookahead = TokenArray.next();
+    if (parse_expr(type, is_literal) == SUCCESS) { // If expr parser was successful
+        lookahead = TokenArray.prev(); // Go back to last token
+        nl_flag = lookahead->has_newline_after; // Update newline flag
+        lookahead = TokenArray.next(); // Get next token
         return true;
     }
     else {
@@ -57,6 +72,7 @@ bool call_expr_parser(type_t *type, bool *is_literal) {
     }
 }
 
+// eol check
 bool nl_check() {
     if (nl_flag) {
         return true;
@@ -458,7 +474,7 @@ bool FUNC_DECL() {
             s = s && PARAM_LIST(&funcData);
             if (s) {
                 if (collect_funcs) {
-                    if (!add_func(funcData)) { // TODO overloading
+                    if (!add_func(funcData)) {
                         fprintf(stderr, "Error: function already defined\n");
                         safe_exit(SEMANTIC_ERROR_3);
                     }
@@ -961,7 +977,6 @@ bool CALL_PARAM_LIST(bool call_after_param, char *func_name) {
             }
             break;
         default:
-//            if (call_expr_parser(&type, &is_literal)) return true; // TODO check if this is correct
             sprintf(error_msg, "Syntax error [CALL_PARAM_LIST]: expected ['TOKEN_FALSE_LITERAL', 'TOKEN_COLON', 'TOKEN_LESS_THAN', 'TOKEN_LOGICAL_AND', 'TOKEN_LEFT_BRACKET', 'TOKEN_NIL_LITERAL', 'TOKEN_REAL_LITERAL', 'TOKEN_STRING_LITERAL', 'TOKEN_ADDITION', 'TOKEN_SUBTRACTION', 'TOKEN_LOGICAL_OR', 'TOKEN_IDENTIFIER', 'TOKEN_UNWRAP_NILLABLE', 'TOKEN_EQUAL_TO', 'TOKEN_LESS_THAN_OR_EQUAL_TO', 'TOKEN_GREATER_THAN', 'TOKEN_NOT_EQUAL_TO', 'TOKEN_GREATER_THAN_OR_EQUAL_TO', 'TOKEN_TRUE_LITERAL', 'TOKEN_IS_NIL', 'TOKEN_DIVISION', 'TOKEN_MULTIPLICATION', 'TOKEN_LOGICAL_NOT', 'TOKEN_INTEGER_LITERAL', 'TOKEN_RIGHT_BRACKET'], got %s\n", tokens_as_str[lookahead->type]);
             s = false;
     }
@@ -1087,7 +1102,6 @@ bool NEXT_ID_CALL_OR_ASSIGN(token_t *id) {
                 s = s && CALL_PARAM_LIST(call_after_param, NULL);
             }
             s = s && match(TOKEN_RIGHT_BRACKET);
-            // TODO check if params match
             if (s && !collect_funcs) {
                 if (!call_after_param) {
                     gen_line("CALL %s\n", funcData->name->str);

@@ -1,3 +1,8 @@
+/*
+ * IFJ Project 2023
+ * Implementation of dynamic string
+ * Author: Kirill Shchetiniuk (xshche05)
+ */
 #ifndef IFJ_PRJ_STRING_UTIL_H
 #define IFJ_PRJ_STRING_UTIL_H
 

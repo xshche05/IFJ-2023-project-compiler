@@ -1,3 +1,8 @@
+/*
+ * IFJ Project 2023
+ * Implementation of lexical analyzer
+ * Author: Kirill Shchetiniuk (xshche05)
+ */
 #ifndef IFJ_PRJ_SCANNER_H
 #define IFJ_PRJ_SCANNER_H
 

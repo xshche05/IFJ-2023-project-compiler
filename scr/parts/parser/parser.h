@@ -1,3 +1,8 @@
+/*
+ * IFJ Project 2023
+ * Implementation of expression parser
+ * Author: Kirill Shchetiniuk (xshche05)
+ */
 #ifndef IFJ_PRJ_PARSER_H
 #define IFJ_PRJ_PARSER_H
 

@@ -1,6 +1,8 @@
-//
-// Created by Spagetik on 08-Nov-23.
-//
+/*
+ * IFJ Project 2023
+ * Implementation of vv-BVS symtable
+ * Author: Kirill Shchetiniuk (xshche05)
+ */
 
 #include <string.h>
 #include "symtable.h"
