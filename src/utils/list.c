@@ -4,7 +4,7 @@
  * Author: Kirill Shchetiniuk (xshche05)
  */
 
-#include "lists.h"
+#include "list.h"
 #include "memory.h"
 #include <stdlib.h>
 #include <string.h>

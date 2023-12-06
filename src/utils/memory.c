@@ -4,7 +4,7 @@
  * Author: Kirill Shchetiniuk (xshche05)
  */
 #include "memory.h"
-#include "lists.h"
+#include "list.h"
 #include <stdio.h>
 
 dynamic_array_t *allocated_pointers = NULL;

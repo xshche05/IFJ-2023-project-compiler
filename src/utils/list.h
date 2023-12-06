@@ -4,8 +4,8 @@
  * Author: Kirill Shchetiniuk (xshche05)
  */
 
-#ifndef IFJ_PRJ_LISTS_H
-#define IFJ_PRJ_LISTS_H
+#ifndef IFJ_PRJ_LIST_H
+#define IFJ_PRJ_LIST_H
 
 #include <stdbool.h>
 
@@ -28,4 +28,4 @@ struct dynamic_array_interface {
     bool (*is_in_array)(dynamic_array_t *array, void *item);
 };
 
-#endif //IFJ_PRJ_LISTS_H
+#endif //IFJ_PRJ_LIST_H

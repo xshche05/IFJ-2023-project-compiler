@@ -8,7 +8,7 @@
 #include <stdbool.h>
 #include <ctype.h>
 #include <string.h>
-#include "lists.h"
+#include "list.h"
 #include "token.h"
 #include <stdio.h>
 #include "macros.h"

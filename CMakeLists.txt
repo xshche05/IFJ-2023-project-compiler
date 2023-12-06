@@ -23,6 +23,11 @@ add_custom_target(test2
         DEPENDS compiler
         WORKING_DIRECTORY ${CMAKE_PROJECT_DIR}/tests/test2)
 
+add_custom_target(odevzdani
+        DEPENDS compiler
+        DEPENDS test1
+        DEPENDS test2)
+
 add_executable(compiler
         src/main.c
         src/parts/scanner/scanner.c
@@ -31,7 +36,7 @@ add_executable(compiler
         src/utils/string_util.c
         src/parts/parser/parser.c
         src/parts/scanner/scanner.c
-        src/utils/lists.c
+        src/utils/list.c
         src/parts/scanner/token.c
         src/parts/parser/expr_parser.c
         src/parts/parser/expr_parser.h

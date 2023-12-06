@@ -7,7 +7,7 @@
 #include "codegen.h"
 #include "stack.h"
 #include "parser.h"
-#include "lists.h"
+#include "list.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdbool.h>
