@@ -1,0 +1,95 @@
+<S> -> <CODE> $
+
+<CODE> -> <VAR_DECL> "eol" <CODE>
+<CODE> -> <LET_DECL> "eol" <CODE>
+<CODE> -> <FUNC_DECL> "eol" <CODE>
+<CODE> -> <WHILE_LOOP> "eol" <CODE>
+<CODE> -> <FOR_LOOP> "eol" <CODE>
+<CODE> -> <BRANCH> "eol" <CODE>
+<CODE> -> <ID_CALL_OR_ASSIGN> "eol" <CODE>
+<CODE> -> <RETURN>
+<CODE> -> "break"
+<CODE> -> "continue"
+<CODE> -> eps
+
+<RETURN> -> "return" <RET_EXPR>
+
+<RET_EXPR> -> <EXPR>
+<RET_EXPR> -> eps
+
+<VAR_DECL> -> "var" "id" <VAR_LET_TYPE> <VAR_LET_EXP>
+
+<VAR_LET_TYPE> -> ":" <TYPE>
+<VAR_LET_TYPE> -> eps
+
+<VAR_LET_EXP> -> "=" <EXPR>
+<VAR_LET_EXP> -> eps
+
+<LET_DECL> -> "let" "id" <VAR_LET_TYPE> <VAR_LET_EXP>
+
+<FUNC_DECL> -> "func" "id" "(" <PARAM_LIST> ")" <FUNC_RET_TYPE> "{" <CODE> "}"
+
+<FUNC_RET_TYPE> -> "->" <TYPE>
+<FUNC_RET_TYPE> -> eps
+
+<PARAM_LIST> -> <PARAM> <NEXT_PARAM>
+<PARAM_LIST> -> eps
+
+<PARAM> -> <PARAM_NAME> "id" ":" <TYPE>
+
+<PARAM_NAME> -> "id"
+<PARAM_NAME> -> "_"
+
+<NEXT_PARAM> -> "," <PARAM> <NEXT_PARAM>
+<NEXT_PARAM> -> eps
+
+<BRANCH> -> "if" <BR_EXPR> "{" <CODE> "}" <ELSE>
+
+<BR_EXPR> -> <EXPR>
+<BR_EXPR> -> "let" "id"
+
+<ELSE> -> "else" <ELSE_IF>
+<ELSE> -> eps
+
+<ELSE_IF> -> "if" <BR_EXPR> "{" <CODE> "}" <ELSE>
+<ELSE_IF> -> "{" <CODE> "}"
+<ELSE_IF> -> eps
+
+<WHILE_LOOP> -> "while" <EXPR> "{" <CODE> "}"
+
+<FOR_LOOP> -> "for" <FOR_ID> "in" <EXPR> <RANGE> "{" <CODE> "}"
+
+<FOR_ID> -> "id"
+<FOR_ID> -> "_"
+
+<RANGE> -> "..." <EXPR>
+<RANGE> -> "..<" <EXPR>
+
+<CALL_PARAM_LIST> -> <CALL_PARAM> <NEXT_CALL_PARAM>
+<CALL_PARAM_LIST> -> eps
+
+<CALL_PARAM> -> "id" ":" <EXPR>
+<CALL_PARAM> -> <EXPR>
+
+<NEXT_CALL_PARAM> -> "," <CALL_PARAM> <NEXT_CALL_PARAM>
+<NEXT_CALL_PARAM> -> eps
+
+<ID_CALL_OR_ASSIGN> -> "id" <NEXT_ID_CALL_OR_ASSIGN>
+
+<NEXT_ID_CALL_OR_ASSIGN> -> "(" <CALL_PARAM_LIST> ")"
+<NEXT_ID_CALL_OR_ASSIGN> -> "=" <EXPR>
+
+<TYPE> -> "Int"
+<TYPE> -> "Double"
+<TYPE> -> "String"
+<TYPE> -> "Bool"
+
+<EXPR> -> "id"
+<EXPR> -> "int_literal"
+<EXPR> -> "double_literal"
+<EXPR> -> "string_literal"
+<EXPR> -> "true_literal"
+<EXPR> -> "false_literal"
+<EXPR> -> "nil_literal"
+<EXPR> -> "("
+<EXPR> -> "!"
