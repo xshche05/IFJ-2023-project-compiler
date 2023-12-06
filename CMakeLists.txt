@@ -26,7 +26,8 @@ add_custom_target(test2
 add_custom_target(odevzdani
         DEPENDS compiler
         DEPENDS test1
-        DEPENDS test2)
+        DEPENDS test2
+        WORKING_DIRECTORY ${CMAKE_PROJECT_DIR})
 
 add_executable(compiler
         src/main.c
