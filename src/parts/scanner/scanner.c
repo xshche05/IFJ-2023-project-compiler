@@ -844,6 +844,7 @@ int source_code_to_tokens() {
                 if (c == '*') {
                     fsm_state = COM_MULT_NEW_S;
                 } else {
+                    if (!isspace(control_char)) SourceCode.back_step();
                     fsm_state = COM_MULT_S;
                 }
                 break;
@@ -884,6 +885,7 @@ int source_code_to_tokens() {
                     if (c == '/') {
                         fsm_state = COM_MULT_NEW_S;
                     } else {
+                        if (!isspace(control_char)) SourceCode.back_step();
                         fsm_state = COM_MULT_S;
                     }
                 }

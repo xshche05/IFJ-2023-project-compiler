@@ -5,9 +5,23 @@ project(IFJ_PRJ C)
 
 set(CMAKE_C_STANDARD 99)
 
+set(CMAKE_PROJECT_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+
 include_directories(src/utils/ src/parts/ src/ src/parts/scanner/ src/parts/parser/ src/parts/codegen/)
 
 add_compile_options(-Wall -Wextra -std=c99 -g)
+
+add_custom_target(run_code
+        DEPENDS compiler
+        WORKING_DIRECTORY ${CMAKE_PROJECT_DIR})
+
+add_custom_target(test1
+        DEPENDS compiler
+        WORKING_DIRECTORY ${CMAKE_PROJECT_DIR}/tests/test1)
+
+add_custom_target(test2
+        DEPENDS compiler
+        WORKING_DIRECTORY ${CMAKE_PROJECT_DIR}/tests/test2)
 
 add_executable(compiler
         src/main.c

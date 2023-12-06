@@ -1,7 +1,7 @@
 #!/bin/bash
 
 testNum=1
-compilerPath="../compiler"
+compilerPath="../../cmake-build-debug/compiler"
 interpreterPath="../ic23int"
 # arguments:
 # 1. name of test

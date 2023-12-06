@@ -2,7 +2,7 @@ import traceback
 import subprocess
 from enum import Enum
 
-COMPILER_PATH = "../compiler"
+COMPILER_PATH = "../../cmake-build-debug/compiler"
 INTERPRETER_PATH = "../ic23int"
 
 # gtfo python
