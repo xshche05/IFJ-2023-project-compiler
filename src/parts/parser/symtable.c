@@ -2,6 +2,7 @@
  * IFJ Project 2023
  * Implementation of vv-BVS symtable
  * Author: Kirill Shchetiniuk (xshche05)
+ * Author: Lilit Movsesian (xmovse00)
  */
 
 #include <string.h>

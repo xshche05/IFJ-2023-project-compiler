@@ -2,6 +2,8 @@
  * IFJ Project 2023
  * Macros for error handling and other useful macros
  * Author: Kirill Shchetiniuk (xshche05)
+ * Author: Lilit Movsesian (xmovse00)
+ * Author: Veranika Saltanava (xsalta01)
  */
 #ifndef IFJ_PRJ_MACROS_H
 #define IFJ_PRJ_MACROS_H

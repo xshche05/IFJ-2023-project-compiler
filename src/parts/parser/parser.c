@@ -2,6 +2,9 @@
  * IFJ Project 2023
  * Implementation of expression parser
  * Author: Kirill Shchetiniuk (xshche05)
+ * Author: Nadzeya Antsipenka (xantsi00)
+ * Author: Veranika Saltanava (xsalta01)
+ * Author: Lilit Movsesian (xmovse00)
  */
 #include <string.h>
 #include "codegen.h"
