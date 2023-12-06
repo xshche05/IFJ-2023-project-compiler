@@ -3,30 +3,29 @@
 cmake_minimum_required(VERSION 3.10)
 project(IFJ_PRJ C)
 
-set(CMAKE_C_STANDARD 11)
+set(CMAKE_C_STANDARD 99)
 
-include_directories(scr/utils scr/parts src scr/parts/scanner scr/parts/parser src/parts/codegen)
+include_directories(src/utils/ src/parts/ src/ src/parts/scanner/ src/parts/parser/ src/parts/codegen/)
 
-add_compile_options(-Wall -Wextra -std=c11 -g)
+add_compile_options(-Wall -Wextra -std=c99 -g)
 
 add_executable(compiler
-        scr/main.c
-        scr/parts/scanner/scanner.c
-        scr/macros.h
-        scr/parts/parts.h
-        scr/utils/source_file.c
-        scr/utils/string_util.c
-        scr/parts/parser/parser.c
-        scr/parts/scanner/scanner.c
-        scr/utils/lists.c
-        scr/parts/scanner/token.c
-        scr/parts/parser/expr_parser.c
-        scr/parts/parser/expr_parser.h
-        scr/utils/stack.c
-        scr/utils/stack.h
-        scr/parts/parser/symtable.c
-        scr/parts/parser/symtable.c
-        scr/utils/memory.c
-        scr/utils/memory.h
-        scr/parts/codegen/codegen.c
-        scr/parts/codegen/codegen.h)
+        src/main.c
+        src/parts/scanner/scanner.c
+        src/macros.h
+        src/utils/source_file.c
+        src/utils/string_util.c
+        src/parts/parser/parser.c
+        src/parts/scanner/scanner.c
+        src/utils/lists.c
+        src/parts/scanner/token.c
+        src/parts/parser/expr_parser.c
+        src/parts/parser/expr_parser.h
+        src/utils/stack.c
+        src/utils/stack.h
+        src/parts/parser/symtable.c
+        src/parts/parser/symtable.c
+        src/utils/memory.c
+        src/utils/memory.h
+        src/parts/codegen/codegen.c
+        src/parts/codegen/codegen.h)
