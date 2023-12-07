@@ -1,4 +1,3 @@
-# Makefile
 CC = gcc
 CFLAGS = -Wall -Wextra -std=c11
 DFLAGS = -g -DDEBUG -Wall -Wextra -Werror -std=c11
