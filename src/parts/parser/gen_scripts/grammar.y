@@ -1,68 +1,110 @@
-S ::= CODE $
-CODE ::= VAR_DECL NL CODE
-CODE ::= LET_DECL NL CODE
-CODE ::= FUNC_DECL NL CODE
-CODE ::= WHILE_LOOP NL CODE
-CODE ::= FOR_LOOP NL CODE
-CODE ::= BRANCH NL CODE
-CODE ::= ID_CALL_OR_ASSIGN NL CODE
-CODE ::= RETURN
-CODE ::= break
-CODE ::= continue
-CODE ::= ''
-RETURN ::= return RET_EXPR 
-RET_EXPR ::= EXPR
-RET_EXPR ::= ''
-VAR_DECL ::= var id VAR_LET_TYPE VAR_LET_EXP
-LET_DECL ::= let id VAR_LET_TYPE VAR_LET_EXP
-VAR_LET_TYPE ::= : TYPE
-VAR_LET_TYPE ::= ''
-VAR_LET_EXP ::= = EXPR
-VAR_LET_EXP ::= ''
-FUNC_DECL ::= func id ( PARAM_LIST ) FUNC_RET_TYPE { CODE } 
-FUNC_RET_TYPE ::= -> TYPE
-FUNC_RET_TYPE ::= ''
-PARAM_LIST ::= PARAM NEXT_PARAM
-PARAM_LIST ::= ''
-PARAM ::= PARAM_NAME id : TYPE
-PARAM_NAME ::= id
-PARAM_NAME ::= _
-NEXT_PARAM ::= , PARAM NEXT_PARAM
-NEXT_PARAM ::= ''
-BRANCH ::= if BR_EXPR { CODE } ELSE 
-BR_EXPR ::= EXPR
-BR_EXPR ::= let id
-ELSE ::= else ELSE_IF
-ELSE ::= ''
-ELSE_IF ::= if BR_EXPR { CODE } ELSE
-ELSE_IF ::= { CODE }
-ELSE_IF ::= ''
-WHILE_LOOP ::= while EXPR { CODE } 
-FOR_LOOP ::= for FOR_ID in EXPR RANGE { CODE } 
-FOR_ID ::= id
-FOR_ID ::= _
-RANGE ::= ... EXPR
-RANGE ::= ..< EXPR
-CALL_PARAM_LIST ::= CALL_PARAM NEXT_CALL_PARAM
-CALL_PARAM_LIST ::= ''
-CALL_PARAM ::= id : EXPR
-CALL_PARAM ::= EXPR
-NEXT_CALL_PARAM ::= , CALL_PARAM NEXT_CALL_PARAM
-NEXT_CALL_PARAM ::= '' 
-ID_CALL_OR_ASSIGN ::= id NEXT_ID_CALL_OR_ASSIGN
-NEXT_ID_CALL_OR_ASSIGN ::= ( CALL_PARAM_LIST )
-NEXT_ID_CALL_OR_ASSIGN ::= = EXPR
-TYPE ::= Int
-TYPE ::= Double
-TYPE ::= String
-TYPE ::= Bool
+[PROGRAM] ::= [DECLARE_GLOBAL_FUNC]
 
-EXPR ::= id
-EXPR ::= int_literal
-EXPR ::= double_literal
-EXPR ::= string_literal
-EXPR ::= true_literal
-EXPR ::= false_literal
-EXPR ::= nil_literal
-EXPR ::= (
-EXPR ::= !
+[DECLARE_GLOBAL_FUNC] ::= [STMT_LIST]
+[STMT_LIST] ::= [STMT] [STMT_LIST]
+[STMT_LIST] ::= ''
+
+
+
+[STMT] ::= if [IF_EXP] { [STMT_LIST] } [ELSE]
+[STMT] ::= while [WHILE_EXP] { [STMT_LIST] }
+[STMT] ::= [KWRD_STMT]
+[STMT] ::= [ASSIGN_STMT]
+[STMT] ::= [FUNC_DECL]
+[STMT] ::= return [EXP]
+
+
+[FUNC_DECL] ::= func id ( [PARAM_LIST] ) [RETURN_TYPE] { [STMT_LIST] }
+[RETURN_TYPE] ::= -> [TYPE]
+[RETURN_TYPE] ::= ''
+
+[WHILE_EXP] ::= ( [EXP] [MB_WHILE_EXP] )
+
+[MB_WHILE_EXP] ::= [COMP_OP] [EXP]
+[MB_WHILE_EXP] ::= ''
+
+[IF_EXP] ::= ( [EXP] )
+[IF_EXP] ::= let id
+
+[ELSE] ::= else { [STMT_LIST] }
+
+[KWRD_STMT] ::= let id [MB_STMT_LET]
+[KWRD_STMT] ::= var id [MB_STMT_LET]
+
+[ASSIGN_STMT] ::= id [MB_ASSIGN_STMT]
+
+[MB_ASSIGN_STMT] ::= = [EXP]
+[MB_ASSIGN_STMT] ::= [FUNC_CALL]
+
+[MB_ASSIGN_EXPR] ::= = [EXP]
+[MB_ASSIGN_EXPR] ::= [FUNC_CALL]
+[MB_ASSIGN_EXPR] ::= ''
+
+[MB_STMT_LET] ::= : [TYPE] [MB_ASSIGN_EXPR]
+[MB_STMT_LET] ::= = [EXP]
+
+
+[TYPE] ::= String
+[TYPE] ::= Int
+[TYPE] ::= Double
+[TYPE] ::= String?
+[TYPE] ::= Int?
+[TYPE] ::= Double?
+
+
+[COMP_OP] ::= ==
+[COMP_OP] ::= !=
+[COMP_OP] ::= >
+[COMP_OP] ::= >=
+[COMP_OP] ::= <
+[COMP_OP] ::= <=
+
+
+[EXP] ::= [T] [EXP_LIST]
+[EXP_LIST] ::= + [T] [EXP_LIST]
+[EXP_LIST] ::= - [T] [EXP_LIST]
+[EXP_LIST] ::= ''
+[T] ::= [FAC] [T_LIST]
+[T_LIST] ::= * [FAC] [T_LIST]
+[T_LIST] ::= / [FAC] [T_LIST]
+[T_LIST] ::= ''
+[FAC] ::= ( [EXP] )
+[FAC] ::= id [FAC_TAIL]
+[FAC_TAIL] ::= [FUNC_CALL]
+[FAC_TAIL] ::= ''
+
+
+
+
+
+
+
+
+[FUNC_CALL] ::= ( [ARG_LIST] )
+
+[ARG_LIST] ::= [ARG] [ARG_LIST_REST]
+[ARG_LIST] ::= ''
+
+[ARG_LIST_REST] ::= , [ARG] [ARG_LIST_REST]
+[ARG_LIST_REST] ::= ''
+
+[ARG] ::= [PREFIX] : [ARG_NAME]
+[PREFIX] ::= ''
+[PREFIX] ::= id
+
+[ARG_NAME] ::= id
+
+
+[PARAM_PREFIX] ::= _
+[PARAM_PREFIX] ::= id
+[PARAM_LIST] ::= [PARAM] [PARAM_LIST_REST]
+[PARAM_LIST] ::= ''
+
+
+
+[PARAM_LIST_REST] ::= , [PARAM] [PARAM_LIST_REST]
+[PARAM_LIST_REST] ::= ''
+
+[PARAM] ::= [PARAM_PREFIX] [PARAM_NAME] : [TYPE]
+
+[PARAM_NAME] ::= id

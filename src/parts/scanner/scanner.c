@@ -110,9 +110,17 @@ static string_t *verify_str(string_t *lexeme, bool multiline) {
             for (int i = 1; i < lines->size - 1; i++) {
                 int spaces_to_remove = spaces_before_closing_quotes;
                 char *cur_line = DynamicArray.get(lines, i);
+                not_empty = false;
                 if (!has_only_spaces(cur_line, strlen(cur_line))) {
                     cur_line += spaces_to_remove;
-                    not_empty = not_empty || true;
+                    not_empty = true;
+                }
+                if (not_empty) {
+                    char *con_char = cur_line-1;
+                    if (!isspace(*con_char)) {
+                        fprintf(stderr, "Error: Invalid multiline string. Before closing quotes too many whitespaces\n");
+                        return NULL;
+                    }
                 }
                 String.add_cstr(new_lex, cur_line);
                 if (i == lines->size - 2) String.del_last_char(new_lex);
@@ -845,9 +853,10 @@ int source_code_to_tokens() {
             case COM_MULT_START_S:
                 comment_cnt++;
                 if (c == '*') {
+                    fsm_state = COM_HALF_END_S; // todo
+                } else if (c == '/') {
                     fsm_state = COM_MULT_NEW_S;
                 } else {
-                    if (!isspace(control_char)) SourceCode.back_step();
                     fsm_state = COM_MULT_S;
                 }
                 break;
