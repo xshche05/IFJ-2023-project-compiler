@@ -30,6 +30,8 @@ To run the compiler, use the following command in the project root directory:
 ```shell
 ./build/compiler < example.ifj23 > example.ifjcode
 ```
+Compiler reads the source code from the standard input and writes the generated code to the standard output.
+In case of an error, the application will return a non-zero exit code.
 
 ### How to run resulting code
 To run the generated code, use the IFJcode23 interpreter (x86-64 systems only). The interpreter can be found in the `bin` directory. 
@@ -37,6 +39,3 @@ To run the interpreter, use the following command in the project root directory:
 ```shell
 ./bin/ic23int example.ifjcode
 ```
-
-Application will read the source code from the standard input and write the generated code to the standard output.
-In case of an error, the application will return a non-zero exit code.
