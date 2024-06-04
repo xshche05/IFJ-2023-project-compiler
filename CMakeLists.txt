@@ -15,19 +15,19 @@ add_custom_target(run_code
         DEPENDS compiler
         WORKING_DIRECTORY ${CMAKE_PROJECT_DIR})
 
-add_custom_target(test1
-        DEPENDS compiler
-        WORKING_DIRECTORY ${CMAKE_PROJECT_DIR}/tests/test1)
-
-add_custom_target(test2
-        DEPENDS compiler
-        WORKING_DIRECTORY ${CMAKE_PROJECT_DIR}/tests/test2)
-
-add_custom_target(odevzdani
-        DEPENDS compiler
-        DEPENDS test1
-        DEPENDS test2
-        WORKING_DIRECTORY ${CMAKE_PROJECT_DIR})
+#add_custom_target(test1
+#        DEPENDS compiler
+#        WORKING_DIRECTORY ${CMAKE_PROJECT_DIR}/tests/test1)
+#
+#add_custom_target(test2
+#        DEPENDS compiler
+#        WORKING_DIRECTORY ${CMAKE_PROJECT_DIR}/tests/test2)
+#
+#add_custom_target(odevzdani
+#        DEPENDS compiler
+#        DEPENDS test1
+#        DEPENDS test2
+#        WORKING_DIRECTORY ${CMAKE_PROJECT_DIR})
 
 add_executable(compiler
         src/main.c

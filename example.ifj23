@@ -1,0 +1,150 @@
+func print_line(_ width: Double) {
+    var line = "+"
+    var x = 0.0
+    while x < width {
+        line = line + "-"
+        x = x + 1
+    }
+    line = line + "+"
+    write(line, "\n")
+}
+
+
+func pixel_color(_ lightness: Double) -> String {
+    if lightness > 0.9 {
+        return "#"
+    } else if lightness > 0.7 {
+        return "*"
+    } else if lightness > 0.5 {
+        return "+"
+    } else if lightness > 0.3 {
+        return "-"
+    } else if lightness > 0.1 {
+        return "."
+    } else {
+        return " "
+    }
+}
+
+
+func abs(_ x: Double) -> Double {
+    if x < 0 {
+        return 0 - x
+    } else {
+        return x
+    }
+}
+
+func yiplus1(_ d: Double) -> Double {
+    var yi = d
+    var delta = 1.0
+    while delta > 0.0001 {
+        var yip1 = (0.5 * ((d / yi) + yi))
+        delta = yip1 - yi
+        delta = abs(delta)
+        yi = yip1
+    }
+    return yi
+}
+
+func is_in_range(_ val: Double, _ min: Double, _ max: Double) -> Int {
+    if val > min {
+        if val < max {
+            return 1
+        }
+    }
+    return 0
+}
+
+write("ifj-raytracer, vykresli 3 koule", "\n")
+var resx = 100.000000
+var resy = 100.000000
+var posx = 0.000000
+var posy = 0.000000
+var posz = 0 - 20.000000
+var spherex = 0.000000
+var spherey = 0.000000
+var spherez = 0.000000
+var sphereradius = 4.000000
+var lightx = 0 - 5.000000
+var lighty = 5.000000
+var lightz = 0 - 11.000000
+var line = "+"
+var x = 0.000000
+var y = 3.000000
+
+print_line(resx)
+
+while y < resy {
+    line = "|"
+    x = 0.000000
+    while x < resx {
+        var tarx = ((1.000000 - ((x * 2.000000) / resx)) * 7.000000)
+        var tary = ((1.000000 - ((y * 2.000000) / resy)) * 5.000000)
+        var tarz = 0.000000
+        var rayx = (tarx - posx)
+        var rayy = (tary - posy)
+        var rayz = (tarz - posz)
+        var n = 0
+        var z = 9999.000000
+        var pixel = " "
+        while n < 3 {
+            var spherex : Double = 0.0
+            var spherey : Double = 0.0
+            var spherez : Double = 0.0
+            var sphereradius : Double = 0.0
+            if n == 0 {
+                spherex = (0 - 5.000000)
+                spherey = (0 - 3.000000)
+                spherez = 6.000000
+                sphereradius = 3.000000
+            } else if n == 1 {
+                spherex = (0 - 1.000000)
+                spherey = 1.000000
+                spherez = 10.000000
+                sphereradius = 5.000000
+            } else {
+                spherex = 5.000000
+                spherey = (0 - 3.000000)
+                spherez = 20.000000
+                sphereradius = 8.000000
+            }
+            var sphereradius2 = (sphereradius * sphereradius)
+            var ocx = (posx - spherex)
+            var ocy = (posy - spherey)
+            var ocz = (posz - spherez)
+            var a = (((rayx * rayx) + (rayy * rayy)) + (rayz * rayz))
+            var b = (2.000000 * (((rayx * ocx) + (rayy * ocy)) + (rayz * ocz)))
+            var c = ((((ocx * ocx) + (ocy * ocy)) + (ocz * ocz)) - sphereradius2)
+            var d = ((b * b) - ((4.000000 * a) * c))
+            if d > 0.0 {
+                d = yiplus1(d)
+                var t = ((0.0 - b) - d) / (2.000000 * a)
+                var in_range = is_in_range(t, 0.000000, z)
+                if in_range == 1 {
+                    z = t
+                    var intersectionx = ((rayx * t) + posx)
+                    var intersectiony = ((rayy * t) + posy)
+                    var intersectionz = ((rayz * t) + posz)
+                    var normalx = ((intersectionx - spherex) / sphereradius)
+                    var normaly = ((intersectiony - spherey) / sphereradius)
+                    var normalz = ((intersectionz - spherez) / sphereradius)
+                    var tolightx = (lightx - intersectionx)
+                    var tolighty = (lighty - intersectiony)
+                    var tolightz = (lightz - intersectionz)
+                    d = (((tolightx * tolightx) + (tolighty * tolighty)) + (tolightz * tolightz))
+                    d = yiplus1(d)
+                    var lightness = ((((normalx * tolightx) + (normaly * tolighty)) + (normalz * tolightz)) / d)
+                    pixel = pixel_color(lightness)
+                }
+            }
+            n = n + 1
+        }
+        line = line + pixel
+        x = x + 1.0
+    }
+    line = line + "|"
+    write(line, "\n")
+    y = y + 1.0
+}
+print_line(resx)

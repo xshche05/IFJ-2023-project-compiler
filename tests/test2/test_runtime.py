@@ -3,7 +3,7 @@ import subprocess
 from enum import Enum
 
 COMPILER_PATH = "../../cmake-build-debug/compiler"
-INTERPRETER_PATH = "../ic23int"
+INTERPRETER_PATH = "../../bin/ic23int"
 
 # gtfo python
 true = True
